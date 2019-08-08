@@ -1,0 +1,31 @@
+/*  Creator	: Matthieu (Rubisetcie) Carteron
+	Language: GLSL
+*/
+
+uniform sampler2D texture;
+
+void main(void)
+{
+	vec4 sum = vec4(0.0);
+	vec4 front = texture2D(texture, gl_TexCoord[0].xy);
+	
+	sum += front * 0.2;
+	
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.0015625, 0.0)) * 0.145312;
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.003125, 0.0)) * 0.140625;
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.0046875, 0.0)) * 0.135937;
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.00625, 0.0)) * 0.13125;
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.0078125, 0.0)) * 0.126562;
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.009375, 0.0)) * 0.121875;
+	sum += texture2D(texture, gl_TexCoord[0].xy - vec2(0.0109375, 0.0)) * 0.117188;
+	
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.0015625, 0.0)) * 0.145312;
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.003125, 0.0)) * 0.140625;
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.0046875, 0.0)) * 0.135937;
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.00625, 0.0)) * 0.13125;
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.0078125, 0.0)) * 0.126562;
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.009375, 0.0)) * 0.121875;
+	sum += texture2D(texture, gl_TexCoord[0].xy + vec2(0.0109375, 0.0)) * 0.117188;
+	
+	gl_FragColor = sum * vec4(1.0, 1.0, 1.0, 0.5);
+}
