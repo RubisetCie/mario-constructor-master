@@ -1,0 +1,143 @@
+/*  Creator	: Matthieu (Rubisetcie) Carteron
+	Language: C++
+*/
+
+1 ICON "icon.ico"
+1 VERSIONINFO
+    FILEVERSION     1, 1, 0, 0
+    PRODUCTVERSION  1, 1, 0, 0
+    FILEOS         	4
+    FILETYPE        1
+    BEGIN
+        BLOCK "StringFileInfo"
+        BEGIN
+            BLOCK "040904E4"
+            BEGIN
+                VALUE "CompanyName",      "Rubis et Compagnie"
+                VALUE "FileDescription",  "A Fangame Mario Game Editor made by RubisetCie and MarioVariable3410."
+                VALUE "FileVersion",      "1.1.0.0"
+                VALUE "InternalName",     "MFEditorProject"
+                VALUE "OriginalFilename", "MFEditorProject.exe"
+                VALUE "ProductName",      "Mario Constructor Master"
+                VALUE "ProductVersion",   "1.1.0.0"
+            END
+        END
+
+        BLOCK "VarFileInfo"
+        BEGIN
+            VALUE "Translation", 0x409, 0
+        END
+    END
+2 DIALOGEX 0, 0, 220, 64, 3
+    CAPTION         "Enter a name :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter the Name of your Level here :", 4, 8, 8, 200, 8
+        EDITTEXT    5, 8, 20, 200, 12
+        PUSHBUTTON  "OK", 6, 32, 38, 60, 20
+        PUSHBUTTON  "Cancel", 7, 128, 38, 60, 20
+    END
+8 DIALOGEX 0, 0, 220, 64, 9
+    CAPTION         "Enter a name :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter your Name :", 10, 8, 8, 200, 8
+        EDITTEXT    11, 8, 20, 200, 12
+        PUSHBUTTON  "OK", 12, 32, 38, 60, 20
+        PUSHBUTTON  "Cancel", 13, 128, 38, 60, 20
+    END
+14 DIALOGEX 0, 0, 220, 64, 15
+    CAPTION         "Enter a number :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter a Gravity value between 1 and 10 :", 16, 8, 8, 200, 8
+        EDITTEXT    17, 16, 20, 48, 12, 0x2000
+        CONTROL     "", 18, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 19, 32, 38, 60, 20
+        PUSHBUTTON  "Cancel", 20, 128, 38, 60, 20
+    END
+21 DIALOGEX 0, 0, 220, 64, 22
+    CAPTION         "Enter a number :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter a Time Limit between 100 and 10000 :", 23, 8, 8, 200, 8
+        EDITTEXT    24, 16, 20, 48, 12, 0x2000
+        CONTROL     "", 25, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 26, 32, 38, 60, 20
+        PUSHBUTTON  "Cancel", 27, 128, 38, 60, 20
+    END
+28 DIALOGEX 0, 0, 220, 64, 29
+    CAPTION         "Enter a number :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter an Opacity Value between 0 and 255 :", 30, 8, 8, 200, 8
+        EDITTEXT    31, 16, 20, 48, 12, 0x2000
+        CONTROL     "", 32, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 33, 32, 38, 60, 20
+        PUSHBUTTON  "Cancel", 34, 128, 38, 60, 20
+    END
+35 DIALOGEX 0, 0, 250, 64, 36
+    CAPTION         "Enter a number :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter the number of Levels you want to include in your Scenario :", 37, 8, 8, 230, 8
+        EDITTEXT    38, 16, 20, 48, 12, 0x2000
+        CONTROL     "", 39, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 40, 48, 38, 60, 20
+        PUSHBUTTON  "Cancel", 41, 144, 38, 60, 20
+    END
+42 DIALOGEX 0, 0, 220, 64, 43
+    CAPTION         "Enter a number :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter an Health Value between 1 and 25 :", 44, 8, 8, 200, 8
+        EDITTEXT    45, 16, 20, 48, 12, 0x2000
+        CONTROL     "", 46, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 47, 32, 38, 60, 20
+        PUSHBUTTON  "Cancel", 48, 128, 38, 60, 20
+    END
+49 DIALOGEX 0, 0, 220, 64, 50
+    CAPTION         "Open a Level"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "What do you want to do with this Level ?", 51, 8, 8, 200, 8
+        PUSHBUTTON  "Edit", 52, 32, 38, 60, 20
+        PUSHBUTTON  "Play", 53, 128, 38, 60, 20
+    END
+54 DIALOGEX 0, 0, 210, 72, 55
+    CAPTION         "Enter the infos :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Set the Width, the Height and the Lives :", 56, 8, 8, 200, 16
+        EDITTEXT    57, 16, 28, 48, 12, 0x2000
+        CONTROL     "", 58, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        EDITTEXT    59, 80, 28, 48, 12, 0x2000
+        CONTROL     "", 60, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        EDITTEXT    72, 144, 28, 48, 12, 0x2000
+        CONTROL     "", 73, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 61, 32, 48, 60, 20
+        PUSHBUTTON  "Cancel", 62, 114, 48, 60, 20
+        LTEXT       "W", 63, 8, 30, 6, 8
+        LTEXT       "H", 64, 72, 30, 6, 8
+        LTEXT       "L", 74, 136, 30, 6, 8
+    END
+65 DIALOGEX 0, 0, 250, 64, 66
+    CAPTION         "Enter a number :"
+    FONT            8, "MS Shell Dlg"
+    STYLE           0x800 | 128 | 0xc00000
+    BEGIN
+        LTEXT       "Please enter the number of Lives you want in your Scenario :", 67, 8, 8, 230, 8
+        EDITTEXT    68, 16, 20, 48, 12, 0x2000
+        CONTROL     "", 69, "msctls_updown32", 54 | 128, 0, 0, 0, 0
+        PUSHBUTTON  "OK", 70, 48, 38, 60, 20
+        PUSHBUTTON  "Cancel", 71, 144, 38, 60, 20
+    END

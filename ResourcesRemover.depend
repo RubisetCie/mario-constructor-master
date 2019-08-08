@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1514909226 source:d:\jeux\programmation\mfeditorproject\sources\resourcesremover.cpp
+	<fstream>
+	<string>
+
+1514912826 source:d:\jeux\creations\c++\mfeditorproject\sources\resourcesremover.cpp
+	<fstream>
+	<string>
+

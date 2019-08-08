@@ -1,0 +1,30 @@
+/*  Creator	: Matthieu (Rubisetcie) Carteron
+	Language: C++
+*/
+
+1 ICON "gicon.ico"
+1 VERSIONINFO
+    FILEVERSION     1, 1, 0, 0
+    PRODUCTVERSION  1, 1, 0, 0
+    FILEOS         	4
+    FILETYPE        1
+    BEGIN
+        BLOCK "StringFileInfo"
+        BEGIN
+            BLOCK "040904E4"
+            BEGIN
+                VALUE "CompanyName",      "Rubis et Compagnie"
+                VALUE "FileDescription",  "An executable for games created with Mario Constructor Master."
+                VALUE "FileVersion",      "1.0.0.0"
+                VALUE "InternalName",     "MFGameProject"
+                VALUE "OriginalFilename", "MFGameProject.exe"
+                VALUE "ProductName",      "Mario Constructor Master Publisher"
+                VALUE "ProductVersion",   "1.1.0.0"
+            END
+        END
+
+        BLOCK "VarFileInfo"
+        BEGIN
+            VALUE "Translation", 0x409, 0
+        END
+    END
