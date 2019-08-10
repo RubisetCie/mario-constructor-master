@@ -86,6 +86,12 @@ bool Scene::Logo()
 
                     break;
 
+                case Event::MouseMoved          :
+
+                    mpos_absolute = Vector2i((eventSystem.mouseMove.x - wpos.x) / windowScale, (eventSystem.mouseMove.y - wpos.y) / windowScale);
+
+                    break;
+
                 case Event::MouseButtonPressed  :
 
                     if (state == ENTRANCE)
@@ -132,7 +138,7 @@ bool Scene::Logo()
                     fadeAlpha += FADESPEED;
                 else
                 {
-                    targetScene = SCENE_INGAME;
+                    targetScene = SCENE_TITLE;
 
                     exitLoop = true;
                 }
@@ -150,11 +156,14 @@ bool Scene::Logo()
             mainTexture.draw(*fadeRect);
 
         if (exitLoop)
-        {
             mainTexture.clear(Color::Black);
 
+        cursor->setPosition(static_cast<Vector2f>(mpos_absolute));
+
+        mainTexture.draw(*cursor);
+
+        if (exitLoop)
             mainTexture.draw(*loading);
-        }
 
         mainTexture.display();
 
@@ -185,6 +194,21 @@ static bool InitAssets()
     fadeRect->setFillColor(Color::Black);
 
     sprLogo = new Sprite(*logo);
+
+    {
+        FMOD_RESULT result;
+
+        result = FMOD_System_CreateStream(soundSystem,
+                                "Data/Sfx/Musics/TitleScreen.mp3",
+                                FMOD_LOOP_NORMAL |
+                                FMOD_SOFTWARE |
+                                FMOD_2D,
+                                NULL,
+                                &music);
+
+        if (result != FMOD_OK)
+            return false;
+    }
 
     return allright;
 }

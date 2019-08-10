@@ -30884,7 +30884,7 @@ static void Level_Test()
     koopaHealth = bowserHealth;
     koopaMusic = bowserMusic;
 
-    worldFont = new SpriteFont(Vector2f(0, 0), false, levelName, levelName.size() > 10);
+    worldFont = new SpriteFont(Vector2f(0, 0), false, levelName);
 
     if (!listTile1.empty())
     {

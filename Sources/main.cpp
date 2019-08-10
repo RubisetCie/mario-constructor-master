@@ -282,11 +282,12 @@ int WinMain(HINSTANCE thisInstance, HINSTANCE, LPSTR args, int showMode)
 
     Shell_NotifyIcon(NIM_DELETE, &trayIcon);
 
-    delete mainWindow;
     delete loadingTex;
     delete loading;
     delete cursorTex;
     delete cursor;
+
+    delete mainWindow;
 
     {
         FMOD_BOOL isPlaying;
@@ -384,7 +385,7 @@ bool InitSFML()
 
     mainWindow->setIcon(32, 32, icon.getPixelsPtr());
     #ifndef DEBUGMODE
-    mainWindow->setMouseCursorVisible(false);
+    mainWindow->setMouseCursorVisible(GetPrivateProfileInt("CONTEXT INITIALIZATION PARAMETERS", "cursor", 0, ".\\contextParams.ini"));
     #endif // DEBUGMODE
     mainWindow->setKeyRepeatEnabled(false);
 

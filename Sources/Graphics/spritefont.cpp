@@ -15,7 +15,7 @@
 using namespace sf;
 using namespace std;
 
-SpriteFont::SpriteFont(Vector2f position, bool right, const string& startText, bool tight)
+SpriteFont::SpriteFont(Vector2f position, bool right, const string& startText)
 {
     unsigned int stringLength = startText.size();
     unsigned int hInc = 0;
@@ -152,10 +152,7 @@ SpriteFont::SpriteFont(Vector2f position, bool right, const string& startText, b
                     m_text.emplace_back(Vertex(Vector2f(position.x + hInc + currentRect.width, position.y + 16), Color::White, Vector2f(currentRect.left + currentRect.width, currentRect.top + currentRect.height)));
                     m_text.emplace_back(Vertex(Vector2f(position.x + hInc, position.y + 16), Color::White, Vector2f(currentRect.left, currentRect.top + currentRect.height)));
 
-                    if (tight)
-                        hInc += currentRect.width - 2;
-                    else
-                        hInc += currentRect.width;
+                    hInc += currentRect.width;
                 }
             }
         }

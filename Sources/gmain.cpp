@@ -32,7 +32,9 @@ Sprite textureRender;
 
 RenderWindow* mainWindow;
 Texture* loadingTex;
+Texture* cursorTex;
 Sprite* loading;
+Sprite* cursor;
 
 FMOD_SYSTEM* soundSystem;
 FMOD_SOUND* music;
@@ -43,10 +45,12 @@ Scenes targetScene;
 string fileToLoad = "";
 string scenarioToLoad = "";
 char loadingType = 0;
+unsigned char target_lives = -1;
 
 float windowScale = 1;
 
 Vector2f wpos;
+Vector2i mpos_absolute;
 
 bool enableShaders = true;
 
@@ -79,6 +83,8 @@ int WinMain(HINSTANCE thisInstance, HINSTANCE, LPSTR args, int showMode)
 
         delete loadingTex;
         delete loading;
+        delete cursorTex;
+        delete cursor;
 
         delete mainWindow;
 
@@ -112,9 +118,12 @@ int WinMain(HINSTANCE thisInstance, HINSTANCE, LPSTR args, int showMode)
         }
     }
 
-    delete mainWindow;
     delete loadingTex;
     delete loading;
+    delete cursorTex;
+    delete cursor;
+
+    delete mainWindow;
 
     {
         FMOD_BOOL isPlaying;
@@ -151,7 +160,7 @@ bool CheckMutex(HANDLE* mutex, const string& uid)
 
 bool InitSFML()
 {
-    Image icon, loadingImg;
+    Image icon, cursorImg, loadingImg;
     ContextSettings settings;
 
     int value[3];
@@ -165,6 +174,8 @@ bool InitSFML()
         enableShaders = false;
 
     value[2] = GetPrivateProfileInt("GAME CONFIGURATION", "playable_type", 0, ".\\game.ini");
+
+    target_lives = GetPrivateProfileInt("GAME CONFIGURATION", "lives", 0, ".\\game.ini");
 
     GetPrivateProfileString("GAME CONFIGURATION", "playable_file", "", filePath, MAX_PATH, ".\\game.ini");
     GetPrivateProfileString("GAME CONFIGURATION", "title", "Game Title", title, 128, ".\\game.ini");
@@ -201,6 +212,14 @@ bool InitSFML()
 
     loadingImg.createMaskFromColor(Color::Magenta);
 
+    if (!cursorImg.loadFromFile("Data/Gfx/Cursor.png"))
+    {
+        MessageBox(NULL, "Failed to load the cursor !\nCheck this file : Data/Gfx/Cursor.png", "Loading error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+        return false;
+    }
+
+    cursorImg.createMaskFromColor(Color::Magenta);
+
     mainTexture.create(640, 480);
 
     if (value[1] == 1)
@@ -215,7 +234,7 @@ bool InitSFML()
 
     mainWindow->setIcon(48, 48, icon.getPixelsPtr());
     #ifndef DEBUGMODE
-    mainWindow->setMouseCursorVisible(false);
+    mainWindow->setMouseCursorVisible(GetPrivateProfileInt("CONTEXT INITIALIZATION PARAMETERS", "cursor", 0, ".\\contextParams.ini"));
     #endif // DEBUGMODE
     mainWindow->setKeyRepeatEnabled(false);
 
@@ -257,14 +276,19 @@ bool InitSFML()
     loadingTex = new Texture;
     loadingTex->loadFromImage(loadingImg);
 
+    cursorTex = new Texture;
+    cursorTex->loadFromImage(cursorImg);
+
     loading = new Sprite(*loadingTex);
     loading->setPosition(524, 462);
 
-    if (title[0] == '\0')
+    cursor = new Sprite(*cursorTex);
+
+    /*if (title[0] == '\0')
     {
         MessageBox(NULL, "Error ! No playable has been specified !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
         return false;
-    }
+    }*/
 
     ifstream testFile;
 

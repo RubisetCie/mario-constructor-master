@@ -13,7 +13,7 @@ class SpriteFont : public sf::Drawable
 {
     public :
 
-        SpriteFont(sf::Vector2f position, bool right, const std::string& startText, bool tight = false);
+        SpriteFont(sf::Vector2f position, bool right, const std::string& startText);
 
         void setText(const char* text, unsigned int size, sf::Vector2f position, bool right);
         void setPosition(sf::Vector2f position);

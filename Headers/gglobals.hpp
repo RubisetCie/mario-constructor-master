@@ -33,8 +33,10 @@ extern sf::Sprite textureRender;
 
 extern sf::RenderWindow* mainWindow;
 extern sf::Sprite* loading;
+extern sf::Sprite* cursor;
 
 extern sf::Vector2f wpos;
+extern sf::Vector2i mpos_absolute;
 
 extern FMOD_SYSTEM* soundSystem;
 extern FMOD_SOUND* music;

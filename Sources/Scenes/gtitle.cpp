@@ -20,30 +20,46 @@ extern "C"
 #include "../../Headers/gglobals.hpp"
 
 #define FADESPEED 4
+#define SIZESELECTED 0.85
 
 using namespace sf;
 using namespace std;
 
-/*static bool InitAssets();
+static bool InitAssets();
+static void UpdateAssets();
 
 Texture* titleTex;
+Texture* buttonTex[3];
+Texture* screenBackTex;
 Sprite* title;
+Sprite* button[2];
+Sprite* screenBack;
 
 FMOD_SOUND* mouseSound;
 FMOD_SOUND* clickSound;
 FMOD_SOUND* enterLevel;
-FMOD_SOUND* createScenario;
 
+bool animDone;
 bool menuBlock;
 
 unsigned int timeb;
 
+float titleSpeed;
+float buttonSpeed[2];
+
 extern Uint8 fadeAlpha;
-extern RectangleShape* fadeRect;*/
+extern RectangleShape* fadeRect;
+
+bool buttonSelect[2];
+
+extern Texture* circleFadeTex;
+extern Sprite* circleSpr;
+extern RectangleShape* blackBorder;
+extern bool fadeCircle;
 
 bool Scene::Title()
 {
-    /*bool exitLoop = false;
+    bool exitLoop = false;
 
     if (!InitAssets())
     {
@@ -55,6 +71,7 @@ bool Scene::Title()
     }
 
     Event eventSystem;
+    bool toGo = false;
 
     while (!exitLoop)
     {
@@ -86,6 +103,113 @@ bool Scene::Title()
                         break;
                     }
 
+                    if (!animDone)
+                    {
+                        timeb = 300;
+                        animDone = true;
+
+                        title->setPosition(320, 87);
+
+                        button[0]->setPosition(200, 300);
+                        button[1]->setPosition(440, 300);
+                    }
+
+                    break;
+
+                case Event::MouseMoved  :
+
+                    mpos_absolute = Vector2i((eventSystem.mouseMove.x - wpos.x) / windowScale, (eventSystem.mouseMove.y - wpos.y) / windowScale);
+
+                    if (animDone && !menuBlock)
+                    {
+                        if (mpos_absolute.x > 127 && mpos_absolute.x < 273 && mpos_absolute.y > 250  && mpos_absolute.y < 350)
+                        {
+                            if (!buttonSelect[0])
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(0), mouseSound, 0, NULL);
+
+                            buttonSelect[0] = true;
+                        }
+                        else
+                            buttonSelect[0] = false;
+
+                        if (mpos_absolute.x > 367 && mpos_absolute.x < 513 && mpos_absolute.y > 250  && mpos_absolute.y < 350)
+                        {
+                            if (!buttonSelect[1])
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(0), mouseSound, 0, NULL);
+
+                            buttonSelect[1] = true;
+                        }
+                        else
+                            buttonSelect[1] = false;
+                    }
+
+                    break;
+
+                case Event::MouseButtonPressed :
+
+                    if (!animDone)
+                    {
+                        timeb = 300;
+                        animDone = true;
+
+                        title->setPosition(320, 87);
+
+                        button[0]->setPosition(200, 300);
+                        button[1]->setPosition(440, 300);
+                    }
+
+                    if (menuBlock || eventSystem.mouseButton.button != Mouse::Left)
+                        break;
+
+                    if (buttonSelect[0])
+                    {
+                        menuBlock = true;
+                        toGo = true;
+
+                        fadeCircle = true;
+
+                        circleFadeTex = new Texture;
+
+                        if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
+                        {
+                            MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+
+                            mainWindow->close();
+
+                            return false;
+                        }
+
+                        circleFadeTex->setSmooth(true);
+
+                        circleSpr = new Sprite(*circleFadeTex);
+                        circleSpr->setPosition(320, 240);
+                        circleSpr->setScale(1.5, 1.5);
+                        circleSpr->setOrigin(240, 240);
+
+                        FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), enterLevel, 0, NULL);
+
+                        FMOD_Channel_Stop(musicChannel);
+
+                        buttonSelect[0] = false;
+                    }
+                    else if (buttonSelect[1])
+                    {
+                        int userAnswer;
+
+                        FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+
+                        userAnswer = MessageBox(NULL, "Do you want to quit ?", "Quit ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL);
+
+                        if (userAnswer == IDYES)
+                        {
+                            exitLoop = true;
+
+                            mainWindow->close();
+
+                            break;
+                        }
+                    }
+
                     break;
 
                 case Event::Resized :
@@ -103,6 +227,60 @@ bool Scene::Title()
                 default             : break;
             }
         }
+
+        UpdateAssets();
+
+        if (toGo)
+        {
+            if (fadeAlpha > FADESPEED)
+                fadeAlpha -= FADESPEED;
+            else
+                fadeAlpha = 0;
+
+            float circleScale = circleSpr->getScale().x;
+
+            if (circleScale > 0.01)
+                circleSpr->scale(0.96, 0.96);
+            else
+            {
+                exitLoop = true;
+                targetScene = SCENE_INGAME;
+            }
+        }
+        else
+        {
+            if (fadeAlpha > FADESPEED)
+                fadeAlpha -= FADESPEED;
+            else
+                fadeAlpha = 0;
+        }
+
+        if (animDone)
+        {
+            if (timeb < 12)
+                timeb++;
+            else
+                timeb = 0;
+        }
+        else
+        {
+            if (timeb < 300)
+                timeb++;
+        }
+
+        mainTexture.draw(*screenBack);
+        mainTexture.draw(*title);
+
+        if (timeb > 175 || animDone)
+        {
+            mainTexture.draw(*button[0]);
+            mainTexture.draw(*button[1]);
+        }
+
+        if (frame_Water < 23)
+            frame_Water++;
+        else
+            frame_Water = 0;
 
         fadeRect->setFillColor(Color(0, 0, 0, fadeAlpha));
 
@@ -137,10 +315,14 @@ bool Scene::Title()
         }
 
         if (exitLoop)
-        {
             mainTexture.clear(Color::Black);
+
+        cursor->setPosition(static_cast<Vector2f>(mpos_absolute));
+
+        mainTexture.draw(*cursor);
+
+        if (exitLoop)
             mainTexture.draw(*loading);
-        }
 
         mainTexture.display();
 
@@ -158,15 +340,21 @@ bool Scene::Title()
         delete circleSpr;
 
     delete titleTex;
+    delete buttonTex[0];
+    delete buttonTex[1];
+    delete buttonTex[2];
+    delete screenBackTex;
 
     delete blackBorder;
 
     delete title;
+    delete button[0];
+    delete button[1];
+    delete screenBack;
 
     FMOD_Sound_Release(clickSound);
     FMOD_Sound_Release(mouseSound);
     FMOD_Sound_Release(enterLevel);
-    FMOD_Sound_Release(createScenario);*/
 
     return true;
 }
@@ -175,49 +363,82 @@ static bool InitAssets()
 {
     bool allright = true;
 
-    /*FMOD_RESULT result;
+    FMOD_RESULT result;
 
+    animDone = false;
     menuBlock = false;
+
     fadeCircle = false;
 
     timeb = 0;
+
+    titleSpeed = 7;
+
+    buttonSpeed[0] = 11;
+    buttonSpeed[1] = 11;
+
+    buttonSelect[0] = false;
+    buttonSelect[1] = false;
 
     titleTex = new Texture;
 
     if (!titleTex->loadFromFile("Data/Gfx/TitleScreen/Title.png"))
         allright = false;
 
+    screenBackTex = new Texture;
+
+    if (!screenBackTex->loadFromFile("Data/Gfx/TitleScreen/Titlescreen.png"))
+        allright = false;
+
     circleFadeTex = NULL;
     circleSpr = NULL;
-
-    title = new Sprite(*titleTex);
 
     blackBorder = new RectangleShape;
     blackBorder->setFillColor(Color::Black);
 
+    buttonTex[0] = new Texture;
+    buttonTex[1] = new Texture;
+    buttonTex[2] = new Texture;
+
+    if (!buttonTex[0]->loadFromFile("Data/Gfx/TitleScreen/Button_PlayLevel.png"))
+        allright = false;
+
+    if (!buttonTex[1]->loadFromFile("Data/Gfx/TitleScreen/Button_PlayScenario.png"))
+        allright = false;
+
+    if (!buttonTex[2]->loadFromFile("Data/Gfx/TitleScreen/Button_Quit.png"))
+        allright = false;
+
+    buttonTex[0]->setSmooth(true);
+    buttonTex[1]->setSmooth(true);
+    buttonTex[2]->setSmooth(true);
+
+    title = new Sprite(*titleTex);
+    screenBack = new Sprite(*screenBackTex);
+
+    button[0] = new Sprite(*buttonTex[0]);
+    button[1] = new Sprite(*buttonTex[2]);
+
     title->setPosition(320, -80);
-    title->setOrigin(300, 70);
+    title->setOrigin(320, 90);
+
+    button[0]->setPosition(-94, 300);
+    button[1]->setPosition(734, 300);
+
+    button[0]->setOrigin(76, 50);
+    button[1]->setOrigin(77, 50);
 
     fadeRect = new RectangleShape(Vector2f(640, 480));
     fadeRect->setFillColor(Color::Black);
 
-    {
-        FMOD_BOOL isPlaying;
+    result = FMOD_System_PlaySound(soundSystem,
+                      static_cast<FMOD_CHANNELINDEX>(20),
+                      music,
+                      0,
+                      &musicChannel);
 
-        FMOD_Channel_IsPlaying(musicChannel, &isPlaying);
-
-        if (!isPlaying)
-        {
-            result = FMOD_System_PlaySound(soundSystem,
-                              static_cast<FMOD_CHANNELINDEX>(20),
-                              music,
-                              0,
-                              &musicChannel);
-
-            if (result != FMOD_OK)
-                allright = false;
-        }
-    }
+    if (result != FMOD_OK)
+        allright = false;
 
     result = FMOD_System_CreateSound(soundSystem,
                                      "Data/Sfx/Menu1.wav",
@@ -246,16 +467,82 @@ static bool InitAssets()
     if (result != FMOD_OK)
         allright = false;
 
-    result = FMOD_System_CreateSound(soundSystem,
-                                     "Data/Sfx/1Up.wav",
-                                     FMOD_DEFAULT,
-                                     NULL,
-                                     &createScenario);
-
-    if (result != FMOD_OK)
-        allright = false;*/
-
     return allright;
+}
+
+static void UpdateAssets()
+{
+    fadeRect->setFillColor(Color(0, 0, 0, fadeAlpha));
+
+    if (!animDone)
+    {
+        if (timeb > 80 && timeb < 145)
+        {
+            if (titleSpeed > 0)
+            {
+                title->move(0, titleSpeed);
+                titleSpeed -= 0.15;
+            }
+            else
+            {
+                title->setPosition(320, 87);
+                titleSpeed = 0;
+            }
+        }
+        else if (timeb > 145)
+        {
+            if (buttonSpeed[0] > 0)
+            {
+                button[0]->move(buttonSpeed[0], 0);
+                buttonSpeed[0] -= 0.21;
+            }
+            else
+            {
+                button[0]->setPosition(200, 300);
+                buttonSpeed[0] = 0;
+            }
+
+            if (timeb > 160)
+            {
+                if (buttonSpeed[1] > 0)
+                {
+                    button[1]->move(-buttonSpeed[1], 0);
+                    buttonSpeed[1] -= 0.21;
+                }
+                else
+                {
+                    button[1]->setPosition(440, 300);
+                    buttonSpeed[1] = 0;
+
+                    animDone = true;
+                }
+            }
+        }
+    }
+    else
+    {
+        for (unsigned int i = 0; i < 2; i++)
+        {
+            float scale = button[i]->getScale().x;
+
+            if (buttonSelect[i])
+            {
+                if (scale > SIZESELECTED + 0.05)
+                    scale -= 0.05;
+                else
+                    scale = SIZESELECTED;
+            }
+            else
+            {
+                if (scale < 0.95)
+                    scale += 0.05;
+                else
+                    scale = 1;
+            }
+
+            button[i]->setScale(scale, scale);
+        }
+    }
 }
 
 bool checkLoadResources(ifstream& levelFile, LPCSTR filename)

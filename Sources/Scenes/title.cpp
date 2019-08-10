@@ -436,18 +436,6 @@ bool Scene::Title()
 
                     break;
 
-                case Event::Resized :
-
-                    windowScale = min(eventSystem.size.width / 640.0, eventSystem.size.height / 480.0);
-                    wpos = Vector2f((eventSystem.size.width - (windowScale * 640)) / 2, (eventSystem.size.height - (windowScale * 480)) / 2);
-
-                    mainWindow->setView(View(FloatRect(0, 0, eventSystem.size.width, eventSystem.size.height)));
-
-                    textureRender.setPosition(wpos);
-                    textureRender.setScale(windowScale, windowScale);
-
-                    break;
-
                 case Event::MouseButtonPressed :
 
                     if (!animDone)
@@ -1276,6 +1264,18 @@ bool Scene::Title()
 
                             break;
                     }
+
+                    break;
+
+                case Event::Resized :
+
+                    windowScale = min(eventSystem.size.width / 640.0, eventSystem.size.height / 480.0);
+                    wpos = Vector2f((eventSystem.size.width - (windowScale * 640)) / 2, (eventSystem.size.height - (windowScale * 480)) / 2);
+
+                    mainWindow->setView(View(FloatRect(0, 0, eventSystem.size.width, eventSystem.size.height)));
+
+                    textureRender.setPosition(wpos);
+                    textureRender.setScale(windowScale, windowScale);
 
                     break;
 

@@ -397,6 +397,9 @@ Mark_LiquidPlane* waterb;
 
 extern Uint8 fadeAlpha;
 extern RectangleShape* fadeRect;
+#ifdef PUBLISHER
+extern unsigned char target_lives;
+#endif
 
 unsigned int effectCloudPos;
 unsigned int effectWeatherPos;
@@ -767,23 +770,21 @@ bool Scene::Ingame()
                         // Progress points :
                         if (mapTrace_timer >= mapTrace_delimiter)
                         {
-                            Vector2f rppos(roundf(ppos.x / 16) * 16, roundf(ppos.y / 16) * 16);
-
                             mapTrace_timer = 0;
 
                             if (frame_Progress > 6 || frame_Progress == 0)
                             {
-                                mapTrace->append(Vertex(Vector2f(rppos.x - 6, rppos.y - 6), Color::White, Vector2f(12, 0)));
-                                mapTrace->append(Vertex(Vector2f(rppos.x + 6, rppos.y - 6), Color::White, Vector2f(24, 0)));
-                                mapTrace->append(Vertex(Vector2f(rppos.x + 6, rppos.y + 6), Color::White, Vector2f(24, 12)));
-                                mapTrace->append(Vertex(Vector2f(rppos.x - 6, rppos.y + 6), Color::White, Vector2f(12, 12)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x - 6, ppos.y - 6), Color::White, Vector2f(12, 0)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x + 6, ppos.y - 6), Color::White, Vector2f(24, 0)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x + 6, ppos.y + 6), Color::White, Vector2f(24, 12)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x - 6, ppos.y + 6), Color::White, Vector2f(12, 12)));
                             }
                             else
                             {
-                                mapTrace->append(Vertex(Vector2f(rppos.x - 6, rppos.y - 6), Color::White, Vector2f(0, 0)));
-                                mapTrace->append(Vertex(Vector2f(rppos.x + 6, rppos.y - 6), Color::White, Vector2f(12, 0)));
-                                mapTrace->append(Vertex(Vector2f(rppos.x + 6, rppos.y + 6), Color::White, Vector2f(12, 12)));
-                                mapTrace->append(Vertex(Vector2f(rppos.x - 6, rppos.y + 6), Color::White, Vector2f(0, 12)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x - 6, ppos.y - 6), Color::White, Vector2f(0, 0)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x + 6, ppos.y - 6), Color::White, Vector2f(12, 0)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x + 6, ppos.y + 6), Color::White, Vector2f(12, 12)));
+                                mapTrace->append(Vertex(Vector2f(ppos.x - 6, ppos.y + 6), Color::White, Vector2f(0, 12)));
                             }
                         }
                         else
@@ -812,6 +813,8 @@ bool Scene::Ingame()
 
                                 frame_Mario = 0;
                                 frame_Start = 0;
+
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(20), musicSamples[29], 0, &musicChannel);
                             }
                             else
                             {
@@ -856,9 +859,10 @@ bool Scene::Ingame()
                 }
             }
 
-            if (marioSpr_validation > 0 && marioSpr_validation < 65)
+            if (marioSpr_validation > 0)
             {
-                marioSpr_validation++;
+                if (marioSpr_validation < 51)
+                    marioSpr_validation++;
 
                 // Level entering :
                 if (marioSpr_validation == 50)
@@ -889,13 +893,18 @@ bool Scene::Ingame()
 
                     FMOD_Channel_Stop(musicChannel);
                 }
-                else if (marioSpr_validation == 65)
+                else if (marioSpr_validation == 51)
                 {
-                    marioSpr_speed.x *= WORLDMAP_MARIOSPEEDACC / WORLDMAP_MARIOSPEED;
-                    marioSpr_speed.y *= WORLDMAP_MARIOSPEEDACC / WORLDMAP_MARIOSPEED;
-                    marioSpr_velocity = WORLDMAP_MARIOSPEEDACC;
+                    if (mapTrace_timer == 0)
+                    {
+                        marioSpr_speed.x *= WORLDMAP_MARIOSPEEDACC / WORLDMAP_MARIOSPEED;
+                        marioSpr_speed.y *= WORLDMAP_MARIOSPEEDACC / WORLDMAP_MARIOSPEED;
+                        marioSpr_velocity = WORLDMAP_MARIOSPEEDACC;
 
-                    mapTrace_delimiter = WORLDMAP_PROGRESSINTERVALACC;
+                        mapTrace_delimiter = WORLDMAP_PROGRESSINTERVALACC;
+
+                        marioSpr_validation = 52;
+                    }
                 }
             }
 
@@ -2243,8 +2252,16 @@ static bool InitAssets()
 
     game_powerup = 0;
     game_coins = 0;
-    game_lives = 4;
     game_score = 0;
+
+    #ifdef PUBLISHER
+    if (target_lives == 0)
+        game_lives = 4;
+    else
+        game_lives = target_lives;
+    #else
+        game_lives = 4;
+    #endif
 
     worldLightTex = new Texture;
 
@@ -4621,7 +4638,6 @@ static bool Level_Load()
 
     {
         TCHAR getString[MAX_PATH];
-        bool toolong;
 
         level_file.read(getString, 1);
 
@@ -4634,17 +4650,14 @@ static bool Level_Load()
                 level_file.read(&getString[j], 1);
 
                 if (getString[j] == '\0')
-                {
-                    toolong = j > 10;
                     break;
-                }
             }
 
             #ifdef DEBUGMODE
             cout << getString << endl;
             #endif // DEBUGMODE
 
-            worldFont = new SpriteFont(Vector2f(0, 0), false, getString, toolong);
+            worldFont = new SpriteFont(Vector2f(0, 0), false, getString);
         }
         else
         {
@@ -8870,7 +8883,18 @@ static bool World_Load()
             musicWorld = &musicSamples[28];
     }
 
-    scenario_file.read(reinterpret_cast<char*>(&game_lives), 1);
+    #ifdef PUBLISHER
+    {
+        unsigned char lives;
+
+        scenario_file.read(reinterpret_cast<char*>(&lives), 1);
+
+        if (target_lives == 0)
+            game_lives = lives;
+    }
+    #else
+        scenario_file.read(reinterpret_cast<char*>(&game_lives), 1);
+    #endif
 
     {
         unsigned short listSize;
