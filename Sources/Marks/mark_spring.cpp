@@ -15,7 +15,7 @@ Mark_Spring::Mark_Spring(const Texture& texture, unsigned int strengh) : Placeab
     m_strengh = strengh;
 }
 
-void Mark_Spring::setPosition(Vector2f pos)
+void Mark_Spring::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }
@@ -29,9 +29,9 @@ void Mark_Spring::update()
     {
         switch (m_frame)
         {
-            case 18 : m_sprite.setTextureRect(IntRect(32, 0, 32, 64)); break;
-            case 12 : m_sprite.setTextureRect(IntRect(64, 0, 32, 64)); break;
-            case 6 : m_sprite.setTextureRect(IntRect(32, 0, 32, 64)); break;
+            case 9 : m_sprite.setTextureRect(IntRect(32, 0, 32, 64)); break;
+            case 6 : m_sprite.setTextureRect(IntRect(64, 0, 32, 64)); break;
+            case 3 : m_sprite.setTextureRect(IntRect(32, 0, 32, 64)); break;
         }
     }
     else
@@ -46,7 +46,7 @@ void Mark_Spring::update()
         {
             player->bounce(m_strengh, true);
 
-            m_frame = 19;
+            m_frame = 10;
 
             FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(14), sfxSamples[13], 0, NULL);
         }

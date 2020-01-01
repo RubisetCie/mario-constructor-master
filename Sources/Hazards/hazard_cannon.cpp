@@ -28,7 +28,7 @@ Hazard_Cannon::~Hazard_Cannon()
         delete *it;
 }
 
-void Hazard_Cannon::setPosition(Vector2f pos)
+void Hazard_Cannon::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

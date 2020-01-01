@@ -25,7 +25,7 @@ Sprite_Life::Sprite_Life(const Texture& texture) : Walkable()
     m_aabb.height = 32;
 }
 
-void Sprite_Life::setPosition(Vector2f pos)
+void Sprite_Life::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

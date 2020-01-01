@@ -18,7 +18,7 @@ Bonus_LuiBlockInv::Bonus_LuiBlockInv(Texture* blockTexture, Collider* collision,
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_LuiBlockInv::setPosition(Vector2f pos)
+void Bonus_LuiBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 }

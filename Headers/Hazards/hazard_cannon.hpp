@@ -17,7 +17,7 @@ class Hazard_Cannon : public Placeable
         Hazard_Cannon(const sf::Texture& texture);
         virtual ~Hazard_Cannon();
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

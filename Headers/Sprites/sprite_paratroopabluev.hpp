@@ -14,7 +14,7 @@ class Sprite_ParatroopaBlueV : public Sprite_Paratroopa
 
         Sprite_ParatroopaBlueV(const sf::Texture& sprite_texture, sf::Texture* const turtle_texture, sf::Texture* const shell_texture, Collider* collision, float target);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void flyUpdate();
 

@@ -17,7 +17,7 @@ class Sprite_SpinyBall : public Pawn, public GotSpeed, public GotCollision
 
         Sprite_SpinyBall(const sf::Texture& texture, const sf::Texture& walktexture, Collider* collision, Sprite_Lakitu* parent);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

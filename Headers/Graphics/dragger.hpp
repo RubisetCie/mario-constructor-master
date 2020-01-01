@@ -13,7 +13,7 @@ class Dragger : public sf::Drawable
 
         Dragger(sf::Texture* mover, sf::Texture* fonttex, unsigned int number);
 
-        void setPosition(sf::Vector2f position);
+        void setPosition(const sf::Vector2f& position);
 
         void update();
 

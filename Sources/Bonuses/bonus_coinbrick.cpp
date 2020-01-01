@@ -23,7 +23,7 @@ Bonus_CoinBrick::Bonus_CoinBrick(Texture* blockTexture, unsigned int coins) : Pl
     m_coins = coins;
 }
 
-void Bonus_CoinBrick::setPosition(Vector2f pos)
+void Bonus_CoinBrick::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 
@@ -111,7 +111,7 @@ void Bonus_CoinBrick::secureUpdate()
             addCoin();
             addPoints(200);
 
-            listEffect.emplace_back(new Effect_Coin(effectTxt[8], effectTxt[12], Vector2f(pos.x + 4, pos.y - 24)));
+            listEffect.emplace_back(new Effect_Coin(effectTxt[8], effectTxt[12], Vector2f(pos.x + 6, pos.y - 24)));
 
             if (bbox.left > cameraPos.x - 384 && bbox.left < cameraPos.x + 352 && bbox.top > cameraPos.y - 304 && bbox.top < cameraPos.y + 272)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(4), sfxSamples[1], 0, NULL);

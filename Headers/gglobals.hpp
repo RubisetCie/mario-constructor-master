@@ -26,7 +26,7 @@ extern "C"
 
 #define lerp(a, b, t) fma(t, b, fma(-t, a, a))
 
-#define EDITOR_VERSION 1
+#define EDITOR_VERSION 2
 
 extern sf::RenderTexture mainTexture;
 extern sf::Sprite textureRender;
@@ -98,7 +98,7 @@ extern std::list<Placeable*>::iterator spriteIteratorb;
 
 // Ingame resources :
 extern FMOD_SOUND* musicSamples[30];
-extern FMOD_SOUND* sfxSamples[34];
+extern FMOD_SOUND* sfxSamples[35];
 
 extern sf::Vertex gradientRectangle[4];
 extern sf::Vertex gradientRectangleb[4];
@@ -152,8 +152,8 @@ extern SpriteFont* timerFont;
 extern sf::RectangleShape* backgroundSpr;
 extern sf::RectangleShape* backgroundSprb;
 
-extern sf::RectangleShape* effectCloudsSpr;
-extern sf::RectangleShape* effectCloudsSprb;
+extern sf::RectangleShape* effectCloudsSpr[2];
+extern sf::RectangleShape* effectCloudsSprb[2];
 
 extern sf::RectangleShape* effectWeatherSpr;
 extern sf::RectangleShape* effectWeatherSprb;
@@ -178,7 +178,7 @@ extern Matrix* collisionMatrixb;
 extern Mark_LiquidPlane* watera;
 extern Mark_LiquidPlane* waterb;
 
-extern unsigned int effectCloudPos;
+extern unsigned int effectCloudPos[2];
 extern unsigned int effectWeatherPos;
 
 extern unsigned int frame_Hud;

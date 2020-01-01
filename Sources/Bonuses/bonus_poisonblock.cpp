@@ -17,7 +17,7 @@ Bonus_PoisonBlock::Bonus_PoisonBlock(Texture* blockTexture) : Bonus_Block(blockT
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_PoisonBlock::setPosition(Vector2f pos)
+void Bonus_PoisonBlock::setPosition(const Vector2f& pos)
 {
     Bonus_Block::setPosition(pos);
 }

@@ -43,7 +43,7 @@ Sprite_ParatroopaYellow::Sprite_ParatroopaYellow(const Texture& texture, Texture
     m_onfloor = false;
 }
 
-void Sprite_ParatroopaYellow::setPosition(Vector2f pos)
+void Sprite_ParatroopaYellow::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

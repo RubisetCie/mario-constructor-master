@@ -33,7 +33,7 @@ Mark_LevelEnd::Mark_LevelEnd(const Texture& texture, const Texture& limitTexture
     m_cleared = 0;
 }
 
-void Mark_LevelEnd::setPosition(Vector2f pos)
+void Mark_LevelEnd::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
     m_limit.setPosition(m_limitdist + 1, pos.y + 256);

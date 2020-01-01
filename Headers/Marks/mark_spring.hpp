@@ -14,7 +14,7 @@ class Mark_Spring : public Placeable
 
         Mark_Spring(const sf::Texture& texture, unsigned int strength);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -14,7 +14,7 @@ class Sprite_Life : public Walkable
 
         Sprite_Life(const sf::Texture& texture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -33,7 +33,7 @@ Sprite_ThrowedCoin::Sprite_ThrowedCoin(const Texture& texture, Vector2f speed, S
     m_parent = parent;
 }
 
-void Sprite_ThrowedCoin::setPosition(Vector2f pos)
+void Sprite_ThrowedCoin::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

@@ -20,7 +20,7 @@ Mark_PlatformStoneTouchH::Mark_PlatformStoneTouchH(const Texture& texture, float
     m_aabb.height = 120;
 }
 
-void Mark_PlatformStoneTouchH::setPosition(Vector2f pos)
+void Mark_PlatformStoneTouchH::setPosition(const Vector2f& pos)
 {
     float start(pos.x + 60);
 

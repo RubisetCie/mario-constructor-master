@@ -20,7 +20,7 @@ class Mark_Mario : public Pawn, public Trace
 
         Mark_Mario(sf::Texture* texture[], sf::Texture* invincible_texture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

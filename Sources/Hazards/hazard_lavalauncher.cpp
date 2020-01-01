@@ -28,7 +28,7 @@ Hazard_Lavalauncher::~Hazard_Lavalauncher()
         delete *it;
 }
 
-void Hazard_Lavalauncher::setPosition(Vector2f pos)
+void Hazard_Lavalauncher::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

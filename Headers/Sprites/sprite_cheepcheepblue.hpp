@@ -7,15 +7,15 @@
 
 #include <SFML/Graphics.hpp>
 #include "../Core/pawn.hpp"
-#include "../Core/collider.hpp"
+#include "gotcollision.hpp"
 
-class Sprite_CheepCheepBlue : public Pawn
+class Sprite_CheepCheepBlue : public GotCollision, public Pawn
 {
     public :
 
         Sprite_CheepCheepBlue(const sf::Texture& texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();
@@ -33,8 +33,6 @@ class Sprite_CheepCheepBlue : public Pawn
         void draw(sf::RenderTarget& target, sf::RenderStates) const;
 
         sf::Sprite m_sprite;
-
-        Collider* m_collider;
 
         bool m_killed, m_swimming, m_active;
 };

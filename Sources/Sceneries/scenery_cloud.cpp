@@ -15,7 +15,7 @@ Scenery_Cloud::Scenery_Cloud(const Texture& texture) : Placeable()
     m_sprite.setTextureRect(IntRect(0, 0, 63, 48));
 }
 
-void Scenery_Cloud::setPosition(Vector2f pos)
+void Scenery_Cloud::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

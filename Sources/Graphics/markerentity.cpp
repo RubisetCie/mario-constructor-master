@@ -83,7 +83,7 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
                     goto LBL_EXITCONDITION;
                 }
 
-                if (CMLid[3] > EDITOR_VERSION)
+                if (CMLid[3] != EDITOR_VERSION)
                 {
                     MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 
@@ -265,7 +265,7 @@ void Marker_Entity::setIsLevel(bool isLevel)
                     return;
                 }
 
-                if (CMLid[3] > EDITOR_VERSION)
+                if (CMLid[3] != EDITOR_VERSION)
                 {
                     MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 

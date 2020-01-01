@@ -14,7 +14,7 @@ class Hazard_Spike : public Placeable
 
         Hazard_Spike(const sf::Vector2i& coords);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -21,7 +21,7 @@ class Sprite_Bowser : public Pawn, public GotCollision, public Trace
         Sprite_Bowser(const sf::Texture& texture, Collider* collision);
         virtual ~Sprite_Bowser();
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

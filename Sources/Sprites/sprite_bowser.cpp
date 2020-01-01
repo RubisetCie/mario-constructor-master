@@ -65,7 +65,7 @@ Sprite_Bowser::~Sprite_Bowser()
         delete *it;
 }
 
-void Sprite_Bowser::setPosition(Vector2f pos)
+void Sprite_Bowser::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

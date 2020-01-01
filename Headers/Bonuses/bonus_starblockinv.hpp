@@ -14,7 +14,7 @@ class Bonus_StarBlockInv : public Bonus_BlockInv
 
         Bonus_StarBlockInv(sf::Texture* blockTexture, Collider* collision, char once);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

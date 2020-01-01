@@ -56,7 +56,7 @@ void Walkable::update()
     {
         if (swimming)
         {
-            if (m_movedistance.y < (WALKABLE_MAXVSPEED - sprite_gravity) / 2)
+            if (m_movedistance.y < (WALKABLE_MAXVSPEED - sprite_gravity) / 2.0f)
                 m_movedistance.y += sprite_gravity / 2;
         }
         else

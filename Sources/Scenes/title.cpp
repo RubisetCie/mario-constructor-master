@@ -29,8 +29,9 @@ using namespace std;
 
 static bool InitAssets();
 static void UpdateAssets();
-static void LoadTilemap();
-static void LoadBackgrounds();
+static inline void LoadTilemap();
+static inline void LoadTilemapSnow();
+static inline void LoadBackgrounds();
 static bool RewriteParameters();
 
 LRESULT CALLBACK dialogNumLevels(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
@@ -49,6 +50,7 @@ Texture* buttonOpTex[8];
 Texture* buttonRetTex;
 Texture* particle;
 Texture* bush;
+Texture* cloudsTex;
 
 Sprite* title;
 Sprite* button[6];
@@ -61,6 +63,8 @@ Sprite* buttonRet;
 Emitter* titleShine;
 
 Scenery_Bush* greenBush;
+
+RectangleShape* clouds;
 
 FMOD_SOUND* mouseSound;
 FMOD_SOUND* clickSound;
@@ -993,7 +997,7 @@ bool Scene::Title()
                                             correct = false;
                                         }
 
-                                        if (CMSid[3] > EDITOR_VERSION)
+                                        if (CMSid[3] != EDITOR_VERSION)
                                         {
                                             MessageBox(NULL, "Error ! This Scenario was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 
@@ -1089,7 +1093,7 @@ bool Scene::Title()
                                             correct = false;
                                         }
 
-                                        if (CMWid[3] > EDITOR_VERSION)
+                                        if (CMWid[3] != EDITOR_VERSION)
                                         {
                                             MessageBox(NULL, "Error ! This World was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 
@@ -1491,6 +1495,7 @@ bool Scene::Title()
 
                 mainTexture.draw(*tileMap, tileSet);
                 mainTexture.draw(*greenBush);
+                mainTexture.draw(*clouds);
                 mainTexture.draw(*title);
 
                 if (timeb > 175 || animDone)
@@ -1514,7 +1519,14 @@ bool Scene::Title()
                 else
                     frame_Water = 0;
 
+                if (effectCloudPos[0] < 63)
+                    effectCloudPos[0]++;
+                else
+                    effectCloudPos[0] = 0;
+
                 greenBush->update();
+
+                clouds->setTextureRect(IntRect(effectCloudPos[0], 0, 640, 63));
 
                 break;
 
@@ -1663,6 +1675,8 @@ bool Scene::Title()
 
     delete bush;
 
+    delete cloudsTex;
+
     delete title;
     delete button[0];
     delete button[1];
@@ -1708,6 +1722,8 @@ bool Scene::Title()
 
     delete titleShine;
 
+    delete clouds;
+
     delete greenBush;
 
     FMOD_Sound_Release(clickSound);
@@ -1720,6 +1736,9 @@ bool Scene::Title()
 
 static bool InitAssets()
 {
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
     bool allright = true;
 
     Image tileset;
@@ -1736,6 +1755,7 @@ static bool InitAssets()
     titleSpeed = 7;
 
     frame_Water = 0;
+    effectCloudPos[0] = 0;
 
     buttonSpeed[0] = 11;
     buttonSpeed[1] = 11;
@@ -1763,7 +1783,7 @@ static bool InitAssets()
     tileset.createMaskFromColor(Color::Magenta);
 
     tileSet = new Texture;
-    tileSet->loadFromImage(tileset, IntRect(0, 0, 640, 416));
+    tileSet->loadFromImage(tileset, IntRect(0, 0, 896, 416));
 
     titleTex = new Texture;
 
@@ -2042,7 +2062,10 @@ static bool InitAssets()
 
     tileMap = new VertexArray(Quads);
 
-    LoadTilemap();
+    if (tm.tm_mon == 0 || tm.tm_mon == 11)
+        LoadTilemapSnow();
+    else
+        LoadTilemap();
 
     gradient[0] = new VertexArray(Quads, 4);
     gradient[1] = new VertexArray(Quads, 4);
@@ -2059,19 +2082,40 @@ static bool InitAssets()
     if (!particle->loadFromFile("Data/Gfx/TitleScreen/Shining.png"))
         allright = false;
 
-    if (!bushImg.loadFromFile("Data/Gfx/Sceneries/Scenery_GreenBush.png"))
-        allright = false;
+    if (tm.tm_mon == 0 || tm.tm_mon == 11)
+    {
+        if (!bushImg.loadFromFile("Data/Gfx/Sceneries/Scenery_GreyBush.png"))
+            allright = false;
+    }
+    else
+    {
+        if (!bushImg.loadFromFile("Data/Gfx/Sceneries/Scenery_GreenBush.png"))
+            allright = false;
+    }
 
     bushImg.createMaskFromColor(Color::Magenta);
 
     bush = new Texture;
     bush->loadFromImage(bushImg);
 
+    if (!bushImg.loadFromFile("Data/Gfx/Effects/Effect_DayClouds.png"))
+        allright = false;
+
+    bushImg.createMaskFromColor(Color::Magenta);
+
+    cloudsTex = new Texture;
+    cloudsTex->loadFromImage(bushImg);
+    cloudsTex->setRepeated(true);
+
     titleShine = new Emitter(600, 140);
     titleShine->setPosition(20, 16);
 
     greenBush = new Scenery_Bush(*bush);
     greenBush->setPosition(Vector2f(364, 386));
+
+    clouds = new RectangleShape(Vector2f(640, 63));
+    clouds->setTexture(cloudsTex);
+    clouds->setTextureRect(IntRect(0, 0, 640, 63));
 
     result = FMOD_System_CreateSound(soundSystem,
                                      "Data/Sfx/Menu1.wav",
@@ -2462,77 +2506,159 @@ static void UpdateAssets()
     }
 }
 
-static void LoadTilemap()
+static inline void LoadTilemap()
 {
     register unsigned int i;
 
-    for (i = 0; i < 20; i++)
+    tileMap->append(Vertex(Vector2f(0, 416), Color::White, Vector2f(0, 0)));
+    tileMap->append(Vertex(Vector2f(32, 416), Color::White, Vector2f(32, 0)));
+    tileMap->append(Vertex(Vector2f(32, 448), Color::White, Vector2f(32, 32)));
+    tileMap->append(Vertex(Vector2f(0, 448), Color::White, Vector2f(0, 32)));
+
+    for (i = 0; i < 18; i++)
     {
-        if (i == 0)
-        {
-            tileMap->append(Vertex(Vector2f(0, 416), Color::White, Vector2f(0, 0)));
-            tileMap->append(Vertex(Vector2f(32, 416), Color::White, Vector2f(32, 0)));
-            tileMap->append(Vertex(Vector2f(32, 448), Color::White, Vector2f(32, 32)));
-            tileMap->append(Vertex(Vector2f(0, 448), Color::White, Vector2f(0, 32)));
-        }
-        else if (i == 19)
-        {
-            tileMap->append(Vertex(Vector2f(i * 32, 416), Color::White, Vector2f(64, 0)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 416), Color::White, Vector2f(96, 0)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 448), Color::White, Vector2f(96, 32)));
-            tileMap->append(Vertex(Vector2f(i * 32, 448), Color::White, Vector2f(64, 32)));
-        }
-        else
-        {
-            tileMap->append(Vertex(Vector2f(i * 32, 416), Color::White, Vector2f(32, 0)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 416), Color::White, Vector2f(64, 0)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 448), Color::White, Vector2f(64, 32)));
-            tileMap->append(Vertex(Vector2f(i * 32, 448), Color::White, Vector2f(32, 32)));
-        }
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 416), Color::White, Vector2f(32, 0)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 416), Color::White, Vector2f(64, 0)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 448), Color::White, Vector2f(64, 32)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 448), Color::White, Vector2f(32, 32)));
     }
 
-    for (i = 0; i < 20; i++)
+    tileMap->append(Vertex(Vector2f(608, 416), Color::White, Vector2f(64, 0)));
+    tileMap->append(Vertex(Vector2f(640, 416), Color::White, Vector2f(96, 0)));
+    tileMap->append(Vertex(Vector2f(640, 448), Color::White, Vector2f(96, 32)));
+    tileMap->append(Vertex(Vector2f(608, 448), Color::White, Vector2f(64, 32)));
+
+    tileMap->append(Vertex(Vector2f(0, 448), Color::White, Vector2f(0, 32)));
+    tileMap->append(Vertex(Vector2f(32, 448), Color::White, Vector2f(32, 32)));
+    tileMap->append(Vertex(Vector2f(32, 480), Color::White, Vector2f(32, 64)));
+    tileMap->append(Vertex(Vector2f(0, 480), Color::White, Vector2f(0, 64)));
+
+    for (i = 0; i < 18; i++)
     {
-        if (i == 0)
-        {
-            tileMap->append(Vertex(Vector2f(0, 448), Color::White, Vector2f(0, 32)));
-            tileMap->append(Vertex(Vector2f(32, 448), Color::White, Vector2f(32, 32)));
-            tileMap->append(Vertex(Vector2f(32, 480), Color::White, Vector2f(32, 64)));
-            tileMap->append(Vertex(Vector2f(0, 480), Color::White, Vector2f(0, 64)));
-        }
-        else if (i == 19)
-        {
-            tileMap->append(Vertex(Vector2f(i * 32, 448), Color::White, Vector2f(64, 32)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 448), Color::White, Vector2f(96, 32)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 480), Color::White, Vector2f(96, 64)));
-            tileMap->append(Vertex(Vector2f(i * 32, 480), Color::White, Vector2f(64, 64)));
-        }
-        else
-        {
-            tileMap->append(Vertex(Vector2f(i * 32, 448), Color::White, Vector2f(32, 32)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 448), Color::White, Vector2f(64, 32)));
-            tileMap->append(Vertex(Vector2f((i+1) * 32, 480), Color::White, Vector2f(64, 64)));
-            tileMap->append(Vertex(Vector2f(i * 32, 480), Color::White, Vector2f(32, 64)));
-        }
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 448), Color::White, Vector2f(32, 32)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 448), Color::White, Vector2f(64, 32)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 480), Color::White, Vector2f(64, 64)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 480), Color::White, Vector2f(32, 64)));
     }
 
-    tileMap->append(Vertex(Vector2f(56, 320), Color::White, Vector2f(512, 320)));
-    tileMap->append(Vertex(Vector2f(88, 320), Color::White, Vector2f(544, 320)));
-    tileMap->append(Vertex(Vector2f(88, 416), Color::White, Vector2f(544, 416)));
-    tileMap->append(Vertex(Vector2f(56, 416), Color::White, Vector2f(512, 416)));
+    tileMap->append(Vertex(Vector2f(608, 448), Color::White, Vector2f(64, 32)));
+    tileMap->append(Vertex(Vector2f(640, 448), Color::White, Vector2f(96, 32)));
+    tileMap->append(Vertex(Vector2f(640, 480), Color::White, Vector2f(96, 64)));
+    tileMap->append(Vertex(Vector2f(608, 480), Color::White, Vector2f(64, 64)));
 
-    tileMap->append(Vertex(Vector2f(230, 352), Color::White, Vector2f(480, 352)));
-    tileMap->append(Vertex(Vector2f(262, 352), Color::White, Vector2f(512, 352)));
-    tileMap->append(Vertex(Vector2f(262, 416), Color::White, Vector2f(512, 416)));
-    tileMap->append(Vertex(Vector2f(230, 416), Color::White, Vector2f(480, 416)));
+    tileMap->append(Vertex(Vector2f(56, 320), Color::White, Vector2f(608, 288)));
+    tileMap->append(Vertex(Vector2f(88, 320), Color::White, Vector2f(640, 288)));
+    tileMap->append(Vertex(Vector2f(88, 416), Color::White, Vector2f(640, 384)));
+    tileMap->append(Vertex(Vector2f(56, 416), Color::White, Vector2f(608, 384)));
 
-    tileMap->append(Vertex(Vector2f(468, 384), Color::White, Vector2f(480, 288)));
-    tileMap->append(Vertex(Vector2f(628, 384), Color::White, Vector2f(640, 288)));
-    tileMap->append(Vertex(Vector2f(628, 416), Color::White, Vector2f(640, 320)));
-    tileMap->append(Vertex(Vector2f(468, 416), Color::White, Vector2f(480, 320)));
+    tileMap->append(Vertex(Vector2f(230, 352), Color::White, Vector2f(576, 320)));
+    tileMap->append(Vertex(Vector2f(262, 352), Color::White, Vector2f(608, 320)));
+    tileMap->append(Vertex(Vector2f(262, 416), Color::White, Vector2f(608, 384)));
+    tileMap->append(Vertex(Vector2f(230, 416), Color::White, Vector2f(576, 384)));
+
+    tileMap->append(Vertex(Vector2f(468, 384), Color::White, Vector2f(576, 256)));
+    tileMap->append(Vertex(Vector2f(628, 384), Color::White, Vector2f(736, 256)));
+    tileMap->append(Vertex(Vector2f(628, 416), Color::White, Vector2f(736, 288)));
+    tileMap->append(Vertex(Vector2f(468, 416), Color::White, Vector2f(576, 288)));
+
+    tileMap->append(Vertex(Vector2f(164, 0), Color::White, Vector2f(576, 32)));
+    tileMap->append(Vertex(Vector2f(228, 0), Color::White, Vector2f(640, 32)));
+    tileMap->append(Vertex(Vector2f(228, 96), Color::White, Vector2f(640, 64)));
+    tileMap->append(Vertex(Vector2f(164, 96), Color::White, Vector2f(576, 64)));
+
+    tileMap->append(Vertex(Vector2f(164, 96), Color::White, Vector2f(576, 64)));
+    tileMap->append(Vertex(Vector2f(228, 96), Color::White, Vector2f(640, 64)));
+    tileMap->append(Vertex(Vector2f(228, 128), Color::White, Vector2f(640, 96)));
+    tileMap->append(Vertex(Vector2f(164, 128), Color::White, Vector2f(576, 96)));
+
+    tileMap->append(Vertex(Vector2f(448, 0), Color::White, Vector2f(576, 32)));
+    tileMap->append(Vertex(Vector2f(512, 0), Color::White, Vector2f(640, 32)));
+    tileMap->append(Vertex(Vector2f(512, 80), Color::White, Vector2f(640, 64)));
+    tileMap->append(Vertex(Vector2f(448, 80), Color::White, Vector2f(576, 64)));
+
+    tileMap->append(Vertex(Vector2f(448, 80), Color::White, Vector2f(576, 64)));
+    tileMap->append(Vertex(Vector2f(512, 80), Color::White, Vector2f(640, 64)));
+    tileMap->append(Vertex(Vector2f(512, 112), Color::White, Vector2f(640, 96)));
+    tileMap->append(Vertex(Vector2f(448, 112), Color::White, Vector2f(576, 96)));
 }
 
-static void LoadBackgrounds()
+static inline void LoadTilemapSnow()
+{
+    register unsigned int i;
+
+    tileMap->append(Vertex(Vector2f(0, 416), Color::White, Vector2f(384, 128)));
+    tileMap->append(Vertex(Vector2f(32, 416), Color::White, Vector2f(416, 128)));
+    tileMap->append(Vertex(Vector2f(32, 448), Color::White, Vector2f(416, 160)));
+    tileMap->append(Vertex(Vector2f(0, 448), Color::White, Vector2f(384, 160)));
+
+    for (i = 0; i < 18; i++)
+    {
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 416), Color::White, Vector2f(416, 128)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 416), Color::White, Vector2f(448, 128)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 448), Color::White, Vector2f(448, 160)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 448), Color::White, Vector2f(416, 160)));
+    }
+
+    tileMap->append(Vertex(Vector2f(608, 416), Color::White, Vector2f(448, 128)));
+    tileMap->append(Vertex(Vector2f(640, 416), Color::White, Vector2f(480, 128)));
+    tileMap->append(Vertex(Vector2f(640, 448), Color::White, Vector2f(480, 160)));
+    tileMap->append(Vertex(Vector2f(608, 448), Color::White, Vector2f(448, 160)));
+
+    tileMap->append(Vertex(Vector2f(0, 448), Color::White, Vector2f(384, 160)));
+    tileMap->append(Vertex(Vector2f(32, 448), Color::White, Vector2f(416, 160)));
+    tileMap->append(Vertex(Vector2f(32, 480), Color::White, Vector2f(416, 192)));
+    tileMap->append(Vertex(Vector2f(0, 480), Color::White, Vector2f(384, 192)));
+
+    for (i = 0; i < 18; i++)
+    {
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 448), Color::White, Vector2f(416, 160)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 448), Color::White, Vector2f(448, 160)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 64, 480), Color::White, Vector2f(448, 192)));
+        tileMap->append(Vertex(Vector2f((i * 32) + 32, 480), Color::White, Vector2f(416, 192)));
+    }
+
+    tileMap->append(Vertex(Vector2f(608, 448), Color::White, Vector2f(448, 160)));
+    tileMap->append(Vertex(Vector2f(640, 448), Color::White, Vector2f(480, 160)));
+    tileMap->append(Vertex(Vector2f(640, 480), Color::White, Vector2f(480, 192)));
+    tileMap->append(Vertex(Vector2f(608, 480), Color::White, Vector2f(448, 192)));
+
+    tileMap->append(Vertex(Vector2f(56, 320), Color::White, Vector2f(672, 288)));
+    tileMap->append(Vertex(Vector2f(88, 320), Color::White, Vector2f(704, 288)));
+    tileMap->append(Vertex(Vector2f(88, 416), Color::White, Vector2f(704, 384)));
+    tileMap->append(Vertex(Vector2f(56, 416), Color::White, Vector2f(672, 384)));
+
+    tileMap->append(Vertex(Vector2f(230, 352), Color::White, Vector2f(640, 320)));
+    tileMap->append(Vertex(Vector2f(262, 352), Color::White, Vector2f(672, 320)));
+    tileMap->append(Vertex(Vector2f(262, 416), Color::White, Vector2f(672, 384)));
+    tileMap->append(Vertex(Vector2f(230, 416), Color::White, Vector2f(640, 384)));
+
+    tileMap->append(Vertex(Vector2f(468, 384), Color::White, Vector2f(736, 256)));
+    tileMap->append(Vertex(Vector2f(628, 384), Color::White, Vector2f(896, 256)));
+    tileMap->append(Vertex(Vector2f(628, 416), Color::White, Vector2f(896, 288)));
+    tileMap->append(Vertex(Vector2f(468, 416), Color::White, Vector2f(736, 288)));
+
+    tileMap->append(Vertex(Vector2f(164, 0), Color::White, Vector2f(832, 32)));
+    tileMap->append(Vertex(Vector2f(228, 0), Color::White, Vector2f(896, 32)));
+    tileMap->append(Vertex(Vector2f(228, 96), Color::White, Vector2f(896, 64)));
+    tileMap->append(Vertex(Vector2f(164, 96), Color::White, Vector2f(832, 64)));
+
+    tileMap->append(Vertex(Vector2f(164, 96), Color::White, Vector2f(832, 64)));
+    tileMap->append(Vertex(Vector2f(228, 96), Color::White, Vector2f(896, 64)));
+    tileMap->append(Vertex(Vector2f(228, 128), Color::White, Vector2f(896, 96)));
+    tileMap->append(Vertex(Vector2f(164, 128), Color::White, Vector2f(832, 96)));
+
+    tileMap->append(Vertex(Vector2f(448, 0), Color::White, Vector2f(832, 32)));
+    tileMap->append(Vertex(Vector2f(512, 0), Color::White, Vector2f(896, 32)));
+    tileMap->append(Vertex(Vector2f(512, 80), Color::White, Vector2f(896, 64)));
+    tileMap->append(Vertex(Vector2f(448, 80), Color::White, Vector2f(832, 64)));
+
+    tileMap->append(Vertex(Vector2f(448, 80), Color::White, Vector2f(832, 64)));
+    tileMap->append(Vertex(Vector2f(512, 80), Color::White, Vector2f(896, 64)));
+    tileMap->append(Vertex(Vector2f(512, 112), Color::White, Vector2f(896, 96)));
+    tileMap->append(Vertex(Vector2f(448, 112), Color::White, Vector2f(832, 96)));
+}
+
+static inline void LoadBackgrounds()
 {
     for (register unsigned int i = 0; i < 4; i++)
     {
@@ -2679,7 +2805,7 @@ bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
         return false;
     }
 
-    if (CMLid[3] > EDITOR_VERSION)
+    if (CMLid[3] != EDITOR_VERSION)
     {
         MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 

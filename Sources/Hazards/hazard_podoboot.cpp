@@ -25,7 +25,7 @@ Hazard_PodobooT::Hazard_PodobooT(const Texture& texture, float maxheight) : Haza
     m_aabb.height = 32;
 }
 
-void Hazard_PodobooT::setPosition(Vector2f pos)
+void Hazard_PodobooT::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos.x, pos.y + 16);
 

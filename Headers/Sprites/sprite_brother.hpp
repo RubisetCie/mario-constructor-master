@@ -15,7 +15,7 @@ class Sprite_Brother : public GotCollision, public Pawn
 
         Sprite_Brother(const sf::Texture& texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

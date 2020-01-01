@@ -16,7 +16,7 @@ class PlatformMov : public Placeable
 
         PlatformMov(const sf::Texture& texture, float speed, Collider* const collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void afterUpdate();
 

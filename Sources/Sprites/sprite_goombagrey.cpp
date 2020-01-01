@@ -33,7 +33,7 @@ Sprite_GoombaGrey::Sprite_GoombaGrey(const Texture& texture, Collider* collision
     m_state = 0;
 }
 
-void Sprite_GoombaGrey::setPosition(Vector2f pos)
+void Sprite_GoombaGrey::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

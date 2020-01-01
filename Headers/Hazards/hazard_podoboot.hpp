@@ -14,7 +14,7 @@ class Hazard_PodobooT : public Hazard_Podoboo
 
         Hazard_PodobooT(const sf::Texture& texture, float maxheight);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void secureUpdate();
 

@@ -54,7 +54,7 @@ Sprite_KoopaYellow::Sprite_KoopaYellow(const Texture& sprite_texture, Texture* c
     m_frame = 0;
 }
 
-void Sprite_KoopaYellow::setPosition(Vector2f pos)
+void Sprite_KoopaYellow::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

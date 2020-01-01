@@ -105,7 +105,7 @@ Mark_Mario::Mark_Mario(Texture* texture[], Texture* invincible_texture) : Pawn()
     }
 }
 
-void Mark_Mario::setPosition(Vector2f pos)
+void Mark_Mario::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 
@@ -475,8 +475,8 @@ void Mark_Mario::secureUpdate()
 
             FMOD_Channel_GetVolume(musicChannel, &volume);
 
-            if (volume > 0.011111)
-                volume -= 0.011111;
+            if (volume > 0.022222)
+                volume -= 0.022222;
             else
                 volume = 0;
 
@@ -513,7 +513,7 @@ void Mark_Mario::secureUpdate()
             if (m_jumping == 0 && m_onfloor && !m_holdjump)
             {
                 m_holdjump = true;
-                m_jumping = MARIO_JUMPTIME + roundf(abs(m_movedistance.x) / 3.0) + (game_powerup == 4) + (rand() % 3) - 1;
+                m_jumping = MARIO_JUMPTIME + roundf(abs(m_movedistance.x) / 3.0) + (game_powerup == 4 ? 2 : 0) + (rand() % 3) - 1;
 
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(0), sfxSamples[0], 0, NULL);
             }
@@ -631,7 +631,7 @@ void Mark_Mario::secureUpdate()
                         m_movedistance.x = 0;
                 }
                 else
-                    m_movedistance.y = 1;
+                    m_movedistance.y = 0.5;
 
                 blockhitter.left = m_aabb.left;
                 blockhitter.top = m_aabb.top - 24;
@@ -706,7 +706,7 @@ void Mark_Mario::secureUpdate()
     }
 
     // Warps handling :
-    if (m_warp == 0 && m_invincibility == 0 && koopaEngaged == 0 && listPassages.size() > 0)
+    if (m_warp == 0 && /*m_invincibility == 0 &&*/ koopaEngaged == 0 && listPassages.size() > 0)
     {
         for (list<WarpsData*>::iterator it = listPassages.begin(); it != listPassages.end(); it++)
         {
@@ -1013,12 +1013,16 @@ void Mark_Mario::secureUpdate()
     if (game_powerup == 0 || m_crouched == 1)
     {
         m_sprite.setPosition(roundf(m_aabb.left + 14), roundf(m_aabb.top - 2));
-        m_invincible.setPosition(roundf(m_aabb.left-1), roundf(m_aabb.top + 14));
+
+        if (m_invincibility > 0)
+            m_invincible.setPosition(roundf(m_aabb.left-1), roundf(m_aabb.top + 14));
     }
     else
     {
         m_sprite.setPosition(roundf(m_aabb.left + 14), roundf(m_aabb.top + 23));
-        m_invincible.setPosition(roundf(m_aabb.left-1), roundf(m_aabb.top + 26));
+
+        if (m_invincibility > 0)
+            m_invincible.setPosition(roundf(m_aabb.left-1), roundf(m_aabb.top + 26));
     }
 
     // Animations :
@@ -1048,10 +1052,13 @@ void Mark_Mario::warpUpdate()
                     #ifdef DEBUGMODE
                     cout << "New music" << endl;
                     #endif // DEBUGMODE
-                    if (m_warp->exitsection == 1)
-                        FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(20), *musicZoneb, 0, &musicChannel);
-                    else
-                        FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(20), *musicZonea, 0, &musicChannel);
+                    if (m_invincibility == 0)
+                    {
+                        if (m_warp->exitsection == 1)
+                            FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(20), *musicZoneb, 0, &musicChannel);
+                        else
+                            FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(20), *musicZonea, 0, &musicChannel);
+                    }
                 }
 
                 for (list<Effect*>::iterator it = listEffect.begin(); it != listEffect.end(); it++)
@@ -1059,7 +1066,8 @@ void Mark_Mario::warpUpdate()
 
                 listEffect.clear();
 
-                effectCloudPos = 0;
+                effectCloudPos[0] = 0;
+                effectCloudPos[1] = 0;
                 effectWeatherPos = 0;
                 effectLightning = (rand() % 350) + 100;
 
@@ -1409,6 +1417,14 @@ void Mark_Mario::warpUpdate()
         {
             m_active = true;
             m_warp = NULL;
+
+            if (m_invincibility > 0)
+            {
+                if (game_powerup == 0)
+                    m_invincible.setPosition(roundf(m_aabb.left-1), roundf(m_aabb.top + 14));
+                else
+                    m_invincible.setPosition(roundf(m_aabb.left-1), roundf(m_aabb.top + 26));
+            }
         }
     }
     else
@@ -2211,7 +2227,7 @@ void Mark_Mario::draw(RenderTarget& target, RenderStates) const
             target.draw(m_warpmario, m_mariotextures[game_powerup]);
     }
 
-    if (m_invincibility > 0)
+    if (m_invincibility > 0 && m_warp == NULL)
         target.draw(m_invincible, BlendAdd);
 
     if (m_fireball[0].m_aabb.left > -64)

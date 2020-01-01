@@ -27,7 +27,7 @@ Hazard_Spikelauncher::~Hazard_Spikelauncher()
         delete *it;
 }
 
-void Hazard_Spikelauncher::setPosition(Vector2f pos)
+void Hazard_Spikelauncher::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

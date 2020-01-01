@@ -17,7 +17,7 @@ PlatformFall::PlatformFall(const Texture& texture, Collider* const collision) : 
     m_collider = collision;
 }
 
-void PlatformFall::setPosition(Vector2f pos)
+void PlatformFall::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 
@@ -55,7 +55,7 @@ void PlatformFall::secureUpdate()
 
     if (zoneb)
     {
-        if (m_aabb.top > levelScaleb.y * 480 + 64)
+        if (m_aabb.top > levelScaleb.y * 480 + 128)
         {
             m_collider->destroyed = true;
             m_destroyed = true;
@@ -63,7 +63,7 @@ void PlatformFall::secureUpdate()
     }
     else
     {
-        if (m_aabb.top > levelScale.y * 480 + 64)
+        if (m_aabb.top > levelScale.y * 480 + 128)
         {
             m_collider->destroyed = true;
             m_destroyed = true;

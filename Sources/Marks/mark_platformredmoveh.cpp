@@ -21,7 +21,7 @@ Mark_PlatformRedMoveH::Mark_PlatformRedMoveH(const Texture& texture, float targe
     m_aabb.height = 32;
 }
 
-void Mark_PlatformRedMoveH::setPosition(Vector2f pos)
+void Mark_PlatformRedMoveH::setPosition(const Vector2f& pos)
 {
     float start(pos.x + 48);
 

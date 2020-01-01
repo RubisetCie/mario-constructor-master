@@ -14,7 +14,7 @@ class Bonus_PoisonBlockInv : public Bonus_BlockInv
 
         Bonus_PoisonBlockInv(sf::Texture* blockTexture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

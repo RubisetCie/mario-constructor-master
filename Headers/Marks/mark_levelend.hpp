@@ -14,7 +14,7 @@ class Mark_LevelEnd : public Placeable
 
         Mark_LevelEnd(const sf::Texture& texture, const sf::Texture& limitTexture, const sf::Texture& barTexture, float limit);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

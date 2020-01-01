@@ -14,7 +14,7 @@ class Bonus_Block : public Placeable
 
         Bonus_Block(sf::Texture* blockTexture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

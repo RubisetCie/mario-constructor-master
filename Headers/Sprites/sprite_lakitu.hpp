@@ -15,7 +15,7 @@ class Sprite_Lakitu : public Pawn
 
         Sprite_Lakitu(const sf::Texture& texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         virtual void thruw() = 0;
 

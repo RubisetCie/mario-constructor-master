@@ -22,7 +22,7 @@ Hazard_LavaB::Hazard_LavaB(const sf::Texture& texture)
     m_sprite.setScale(1, -1);
 }
 
-void Hazard_LavaB::setPosition(Vector2f pos)
+void Hazard_LavaB::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

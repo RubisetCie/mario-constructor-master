@@ -26,7 +26,7 @@ Sprite_Flower::Sprite_Flower(const Texture& texture) : Fallable()
     m_aabb.height = 32;
 }
 
-void Sprite_Flower::setPosition(Vector2f pos)
+void Sprite_Flower::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

@@ -22,7 +22,7 @@ Bonus_StarBlockInv::Bonus_StarBlockInv(Texture* blockTexture, Collider* collisio
     m_frame = 0;
 }
 
-void Bonus_StarBlockInv::setPosition(Vector2f pos)
+void Bonus_StarBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 }

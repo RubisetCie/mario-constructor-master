@@ -14,7 +14,7 @@ class Mark_PlatformStoneTouchH : public PlatformMov
 
         Mark_PlatformStoneTouchH(const sf::Texture& texture, float target, float speed, Collider* const collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -17,7 +17,7 @@ Mark_PlatformShortMoveH::Mark_PlatformShortMoveH(const Texture& texture, float t
     m_aabb.height = 32;
 }
 
-void Mark_PlatformShortMoveH::setPosition(Vector2f pos)
+void Mark_PlatformShortMoveH::setPosition(const Vector2f& pos)
 {
     float start(pos.x + 16);
 

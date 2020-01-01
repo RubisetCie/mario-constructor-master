@@ -232,7 +232,7 @@ bool InitSFML()
                                 Style::Default,
                                 settings);
 
-    mainWindow->setIcon(48, 48, icon.getPixelsPtr());
+    mainWindow->setIcon(32, 32, icon.getPixelsPtr());
     #ifndef DEBUGMODE
     mainWindow->setMouseCursorVisible(GetPrivateProfileInt("CONTEXT INITIALIZATION PARAMETERS", "cursor", 0, ".\\contextParams.ini"));
     #endif // DEBUGMODE

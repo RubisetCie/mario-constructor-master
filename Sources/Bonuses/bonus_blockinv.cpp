@@ -23,7 +23,7 @@ Bonus_BlockInv::Bonus_BlockInv(Texture* blockTexture, Collider* collision, char 
     m_once = once;
 }
 
-void Bonus_BlockInv::setPosition(Vector2f pos)
+void Bonus_BlockInv::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

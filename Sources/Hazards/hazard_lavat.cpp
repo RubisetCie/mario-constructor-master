@@ -23,7 +23,7 @@ Hazard_LavaT::Hazard_LavaT(const sf::Texture& texture)
     m_sprite.setTextureRect(IntRect(0, 0, 32, 34));
 }
 
-void Hazard_LavaT::setPosition(Vector2f pos)
+void Hazard_LavaT::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

@@ -14,7 +14,7 @@ Scenery_Static::Scenery_Static(const Texture& texture, const IntRect& rect) : Pl
     m_sprite.setTextureRect(rect);
 }
 
-void Scenery_Static::setPosition(Vector2f pos)
+void Scenery_Static::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

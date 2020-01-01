@@ -19,7 +19,7 @@ Mark_PlatformCloudMoveH::Mark_PlatformCloudMoveH(const Texture& texture, float t
     m_aabb.height = 32;
 }
 
-void Mark_PlatformCloudMoveH::setPosition(Vector2f pos)
+void Mark_PlatformCloudMoveH::setPosition(const Vector2f& pos)
 {
     float start(pos.x + 63);
 

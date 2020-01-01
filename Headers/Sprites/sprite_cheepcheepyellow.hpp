@@ -7,15 +7,15 @@
 
 #include <SFML/Graphics.hpp>
 #include "../Core/placeable.hpp"
-#include "../Core/collider.hpp"
+#include "gotcollision.hpp"
 
-class Sprite_CheepCheepYellow : public Placeable
+class Sprite_CheepCheepYellow : public GotCollision, public Placeable
 {
     public :
 
         Sprite_CheepCheepYellow(const sf::Texture& texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();
@@ -35,8 +35,6 @@ class Sprite_CheepCheepYellow : public Placeable
         void draw(sf::RenderTarget& target, sf::RenderStates) const;
 
         sf::Sprite m_sprite;
-
-        Collider* m_collider;
 
         bool m_killed, m_swimming, m_active;
 };

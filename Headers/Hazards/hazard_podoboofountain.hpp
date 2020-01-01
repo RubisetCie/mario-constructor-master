@@ -17,7 +17,7 @@ class Hazard_PodobooFountain : public Placeable
         Hazard_PodobooFountain();
         virtual ~Hazard_PodobooFountain();
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -17,7 +17,7 @@ Bonus_LifeBlockInv::Bonus_LifeBlockInv(Texture* blockTexture, Collider* collisio
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_LifeBlockInv::setPosition(Vector2f pos)
+void Bonus_LifeBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 

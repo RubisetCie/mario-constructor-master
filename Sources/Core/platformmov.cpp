@@ -18,7 +18,7 @@ PlatformMov::PlatformMov(const Texture& texture, float speed, Collider* const co
     m_collider = collision;
 }
 
-void PlatformMov::setPosition(Vector2f pos)
+void PlatformMov::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

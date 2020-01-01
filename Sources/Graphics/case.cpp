@@ -17,7 +17,7 @@ Case::Case(Texture& texture, IntRect rekt, unsigned int eye_id)
     m_eyeid = eye_id;
 }
 
-void Case::setPosition(Vector2f pos)
+void Case::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

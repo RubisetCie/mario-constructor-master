@@ -27,7 +27,7 @@ Sprite_PlantR::Sprite_PlantR(Texture* texture, Collider* collision) : Placeable(
     m_collider = collision;
 }
 
-void Sprite_PlantR::setPosition(Vector2f pos)
+void Sprite_PlantR::setPosition(const Vector2f& pos)
 {
     m_array.append(Vertex(pos, Color::White, Vector2f(0, 0)));
     m_array.append(Vertex(Vector2f(pos.x, pos.y), Color::White, Vector2f(0, 0)));

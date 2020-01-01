@@ -50,7 +50,7 @@ Sprite_Brother::Sprite_Brother(const Texture& texture, Collider* collision) : Pa
     m_alarm[4] = rand() % 90 + 40;
 }
 
-void Sprite_Brother::setPosition(Vector2f pos)
+void Sprite_Brother::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 
@@ -489,12 +489,7 @@ void Sprite_Brother::secureUpdate()
     {
         if (m_aabb.top > levelScaleb.y * 480 + 64)
         {
-            if (m_collider != NULL)
-            {
-                m_collider->destroyed = true;
-                m_collider = NULL;
-            }
-
+            m_collider->destroyed = true;
             dead();
         }
     }
@@ -502,12 +497,7 @@ void Sprite_Brother::secureUpdate()
     {
         if (m_aabb.top > levelScale.y * 480 + 64)
         {
-            if (m_collider != NULL)
-            {
-                m_collider->destroyed = true;
-                m_collider = NULL;
-            }
-
+            m_collider->destroyed = true;
             dead();
         }
     }

@@ -14,7 +14,7 @@ class Bonus_Brick : public Placeable
 
         Bonus_Brick(sf::Texture* brickTexture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

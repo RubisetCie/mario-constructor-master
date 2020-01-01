@@ -59,10 +59,14 @@ extern "C"
 #include "../../Headers/Bonuses/bonus_coinblockinv.hpp"
 #include "../../Headers/Bonuses/bonus_brick.hpp"
 #include "../../Headers/Bonuses/bonus_coinbrick.hpp"
+#include "../../Headers/Bonuses/bonus_switch.hpp"
+#include "../../Headers/Bonuses/bonus_toggle.hpp"
 
 #include "../../Headers/Sceneries/scenery_static.hpp"
 #include "../../Headers/Sceneries/scenery_bush.hpp"
 #include "../../Headers/Sceneries/scenery_cloud.hpp"
+#include "../../Headers/Sceneries/scenery_scroll.hpp"
+#include "../../Headers/Sceneries/scenery_waterfall.hpp"
 
 #include "../../Headers/Marks/mark_waterplane.hpp"
 #include "../../Headers/Marks/mark_lavaplane.hpp"
@@ -143,6 +147,7 @@ extern "C"
 #include "../../Headers/Sprites/sprite_thwompb.hpp"
 #include "../../Headers/Sprites/sprite_thwompt.hpp"
 #include "../../Headers/Sprites/sprite_bowser.hpp"
+#include "../../Headers/Sprites/sprite_staticplant.hpp"
 
 #include "../../Headers/Hazards/hazard_lavat.hpp"
 #include "../../Headers/Hazards/hazard_laval.hpp"
@@ -253,7 +258,7 @@ bool marksDelta_phase;
 float marksDelta;
 
 FMOD_SOUND* musicSamples[30];
-FMOD_SOUND* sfxSamples[34];
+FMOD_SOUND* sfxSamples[35];
 
 FMOD_SOUND** musicZonea;
 FMOD_SOUND** musicZoneb;
@@ -322,20 +327,20 @@ Shader* glowShaderV;
 Vertex gradientRectangle[4];
 Vertex gradientRectangleb[4];
 
-Texture* backgroundTxt[14];
-Texture* sceneriesTxt[10];
+Texture* backgroundTxt[16];
+Texture* sceneriesTxt[14];
 Texture* effectTxt[16];
 Texture* itemsTxt[11];
-Texture* enemiesTxt[41];
+Texture* enemiesTxt[42];
 Texture* hazardsTxt[11];
-Texture* marksTxt[10];
+Texture* marksTxt[12];
 Texture* marioTxt[6];
 
 Texture* worldLightTex;
 Texture* worldBackTex[2];
 Texture* entTex[7];
 Texture* worldTextures[166];
-Texture* worldEyecandies[73];
+Texture* worldEyecandies[81];
 
 Texture* hudTxt[7];
 
@@ -371,8 +376,8 @@ RectangleShape* mapBack;
 RectangleShape* backgroundSpr;
 RectangleShape* backgroundSprb;
 
-RectangleShape* effectCloudsSpr;
-RectangleShape* effectCloudsSprb;
+RectangleShape* effectCloudsSpr[2];
+RectangleShape* effectCloudsSprb[2];
 
 RectangleShape* effectWeatherSpr;
 RectangleShape* effectWeatherSprb;
@@ -401,7 +406,8 @@ extern RectangleShape* fadeRect;
 extern unsigned char target_lives;
 #endif
 
-unsigned int effectCloudPos;
+unsigned int effectCloudPos[2];
+unsigned int effectLavafallPos;
 unsigned int effectWeatherPos;
 unsigned short effectLightning;
 char effectWeatherType;
@@ -429,6 +435,9 @@ unsigned char game_powerup;
 unsigned char game_coins;
 unsigned char game_lives;
 unsigned int game_score;
+
+unsigned char game_toggleSolidity[4];
+unsigned char game_toggleSoliditySave[4];
 
 float mario_gravity;
 float sprite_gravity;
@@ -1365,6 +1374,12 @@ bool Scene::Ingame()
                 if (backgroundSprb != NULL)
                     mainTexture.draw(*backgroundSprb);
 
+                if (effectCloudsSprb[1] != NULL)
+                {
+                    effectCloudsSprb[1]->setTextureRect(IntRect(effectCloudPos[0], 0, levelScaleb.x * 640, 63));
+                    mainTexture.draw(*effectCloudsSprb[1]);
+                }
+
                 if (!tilemapLayer1b.empty())
                     mainTexture.draw(&tilemapLayer1b.front(), tilemapLayer1b.size(), Quads, mainTileset);
 
@@ -1526,10 +1541,10 @@ bool Scene::Ingame()
                     mainTexture.draw(*effectWeatherSprb);
                 }
 
-                if (effectCloudsSprb != NULL)
+                if (effectCloudsSprb[0] != NULL)
                 {
-                    effectCloudsSprb->setTextureRect(IntRect(effectCloudPos, 0, levelScaleb.x * 640, 63));
-                    mainTexture.draw(*effectCloudsSprb);
+                    effectCloudsSprb[0]->setTextureRect(IntRect(effectCloudPos[1], 0, levelScaleb.x * 640, 63));
+                    mainTexture.draw(*effectCloudsSprb[0]);
                 }
             }
             else
@@ -1541,6 +1556,12 @@ bool Scene::Ingame()
 
                 if (backgroundSpr != NULL)
                     mainTexture.draw(*backgroundSpr);
+
+                if (effectCloudsSpr[1] != NULL)
+                {
+                    effectCloudsSpr[1]->setTextureRect(IntRect(effectCloudPos[0], 0, levelScale.x * 640, 63));
+                    mainTexture.draw(*effectCloudsSpr[1]);
+                }
 
                 if (!tilemapLayer1.empty())
                     mainTexture.draw(&tilemapLayer1.front(), tilemapLayer1.size(), Quads, mainTileset);
@@ -1708,11 +1729,20 @@ bool Scene::Ingame()
                     mainTexture.draw(*effectWeatherSpr);
                 }
 
-                if (effectCloudsSpr != NULL)
+                if (effectCloudsSpr[0] != NULL)
                 {
-                    effectCloudsSpr->setTextureRect(IntRect(effectCloudPos, 0, levelScale.x * 640, 63));
-                    mainTexture.draw(*effectCloudsSpr);
+                    effectCloudsSpr[0]->setTextureRect(IntRect(effectCloudPos[1], 0, levelScale.x * 640, 63));
+                    mainTexture.draw(*effectCloudsSpr[0]);
                 }
+            }
+
+            // Toggling the switch blocks :
+            for (register unsigned int i = 0; i < 4; i++)
+            {
+                if (game_toggleSolidity[i] == 1)
+                    game_toggleSolidity[i] = 0;
+                else if (game_toggleSolidity[i] == 3)
+                    game_toggleSolidity[i] = 2;
             }
 
             if (spritehitter.left > -64)
@@ -1734,10 +1764,20 @@ bool Scene::Ingame()
             if (frame_Hud % 6 == 0)
                 hudSpr[1]->setTextureRect(IntRect(0, (frame_Hud/6) * 16, 28, 16));
 
-            if (effectCloudPos < 63)
-                effectCloudPos++;
+            if (effectCloudPos[0] < 63)
+                effectCloudPos[0]++;
             else
-                effectCloudPos = 0;
+                effectCloudPos[0] = 0;
+
+            if (effectCloudPos[1] < 62)
+                effectCloudPos[1] += 2;
+            else
+                effectCloudPos[1] = 0;
+
+            if (effectLavafallPos < 28)
+                effectLavafallPos += 4;
+            else
+                effectLavafallPos = 0;
 
             if (zoneb)
             {
@@ -1957,7 +1997,7 @@ bool Scene::Ingame()
     for (register unsigned int i = 0; i < 166; i++)
         delete worldTextures[i];
 
-    for (register unsigned int i = 0; i < 73; i++)
+    for (register unsigned int i = 0; i < 81; i++)
         delete worldEyecandies[i];
 
     delete renderPasses[0];
@@ -2002,6 +2042,8 @@ bool Scene::Ingame()
     delete backgroundTxt[9];
     delete backgroundTxt[10];
     delete backgroundTxt[11];
+    delete backgroundTxt[14];
+    delete backgroundTxt[15];
 
     delete sceneriesTxt[0];
     delete sceneriesTxt[1];
@@ -2013,6 +2055,10 @@ bool Scene::Ingame()
     delete sceneriesTxt[7];
     delete sceneriesTxt[8];
     delete sceneriesTxt[9];
+    delete sceneriesTxt[10];
+    delete sceneriesTxt[11];
+    delete sceneriesTxt[12];
+    delete sceneriesTxt[13];
 
     delete effectTxt[0];
     delete effectTxt[1];
@@ -2084,6 +2130,7 @@ bool Scene::Ingame()
     delete enemiesTxt[38];
     delete enemiesTxt[39];
     delete enemiesTxt[40];
+    delete enemiesTxt[41];
 
     delete hazardsTxt[0];
     delete hazardsTxt[1];
@@ -2107,6 +2154,8 @@ bool Scene::Ingame()
     delete marksTxt[7];
     delete marksTxt[8];
     delete marksTxt[9];
+    delete marksTxt[10];
+    delete marksTxt[11];
 
     delete marioTxt[0];
     delete marioTxt[1];
@@ -2182,6 +2231,7 @@ bool Scene::Ingame()
         FMOD_Sound_Release(sfxSamples[31]);
         FMOD_Sound_Release(sfxSamples[32]);
         FMOD_Sound_Release(sfxSamples[33]);
+        FMOD_Sound_Release(sfxSamples[34]);
 
         FMOD_Sound_Release(musicSamples[0]);
         FMOD_Sound_Release(musicSamples[1]);
@@ -2244,7 +2294,9 @@ static bool InitAssets()
     mapCamera = new View(Vector2f(320, 240), Vector2f(640, 480));
     levelCamera_shake = 0;
 
-    effectCloudPos = 0;
+    effectCloudPos[0] = 0;
+    effectCloudPos[1] = 0;
+    effectLavafallPos = 0;
     effectWeatherPos = 0;
 
     autoscroll_node = 0;
@@ -2349,7 +2401,7 @@ static bool InitAssets()
         delete[] fileurl;
     }
 
-    for (register unsigned int i = 0; i < 73; i++)
+    for (register unsigned int i = 0; i < 81; i++)
     {
         char* fileurl = new char[46];
 
@@ -2394,6 +2446,24 @@ static bool InitAssets()
     backgroundTxt[2] = new Texture;
     backgroundTxt[2]->loadFromImage(tempImage);
     backgroundTxt[2]->setRepeated(true);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Backgrounds/Background_Blue.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    backgroundTxt[14] = new Texture;
+    backgroundTxt[14]->loadFromImage(tempImage);
+    backgroundTxt[14]->setRepeated(true);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Backgrounds/Background_Snow.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    backgroundTxt[15] = new Texture;
+    backgroundTxt[15]->loadFromImage(tempImage);
+    backgroundTxt[15]->setRepeated(true);
 
     if (!tempImage.loadFromFile("Data/Gfx/Backgrounds/Background_Night.png"))
         allright = false;
@@ -2550,6 +2620,39 @@ static bool InitAssets()
 
     sceneriesTxt[9] = new Texture;
     sceneriesTxt[9]->loadFromImage(tempImage);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Sceneries/Scenery_Waterfall.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    sceneriesTxt[10] = new Texture;
+    sceneriesTxt[10]->loadFromImage(tempImage);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Sceneries/Scenery_Lavafall.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    sceneriesTxt[11] = new Texture;
+    sceneriesTxt[11]->loadFromImage(tempImage);
+    sceneriesTxt[11]->setRepeated(true);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Sceneries/Scenery_SmallCastleSnow.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    sceneriesTxt[12] = new Texture;
+    sceneriesTxt[12]->loadFromImage(tempImage);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Sceneries/Scenery_BigCastleSnow.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    sceneriesTxt[13] = new Texture;
+    sceneriesTxt[13]->loadFromImage(tempImage);
 
     if (!tempImage.loadFromFile("Data/Gfx/Effects/Effect_DayClouds.png"))
         allright = false;
@@ -3095,6 +3198,14 @@ static bool InitAssets()
     enemiesTxt[40] = new Texture;
     enemiesTxt[40]->loadFromImage(tempImage);
 
+    if (!tempImage.loadFromFile("Data/Gfx/Enemies/Enemy_Plant.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    enemiesTxt[41] = new Texture;
+    enemiesTxt[41]->loadFromImage(tempImage);
+
     if (!tempImage.loadFromFile("Data/Gfx/Hazards/Hazard_Lava.png"))
         allright = false;
 
@@ -3264,6 +3375,22 @@ static bool InitAssets()
     marksTxt[9] = new Texture;
     marksTxt[9]->loadFromImage(tempImage);
 
+    if (!tempImage.loadFromFile("Data/Gfx/Marks/Switches/Switch_Activator.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    marksTxt[10] = new Texture;
+    marksTxt[10]->loadFromImage(tempImage);
+
+    if (!tempImage.loadFromFile("Data/Gfx/Marks/Switches/Switch_Blocks.png"))
+        allright = false;
+
+    tempImage.createMaskFromColor(Color::Magenta);
+
+    marksTxt[11] = new Texture;
+    marksTxt[11]->loadFromImage(tempImage);
+
     if (!tempImage.loadFromFile("Data/Gfx/Mario/Mario_Small.png"))
         allright = false;
 
@@ -3391,11 +3518,13 @@ static bool InitAssets()
     mapTrace_delimiter = WORLDMAP_PROGRESSINTERVAL;
 
     backgroundSpr = NULL;
-    effectCloudsSpr = NULL;
+    effectCloudsSpr[0] = NULL;
+    effectCloudsSpr[1] = NULL;
     effectWeatherSpr = NULL;
 
     backgroundSprb = NULL;
-    effectCloudsSprb = NULL;
+    effectCloudsSprb[0] = NULL;
+    effectCloudsSprb[1] = NULL;
     effectWeatherSprb = NULL;
 
     effectLightningSpr = new Sprite(*effectTxt[4]);
@@ -3586,6 +3715,11 @@ static bool InitAssets()
         allright = false;
 
     result = FMOD_System_CreateSound(soundSystem, "Data/Sfx/Storm.wav", FMOD_DEFAULT, NULL, &sfxSamples[33]);
+
+    if (result != FMOD_OK)
+        allright = false;
+
+    result = FMOD_System_CreateSound(soundSystem, "Data/Sfx/Switch.wav", FMOD_DEFAULT, NULL, &sfxSamples[34]);
 
     if (result != FMOD_OK)
         allright = false;
@@ -3838,7 +3972,9 @@ static bool Level_Load()
 
     levelCamera_shake = 0;
 
-    effectCloudPos = 0;
+    effectCloudPos[0] = 0;
+    effectCloudPos[1] = 0;
+    effectLavafallPos = 0;
     effectWeatherPos = 0;
     effectLightning = (rand() % 350) + 100;
 
@@ -3855,6 +3991,16 @@ static bool Level_Load()
     frame_Clouds = 0;
     frame_Flower = 0;
     frame_Rotodisc = 0;
+
+    game_toggleSolidity[0] = 0;
+    game_toggleSolidity[1] = 0;
+    game_toggleSolidity[2] = 0;
+    game_toggleSolidity[3] = 0;
+
+    game_toggleSoliditySave[0] = 0;
+    game_toggleSoliditySave[1] = 0;
+    game_toggleSoliditySave[2] = 0;
+    game_toggleSoliditySave[3] = 0;
 
     player = NULL;
 
@@ -4103,22 +4249,22 @@ static bool Level_Load()
         {
             case 0 : break;
             case 1 :
-                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 160));
-                backgroundSpr->setPosition(0, (levelScale.y * 480) - 160);
+                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 274));
+                backgroundSpr->setPosition(0, (levelScale.y * 480) - 274);
                 backgroundSpr->setTexture(backgroundTxt[0]);
-                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 160));
+                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 274));
                 break;
             case 2 :
-                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 160));
-                backgroundSpr->setPosition(0, (levelScale.y * 480) - 160);
+                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 274));
+                backgroundSpr->setPosition(0, (levelScale.y * 480) - 274);
                 backgroundSpr->setTexture(backgroundTxt[1]);
-                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 160));
+                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 274));
                 break;
             case 3 :
-                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 156));
-                backgroundSpr->setPosition(0, (levelScale.y * 480) - 156);
+                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 274));
+                backgroundSpr->setPosition(0, (levelScale.y * 480) - 274);
                 backgroundSpr->setTexture(backgroundTxt[2]);
-                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 156));
+                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 274));
                 break;
             case 4 :
                 backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 178));
@@ -4175,6 +4321,18 @@ static bool Level_Load()
                 backgroundSpr->setTexture(backgroundTxt[12]);
                 backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, levelScale.y * 480));
                 break;
+            case 14 :
+                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 274));
+                backgroundSpr->setPosition(0, (levelScale.y * 480) - 274);
+                backgroundSpr->setTexture(backgroundTxt[14]);
+                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 274));
+                break;
+            case 15 :
+                backgroundSpr = new RectangleShape(Vector2f(levelScale.x * 640, 274));
+                backgroundSpr->setPosition(0, (levelScale.y * 480) - 274);
+                backgroundSpr->setTexture(backgroundTxt[15]);
+                backgroundSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 274));
+                break;
         }
     }
 
@@ -4187,22 +4345,22 @@ static bool Level_Load()
         {
             case 0 : break;
             case 1 :
-                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 160));
-                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 160);
+                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 274));
+                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 274);
                 backgroundSprb->setTexture(backgroundTxt[0]);
-                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 160));
+                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 274));
                 break;
             case 2 :
-                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 160));
-                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 160);
+                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 274));
+                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 274);
                 backgroundSprb->setTexture(backgroundTxt[1]);
-                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 160));
+                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 274));
                 break;
             case 3 :
-                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 156));
-                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 156);
+                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 274));
+                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 274);
                 backgroundSprb->setTexture(backgroundTxt[2]);
-                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 156));
+                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 274));
                 break;
             case 4 :
                 backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 178));
@@ -4258,6 +4416,18 @@ static bool Level_Load()
                 backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, levelScaleb.y * 480));
                 backgroundSprb->setTexture(backgroundTxt[13]);
                 backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, levelScaleb.y * 480));
+                break;
+            case 14 :
+                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 274));
+                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 274);
+                backgroundSprb->setTexture(backgroundTxt[14]);
+                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 274));
+                break;
+            case 15 :
+                backgroundSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 274));
+                backgroundSprb->setPosition(0, (levelScaleb.y * 480) - 274);
+                backgroundSprb->setTexture(backgroundTxt[15]);
+                backgroundSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 274));
                 break;
         }
     }
@@ -4390,19 +4560,46 @@ static bool Level_Load()
         {
             case 0 : break;
             case 1 :
-                effectCloudsSpr = new RectangleShape(Vector2f(levelScale.x * 640, 63));
-                effectCloudsSpr->setTexture(effectTxt[0]);
-                effectCloudsSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                effectCloudsSpr[0] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[0]->setTexture(effectTxt[0]);
+                effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
                 break;
             case 2 :
-                effectCloudsSpr = new RectangleShape(Vector2f(levelScale.x * 640, 63));
-                effectCloudsSpr->setTexture(effectTxt[2]);
-                effectCloudsSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                effectCloudsSpr[0] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[0]->setTexture(effectTxt[2]);
+                effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
                 break;
             case 3 :
-                effectCloudsSpr = new RectangleShape(Vector2f(levelScale.x * 640, 63));
-                effectCloudsSpr->setTexture(effectTxt[1]);
-                effectCloudsSpr->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                effectCloudsSpr[0] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[0]->setTexture(effectTxt[1]);
+                effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                break;
+            case 4 :
+                effectCloudsSpr[0] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[0]->setTexture(effectTxt[0]);
+                effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                effectCloudsSpr[1] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[1]->setPosition(0, 24);
+                effectCloudsSpr[1]->setTexture(effectTxt[0]);
+                effectCloudsSpr[1]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                break;
+            case 5 :
+                effectCloudsSpr[0] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[0]->setTexture(effectTxt[2]);
+                effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                effectCloudsSpr[1] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[1]->setPosition(0, 24);
+                effectCloudsSpr[1]->setTexture(effectTxt[2]);
+                effectCloudsSpr[1]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                break;
+            case 6 :
+                effectCloudsSpr[0] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[0]->setTexture(effectTxt[1]);
+                effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
+                effectCloudsSpr[1] = new RectangleShape(Vector2f(levelScale.x * 640, 63));
+                effectCloudsSpr[1]->setPosition(0, 24);
+                effectCloudsSpr[1]->setTexture(effectTxt[1]);
+                effectCloudsSpr[1]->setTextureRect(IntRect(0, 0, levelScale.x * 640, 63));
                 break;
         }
     }
@@ -4439,19 +4636,46 @@ static bool Level_Load()
         {
             case 0 : break;
             case 1 :
-                effectCloudsSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
-                effectCloudsSprb->setTexture(effectTxt[0]);
-                effectCloudsSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                effectCloudsSprb[0] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[0]->setTexture(effectTxt[0]);
+                effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
                 break;
             case 2 :
-                effectCloudsSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
-                effectCloudsSprb->setTexture(effectTxt[2]);
-                effectCloudsSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                effectCloudsSprb[0] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[0]->setTexture(effectTxt[2]);
+                effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
                 break;
             case 3 :
-                effectCloudsSprb = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
-                effectCloudsSprb->setTexture(effectTxt[1]);
-                effectCloudsSprb->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                effectCloudsSprb[0] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[0]->setTexture(effectTxt[1]);
+                effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                break;
+            case 4 :
+                effectCloudsSprb[0] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[0]->setTexture(effectTxt[0]);
+                effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                effectCloudsSprb[1] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[1]->setPosition(0, 24);
+                effectCloudsSprb[1]->setTexture(effectTxt[0]);
+                effectCloudsSprb[1]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                break;
+            case 5 :
+                effectCloudsSprb[0] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[0]->setTexture(effectTxt[2]);
+                effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                effectCloudsSprb[1] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[1]->setPosition(0, 24);
+                effectCloudsSprb[1]->setTexture(effectTxt[2]);
+                effectCloudsSprb[1]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                break;
+            case 6 :
+                effectCloudsSprb[0] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[0]->setTexture(effectTxt[1]);
+                effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
+                effectCloudsSprb[1] = new RectangleShape(Vector2f(levelScaleb.x * 640, 63));
+                effectCloudsSprb[1]->setPosition(0, 24);
+                effectCloudsSprb[1]->setTexture(effectTxt[1]);
+                effectCloudsSprb[1]->setTextureRect(IntRect(0, 0, levelScaleb.x * 640, 63));
                 break;
         }
     }
@@ -4838,28 +5062,32 @@ static bool Level_Load()
 
                 switch (entType)
                 {
-                    case 92 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 93 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(512, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 92 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 93 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 94 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[0])); originPos = Vector2f(16, -2); break;
-                    case 95 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(544, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 96 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(576, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 95 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 96 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 97 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[1])); originPos = Vector2f(16, -2); break;
-                    case 98 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(608, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 99 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 98 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 99 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 100 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[2])); originPos = Vector2f(16, -2); break;
-                    case 101 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(672, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 102 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(704, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 101 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 102 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 103 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[3])); originPos = Vector2f(16, -2); break;
-                    case 104 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(736, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 105 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(768, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 104 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 105 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 106 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[4])); originPos = Vector2f(16, -2); break;
-                    case 107 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 288, 160, 32))); originPos = Vector2f(64, 0); break;
-                    case 108 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 288, 160, 32))); originPos = Vector2f(64, 0); break;
+                    case 107 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_FENCE)); originPos = Vector2f(64, 0); break;
+                    case 108 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_SNOWFENCE)); originPos = Vector2f(64, 0); break;
                     case 109 : listPlaceables.emplace_back(new Scenery_Cloud(*sceneriesTxt[5])); originPos = Vector2f(15, 8); break;
                     case 110 : listPlaceables.emplace_back(new Scenery_Cloud(*sceneriesTxt[6])); originPos = Vector2f(15, 8); break;
                     case 111 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[7], IntRect(0, 0, 127, 160))); originPos = Vector2f(47, 128); break;
                     case 112 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[8], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
                     case 113 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[9], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
+                    case 229 : listPlaceables.emplace_back(new Scenery_Waterfall(*sceneriesTxt[10])); originPos = Vector2f(31, -5); break;
+                    case 230 : listPlaceables.emplace_back(new Scenery_Scroll(*sceneriesTxt[11])); originPos = Vector2f(11, 0); break;
+                    case 231 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[12], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
+                    case 232 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[13], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
                 }
 
                 listPlaceables.back()->setPosition(entPos - originPos);
@@ -5144,22 +5372,22 @@ static bool Level_Load()
                         break;
                     case 123 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 124 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 125 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 126 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 127 :
@@ -5334,10 +5562,10 @@ static bool Level_Load()
                     case 169 : listPlaceables.emplace_back(new Hazard_LavaL(*hazardsTxt[0])); originPos = Vector2f(2, 0); create = 1; break;
                     case 170 : listPlaceables.emplace_back(new Hazard_LavaR(*hazardsTxt[0])); originPos = Vector2f(-34, 0); create = 1; break;
                     case 171 :
-                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(832, 96)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(864, 96)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(864, 128)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(832, 128)));
+                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(928, 96)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(960, 96)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(960, 128)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(928, 128)));
                         create = 0;
                         break;
                     case 172 :
@@ -5393,30 +5621,6 @@ static bool Level_Load()
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         break;
                     case 192 :
-                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(512, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(544, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(544, 256)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(512, 256)));
-                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 193 :
-                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(480, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(512, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(512, 256)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(480, 256)));
-                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 194 :
-                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(544, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(576, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(576, 256)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(544, 256)));
-                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 195 :
                         tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(608, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(640, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(640, 256)));
@@ -5424,7 +5628,7 @@ static bool Level_Load()
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 196 :
+                    case 193 :
                         tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(576, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(608, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(608, 256)));
@@ -5432,15 +5636,7 @@ static bool Level_Load()
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 197 :
-                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(672, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(704, 224)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(704, 256)));
-                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(672, 256)));
-                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 198 :
+                    case 194 :
                         tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(640, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(672, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(672, 256)));
@@ -5448,7 +5644,7 @@ static bool Level_Load()
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 199 :
+                    case 195 :
                         tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(704, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(736, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(736, 256)));
@@ -5456,7 +5652,15 @@ static bool Level_Load()
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 200 :
+                    case 196 :
+                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(672, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(704, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(704, 256)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(672, 256)));
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 197 :
                         tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(768, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(800, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(800, 256)));
@@ -5464,11 +5668,35 @@ static bool Level_Load()
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 201 :
+                    case 198 :
                         tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(736, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(768, 224)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(768, 256)));
                         tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(736, 256)));
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 199 :
+                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(800, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(832, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(832, 256)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(800, 256)));
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 200 :
+                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(864, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(896, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(896, 256)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(864, 256)));
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 201 :
+                        tilemapLayer2.emplace_back(Vertex(entPos, Color::White, Vector2f(832, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(864, 224)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(864, 256)));
+                        tilemapLayer2.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(832, 256)));
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
@@ -5554,6 +5782,10 @@ static bool Level_Load()
                         create = 3;
 
                         break;
+                    case 225 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 0)); originPos = Vector2f(-1, -1); create = 1; break;
+                    case 226 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 270)); originPos = Vector2f(-1, -32); create = 1; break;
+                    case 227 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 90)); originPos = Vector2f(-31, -1); create = 1; break;
+                    case 228 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 180)); originPos = Vector2f(-31, -31); create = 1; break;
                 }
 
                 if (create == 1)
@@ -5688,6 +5920,122 @@ static bool Level_Load()
                         listPlaceables.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 15)); originPos = Vector2f(0, 0);
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
                         break;
+                    case 213 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 214 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, true);
+
+                        toggle->attributeSolid(collisionMatrix->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 215 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 0)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 216 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 217 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, true);
+
+                        toggle->attributeSolid(collisionMatrix->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 218 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 1)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 219 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 220 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, true);
+
+                        toggle->attributeSolid(collisionMatrix->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 221 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 2)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 222 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 223 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, true);
+
+                        toggle->attributeSolid(collisionMatrix->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 224 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 3)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
                 }
 
                 if (toMiddle)
@@ -5719,28 +6067,32 @@ static bool Level_Load()
 
                 switch (entType)
                 {
-                    case 92 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 93 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(512, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 92 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 93 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 94 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[0])); originPos = Vector2f(16, -2); break;
-                    case 95 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(544, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 96 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(576, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 95 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 96 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 97 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[1])); originPos = Vector2f(16, -2); break;
-                    case 98 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(608, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 99 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 98 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 99 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 100 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[2])); originPos = Vector2f(16, -2); break;
-                    case 101 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(672, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 102 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(704, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 101 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 102 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 103 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[3])); originPos = Vector2f(16, -2); break;
-                    case 104 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(736, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 105 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(768, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 104 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 105 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 106 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[4])); originPos = Vector2f(16, -2); break;
-                    case 107 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 288, 160, 32))); originPos = Vector2f(64, 0); break;
-                    case 108 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 288, 160, 32))); originPos = Vector2f(64, 0); break;
+                    case 107 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_FENCE)); originPos = Vector2f(64, 0); break;
+                    case 108 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_SNOWFENCE)); originPos = Vector2f(64, 0); break;
                     case 109 : listPlaceablesb.emplace_back(new Scenery_Cloud(*sceneriesTxt[5])); originPos = Vector2f(15, 8); break;
                     case 110 : listPlaceablesb.emplace_back(new Scenery_Cloud(*sceneriesTxt[6])); originPos = Vector2f(15, 8); break;
                     case 111 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[7], IntRect(0, 0, 127, 160))); originPos = Vector2f(47, 128); break;
                     case 112 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[8], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
                     case 113 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[9], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
+                    case 229 : listPlaceablesb.emplace_back(new Scenery_Waterfall(*sceneriesTxt[10])); originPos = Vector2f(31, -5); break;
+                    case 230 : listPlaceablesb.emplace_back(new Scenery_Scroll(*sceneriesTxt[11])); originPos = Vector2f(11, 0); break;
+                    case 231 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[12], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
+                    case 232 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[13], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
                 }
 
                 listPlaceablesb.back()->setPosition(entPos - originPos);
@@ -6025,22 +6377,22 @@ static bool Level_Load()
                         break;
                     case 123 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 124 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 125 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 126 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 127 :
@@ -6215,10 +6567,10 @@ static bool Level_Load()
                     case 169 : listPlaceablesb.emplace_back(new Hazard_LavaL(*hazardsTxt[0])); originPos = Vector2f(2, 0); create = 1; break;
                     case 170 : listPlaceablesb.emplace_back(new Hazard_LavaR(*hazardsTxt[0])); originPos = Vector2f(-34, 0); create = 1; break;
                     case 171 :
-                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(832, 96)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(864, 96)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(864, 128)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(832, 128)));
+                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(928, 96)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(960, 96)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(960, 128)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(928, 128)));
                         create = 0;
                         break;
                     case 172 :
@@ -6274,30 +6626,6 @@ static bool Level_Load()
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         break;
                     case 192 :
-                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(512, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(544, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(544, 256)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(512, 256)));
-                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 193 :
-                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(480, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(512, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(512, 256)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(480, 256)));
-                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 194 :
-                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(544, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(576, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(576, 256)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(544, 256)));
-                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 195 :
                         tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(608, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(640, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(640, 256)));
@@ -6305,7 +6633,7 @@ static bool Level_Load()
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 196 :
+                    case 193 :
                         tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(576, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(608, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(608, 256)));
@@ -6313,15 +6641,7 @@ static bool Level_Load()
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 197 :
-                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(672, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(704, 224)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(704, 256)));
-                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(672, 256)));
-                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
-                        create = 0;
-                        break;
-                    case 198 :
+                    case 194 :
                         tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(640, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(672, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(672, 256)));
@@ -6329,7 +6649,7 @@ static bool Level_Load()
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 199 :
+                    case 195 :
                         tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(704, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(736, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(736, 256)));
@@ -6337,7 +6657,15 @@ static bool Level_Load()
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 200 :
+                    case 196 :
+                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(672, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(704, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(704, 256)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(672, 256)));
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 197 :
                         tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(768, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(800, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(800, 256)));
@@ -6345,11 +6673,35 @@ static bool Level_Load()
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
-                    case 201 :
+                    case 198 :
                         tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(736, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(768, 224)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(768, 256)));
                         tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(736, 256)));
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 199 :
+                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(800, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(832, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(832, 256)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(800, 256)));
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 200 :
+                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(864, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(896, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(896, 256)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(864, 256)));
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        create = 0;
+                        break;
+                    case 201 :
+                        tilemapLayer2b.emplace_back(Vertex(entPos, Color::White, Vector2f(832, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y), Color::White, Vector2f(864, 224)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x + 32, entPos.y + 32), Color::White, Vector2f(864, 256)));
+                        tilemapLayer2b.emplace_back(Vertex(Vector2f(entPos.x, entPos.y + 32), Color::White, Vector2f(832, 256)));
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         create = 0;
                         break;
@@ -6436,6 +6788,10 @@ static bool Level_Load()
                         create = 3;
 
                         break;
+                    case 225 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 0)); originPos = Vector2f(-1, -1); create = 1; break;
+                    case 226 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 270)); originPos = Vector2f(-1, -32); create = 1; break;
+                    case 227 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 90)); originPos = Vector2f(-31, -1); create = 1; break;
+                    case 228 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 180)); originPos = Vector2f(-31, -31); create = 1; break;
                 }
 
                 if (create == 1)
@@ -6568,6 +6924,122 @@ static bool Level_Load()
                         break;
                     case 55 :
                         listPlaceablesb.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 15)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 213 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 214 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, true);
+
+                        toggle->attributeSolid(collisionMatrixb->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 215 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 0)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 216 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 217 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, true);
+
+                        toggle->attributeSolid(collisionMatrixb->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 218 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 1)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 219 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 220 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, true);
+
+                        toggle->attributeSolid(collisionMatrixb->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 221 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 2)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 222 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 223 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, true);
+
+                        toggle->attributeSolid(collisionMatrixb->getReference(entPos.x/32, entPos.y/32));
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 224 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 3)); originPos = Vector2f(0, 0);
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
                         break;
                 }
@@ -6789,6 +7261,11 @@ static void Level_Reload()
 
     game_powerup = 0;
 
+    game_toggleSolidity[0] = game_toggleSoliditySave[0];
+    game_toggleSolidity[1] = game_toggleSoliditySave[1];
+    game_toggleSolidity[2] = game_toggleSoliditySave[2];
+    game_toggleSolidity[3] = game_toggleSoliditySave[3];
+
     blockhitter = FloatRect(-64, -64, 28, 8);
     spritehitter = FloatRect(-64, -64, 0, 0);
     enemystomper = FloatRect(-64, -64, 34, 12);
@@ -6807,7 +7284,9 @@ static void Level_Reload()
 
     levelCamera_shake = 0;
 
-    effectCloudPos = 0;
+    effectCloudPos[0] = 0;
+    effectCloudPos[1] = 0;
+    effectLavafallPos = 0;
     effectWeatherPos = 0;
     effectLightning = (rand() % 350) + 100;
 
@@ -6865,28 +7344,32 @@ static void Level_Reload()
 
                 switch (entType)
                 {
-                    case 92 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 93 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(512, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 92 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 93 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 94 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[0])); originPos = Vector2f(16, -2); break;
-                    case 95 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(544, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 96 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(576, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 95 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 96 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 97 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[1])); originPos = Vector2f(16, -2); break;
-                    case 98 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(608, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 99 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 98 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 99 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 100 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[2])); originPos = Vector2f(16, -2); break;
-                    case 101 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(672, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 102 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(704, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 101 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 102 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 103 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[3])); originPos = Vector2f(16, -2); break;
-                    case 104 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(736, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 105 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(768, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 104 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 105 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 106 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[4])); originPos = Vector2f(16, -2); break;
-                    case 107 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 288, 160, 32))); originPos = Vector2f(80, 0); break;
-                    case 108 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 288, 160, 32))); originPos = Vector2f(80, 0); break;
+                    case 107 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_FENCE)); originPos = Vector2f(80, 0); break;
+                    case 108 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_SNOWFENCE)); originPos = Vector2f(80, 0); break;
                     case 109 : listPlaceables.emplace_back(new Scenery_Cloud(*sceneriesTxt[5])); originPos = Vector2f(15, 8); break;
                     case 110 : listPlaceables.emplace_back(new Scenery_Cloud(*sceneriesTxt[6])); originPos = Vector2f(15, 8); break;
                     case 111 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[7], IntRect(0, 0, 127, 160))); originPos = Vector2f(47, 128); break;
                     case 112 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[8], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
                     case 113 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[9], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
+                    case 229 : listPlaceables.emplace_back(new Scenery_Waterfall(*sceneriesTxt[10])); originPos = Vector2f(31, -5); break;
+                    case 230 : listPlaceables.emplace_back(new Scenery_Scroll(*sceneriesTxt[11])); originPos = Vector2f(11, 0); break;
+                    case 231 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[12], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
+                    case 232 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[13], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
                 }
 
                 listPlaceables.back()->setPosition(entPos - originPos);
@@ -7191,22 +7674,22 @@ static void Level_Reload()
                         break;
                     case 123 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listCollider.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 124 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listCollider.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 125 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listCollider.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 126 :
                         listCollider.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddle.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listCollider.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddle.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listCollider.back()->object = listMiddle.back();
                         break;
                     case 127 :
@@ -7470,6 +7953,10 @@ static void Level_Reload()
                         originPos = Vector2f(0, 0);
                         create = 3;
                         break;
+                    case 225 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 0)); originPos = Vector2f(-1, -1); create = 1; break;
+                    case 226 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 270)); originPos = Vector2f(-1, -32); create = 1; break;
+                    case 227 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 90)); originPos = Vector2f(-31, -1); create = 1; break;
+                    case 228 : listPlaceables.emplace_back(new Sprite_StaticPlant(entPos, 180)); originPos = Vector2f(-31, -31); create = 1; break;
                 }
 
                 if (create == 1)
@@ -7683,6 +8170,134 @@ static void Level_Reload()
                         break;
                     case 54 : listPlaceables.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 10)); originPos = Vector2f(0, 0); break;
                     case 55 : listPlaceables.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 15)); originPos = Vector2f(0, 0); break;
+                    case 213 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 214 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, true);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 215 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 0)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 216 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 217 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, true);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 218 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 1)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 219 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 220 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, true);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 221 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 2)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 222 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, false);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 223 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, true);
+                        unsigned char* c = collisionMatrix->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceables.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 224 :
+                        listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 3)); originPos = Vector2f(0, 0);
+                        collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
                 }
 
                 if (toMiddle)
@@ -7714,28 +8329,32 @@ static void Level_Reload()
 
                 switch (entType)
                 {
-                    case 92 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 93 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(512, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 92 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 93 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 94 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[0])); originPos = Vector2f(16, -2); break;
-                    case 95 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(544, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 96 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(576, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 95 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 96 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 97 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[1])); originPos = Vector2f(16, -2); break;
-                    case 98 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(608, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 99 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 98 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 99 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 100 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[2])); originPos = Vector2f(16, -2); break;
-                    case 101 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(672, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 102 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(704, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 101 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 102 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 103 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[3])); originPos = Vector2f(16, -2); break;
-                    case 104 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(736, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                    case 105 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(768, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                    case 104 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_TREE)); originPos = Vector2f(-1, 32); break;
+                    case 105 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_BIGTREE)); originPos = Vector2f(0, 64); break;
                     case 106 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[4])); originPos = Vector2f(16, -2); break;
-                    case 107 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 288, 160, 32))); originPos = Vector2f(80, 0); break;
-                    case 108 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 288, 160, 32))); originPos = Vector2f(80, 0); break;
+                    case 107 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_FENCE)); originPos = Vector2f(80, 0); break;
+                    case 108 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_SNOWFENCE)); originPos = Vector2f(80, 0); break;
                     case 109 : listPlaceablesb.emplace_back(new Scenery_Cloud(*sceneriesTxt[5])); originPos = Vector2f(15, 8); break;
                     case 110 : listPlaceablesb.emplace_back(new Scenery_Cloud(*sceneriesTxt[6])); originPos = Vector2f(15, 8); break;
                     case 111 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[7], IntRect(0, 0, 127, 160))); originPos = Vector2f(47, 128); break;
                     case 112 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[8], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
                     case 113 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[9], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
+                    case 229 : listPlaceablesb.emplace_back(new Scenery_Waterfall(*sceneriesTxt[10])); originPos = Vector2f(31, -5); break;
+                    case 230 : listPlaceablesb.emplace_back(new Scenery_Scroll(*sceneriesTxt[11])); originPos = Vector2f(11, 0); break;
+                    case 231 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[12], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
+                    case 232 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[13], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
                 }
 
                 listPlaceablesb.back()->setPosition(entPos - originPos);
@@ -8036,22 +8655,22 @@ static void Level_Reload()
                         break;
                     case 123 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listColliderb.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 124 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listColliderb.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 125 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listColliderb.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 126 :
                         listColliderb.emplace_back(new Collider{FloatRect(entPos, Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                        listMiddleb.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listColliderb.back(), true)); originPos = Vector2f(-16, 15); create = 2;
+                        listMiddleb.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                         listColliderb.back()->object = listMiddleb.back();
                         break;
                     case 127 :
@@ -8315,6 +8934,10 @@ static void Level_Reload()
                         originPos = Vector2f(0, 0);
                         create = 3;
                         break;
+                    case 225 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 0)); originPos = Vector2f(-1, -1); create = 1; break;
+                    case 226 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 270)); originPos = Vector2f(-1, -32); create = 1; break;
+                    case 227 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 90)); originPos = Vector2f(-31, -1); create = 1; break;
+                    case 228 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(entPos, 180)); originPos = Vector2f(-31, -31); create = 1; break;
                 }
 
                 if (create == 1)
@@ -8524,6 +9147,134 @@ static void Level_Reload()
                         break;
                     case 54 : listPlaceablesb.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 10)); originPos = Vector2f(0, 0); break;
                     case 55 : listPlaceablesb.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 15)); originPos = Vector2f(0, 0); break;
+                    case 213 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 214 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, true);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 215 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 0)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 216 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 217 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, true);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 218 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 1)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 219 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 220 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, true);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 221 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 2)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
+                    case 222 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, false);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 1;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 223 :
+                    {
+                        Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, true);
+                        unsigned char* c = collisionMatrixb->getReference(entPos.x/32, entPos.y/32);
+
+                        toggle->attributeSolid(c);
+
+                        (*c) = 0;
+
+                        listPlaceablesb.emplace_back(toggle);
+
+                        originPos = Vector2f(0, 0);
+                        break;
+                    }
+                    case 224 :
+                        listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 3)); originPos = Vector2f(0, 0);
+                        collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
+                        break;
                 }
 
                 if (toMiddle)
@@ -8713,10 +9464,16 @@ static void Level_Clear()
         backgroundSpr = NULL;
     }
 
-    if (effectCloudsSpr != NULL)
+    if (effectCloudsSpr[0] != NULL)
     {
-        delete effectCloudsSpr;
-        effectCloudsSpr = NULL;
+        delete effectCloudsSpr[0];
+        effectCloudsSpr[0] = NULL;
+    }
+
+    if (effectCloudsSpr[1] != NULL)
+    {
+        delete effectCloudsSpr[1];
+        effectCloudsSpr[1] = NULL;
     }
 
     if (effectWeatherSpr != NULL)
@@ -8731,10 +9488,16 @@ static void Level_Clear()
         backgroundSprb = NULL;
     }
 
-    if (effectCloudsSprb != NULL)
+    if (effectCloudsSprb[0] != NULL)
     {
-        delete effectCloudsSprb;
-        effectCloudsSprb = NULL;
+        delete effectCloudsSprb[0];
+        effectCloudsSprb[0] = NULL;
+    }
+
+    if (effectCloudsSprb[1] != NULL)
+    {
+        delete effectCloudsSprb[1];
+        effectCloudsSprb[1] = NULL;
     }
 
     if (effectWeatherSprb != NULL)

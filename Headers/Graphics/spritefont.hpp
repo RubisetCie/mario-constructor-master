@@ -13,10 +13,10 @@ class SpriteFont : public sf::Drawable
 {
     public :
 
-        SpriteFont(sf::Vector2f position, bool right, const std::string& startText);
+        SpriteFont(const sf::Vector2f& position, bool right, const std::string& startText);
 
-        void setText(const char* text, unsigned int size, sf::Vector2f position, bool right);
-        void setPosition(sf::Vector2f position);
+        void setText(const char* text, unsigned int size, const sf::Vector2f& position, bool right);
+        void setPosition(const sf::Vector2f& position);
 
         float getHorizontalSize();
 

@@ -26,7 +26,7 @@ Bonus_StarBlock::Bonus_StarBlock(Texture* blockTexture) : Bonus_Block(blockTextu
     m_frame = 0;
 }
 
-void Bonus_StarBlock::setPosition(Vector2f pos)
+void Bonus_StarBlock::setPosition(const Vector2f& pos)
 {
     Bonus_Block::setPosition(pos);
 }

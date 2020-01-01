@@ -22,7 +22,7 @@ Mark_PlatformCloudTouchH::Mark_PlatformCloudTouchH(const Texture& texture, float
     m_aabb.height = 32;
 }
 
-void Mark_PlatformCloudTouchH::setPosition(Vector2f pos)
+void Mark_PlatformCloudTouchH::setPosition(const Vector2f& pos)
 {
     float start(pos.x + 63);
 

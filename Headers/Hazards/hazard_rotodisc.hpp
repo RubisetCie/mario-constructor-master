@@ -12,9 +12,9 @@ class Hazard_Rotodisc : public Placeable
 {
     public :
 
-        Hazard_Rotodisc(const sf::Texture& texture, sf::Vector2f disk_pos, float speed);
+        Hazard_Rotodisc(const sf::Texture& texture, const sf::Vector2f& disk_pos, float speed);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

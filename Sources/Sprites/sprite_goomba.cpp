@@ -33,7 +33,7 @@ Sprite_Goomba::Sprite_Goomba(const Texture& texture, Collider* collision) : Walk
     m_state = 0;
 }
 
-void Sprite_Goomba::setPosition(Vector2f pos)
+void Sprite_Goomba::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

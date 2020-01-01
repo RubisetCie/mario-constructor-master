@@ -6,7 +6,7 @@
 #define BRICKCOIN_INCLUDED
 
 #include <SFML/Graphics.hpp>
-#include "bonus_block.hpp"
+#include "../Core/placeable.hpp"
 
 class Bonus_CoinBrick : public Placeable
 {
@@ -14,7 +14,7 @@ class Bonus_CoinBrick : public Placeable
 
         Bonus_CoinBrick(sf::Texture* blockTexture, unsigned int coins);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();
@@ -33,10 +33,10 @@ class Bonus_CoinBrick : public Placeable
 
         unsigned int m_coins;
 
-        char m_hit;
-
         float m_startheight;
         float m_hitspeed;
+
+        char m_hit;
 };
 
 #endif

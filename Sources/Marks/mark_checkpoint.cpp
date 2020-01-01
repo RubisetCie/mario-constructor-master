@@ -22,7 +22,7 @@ Mark_CheckPoint::Mark_CheckPoint(const Texture& texture, bool zone) : Placeable(
     m_zone = zone;
 }
 
-void Mark_CheckPoint::setPosition(Vector2f pos)
+void Mark_CheckPoint::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 
@@ -97,6 +97,11 @@ void Mark_CheckPoint::update()
             m_sprite.setTextureRect(IntRect(107, 0, 107, 111));
 
             player->m_checkpoint = this;
+
+            game_toggleSoliditySave[0] = game_toggleSolidity[0];
+            game_toggleSoliditySave[1] = game_toggleSolidity[1];
+            game_toggleSoliditySave[2] = game_toggleSolidity[2];
+            game_toggleSoliditySave[3] = game_toggleSolidity[3];
 
             if (autoscroll == zoneb + 1)
                 autoscroll_nodesaved = autoscroll_node;

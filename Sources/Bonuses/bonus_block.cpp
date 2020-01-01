@@ -18,7 +18,7 @@ Bonus_Block::Bonus_Block(Texture* blockTexture) : Placeable()
     m_hit = 0;
 }
 
-void Bonus_Block::setPosition(Vector2f pos)
+void Bonus_Block::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

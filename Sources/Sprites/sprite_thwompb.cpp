@@ -33,7 +33,7 @@ Sprite_ThwompB::Sprite_ThwompB(const Texture& texture) : Pawn()
     m_frame = 0;
 }
 
-void Sprite_ThwompB::setPosition(Vector2f pos)
+void Sprite_ThwompB::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

@@ -20,7 +20,7 @@ Mark_PlatformRedTouchV::Mark_PlatformRedTouchV(const Texture& texture, float tar
     m_aabb.height = 32;
 }
 
-void Mark_PlatformRedTouchV::setPosition(Vector2f pos)
+void Mark_PlatformRedTouchV::setPosition(const Vector2f& pos)
 {
     m_startpoint = pos.y;
 

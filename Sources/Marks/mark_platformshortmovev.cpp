@@ -18,7 +18,7 @@ Mark_PlatformShortMoveV::Mark_PlatformShortMoveV(const Texture& texture, float t
     m_aabb.height = 32;
 }
 
-void Mark_PlatformShortMoveV::setPosition(Vector2f pos)
+void Mark_PlatformShortMoveV::setPosition(const Vector2f& pos)
 {
     m_startpoint = pos.y;
 

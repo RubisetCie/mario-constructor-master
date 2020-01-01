@@ -16,7 +16,7 @@ class Hazard_Lavalauncher : public Placeable
         Hazard_Lavalauncher(const sf::Texture& texture);
         virtual ~Hazard_Lavalauncher();
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -15,7 +15,7 @@ class Sprite_Spiny : public Walkable, public GotCollision
 
         Sprite_Spiny(const sf::Texture& texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

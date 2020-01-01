@@ -15,10 +15,10 @@
 using namespace std;
 using namespace sf;
 
-Hazard_Rotodisc::Hazard_Rotodisc(const Texture& texture, Vector2f disk_pos, float speed)
+Hazard_Rotodisc::Hazard_Rotodisc(const Texture& texture, const Vector2f& disk_pos, float speed)
 {
     m_sprite.setTexture(*mainTileset);
-    m_sprite.setTextureRect(IntRect(800, 96, 32, 32));
+    m_sprite.setTextureRect(IntRect(896, 96, 32, 32));
 
     m_disk.setTexture(texture);
 
@@ -30,7 +30,7 @@ Hazard_Rotodisc::Hazard_Rotodisc(const Texture& texture, Vector2f disk_pos, floa
     m_speed = fma((speed - 1.0f), 0.0156666f, 0.005f);
 }
 
-void Hazard_Rotodisc::setPosition(Vector2f pos)
+void Hazard_Rotodisc::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

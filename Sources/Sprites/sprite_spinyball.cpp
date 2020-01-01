@@ -39,7 +39,7 @@ Sprite_SpinyBall::Sprite_SpinyBall(const Texture& texture, const Texture& walkte
     m_onfloor = false;
 }
 
-void Sprite_SpinyBall::setPosition(Vector2f pos)
+void Sprite_SpinyBall::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

@@ -14,7 +14,7 @@ class Mark_CheckPoint : public Placeable
 
         Mark_CheckPoint(const sf::Texture& texture, bool zone);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void silentCheck();
         void unCheck();

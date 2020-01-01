@@ -21,7 +21,7 @@ Hazard_Spike::Hazard_Spike(const Vector2i& coords)
     m_sprite.setTextureRect(IntRect(coords, Vector2i(32, 32)));
 }
 
-void Hazard_Spike::setPosition(Vector2f pos)
+void Hazard_Spike::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

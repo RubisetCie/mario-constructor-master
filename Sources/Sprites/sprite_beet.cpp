@@ -28,7 +28,7 @@ Sprite_Beet::Sprite_Beet(const Texture& texture) : Fallable()
     m_frame = 0;
 }
 
-void Sprite_Beet::setPosition(Vector2f pos)
+void Sprite_Beet::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

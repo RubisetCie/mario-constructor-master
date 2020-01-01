@@ -20,7 +20,7 @@ Mark_PlatformShortTouchH::Mark_PlatformShortTouchH(const Texture& texture, float
     m_aabb.height = 32;
 }
 
-void Mark_PlatformShortTouchH::setPosition(Vector2f pos)
+void Mark_PlatformShortTouchH::setPosition(const Vector2f& pos)
 {
     float start(pos.x + 16);
 

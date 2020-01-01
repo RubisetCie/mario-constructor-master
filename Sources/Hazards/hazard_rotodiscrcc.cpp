@@ -16,14 +16,14 @@ using namespace std;
 
 using namespace sf;
 
-Hazard_RotodiscRCC::Hazard_RotodiscRCC(const Texture& texture, Vector2f disk_pos, float speed) : Hazard_Rotodisc(texture, disk_pos, speed)
+Hazard_RotodiscRCC::Hazard_RotodiscRCC(const Texture& texture, const Vector2f& disk_pos, float speed) : Hazard_Rotodisc(texture, disk_pos, speed)
 {
     m_quarterspeed = speed * 1.5707f;
 
     m_grow = false;
 }
 
-void Hazard_RotodiscRCC::setPosition(Vector2f pos)
+void Hazard_RotodiscRCC::setPosition(const Vector2f& pos)
 {
     Hazard_Rotodisc::setPosition(pos);
 

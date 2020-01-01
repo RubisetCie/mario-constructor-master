@@ -24,7 +24,7 @@ Sprite_ParatroopaGreenH::Sprite_ParatroopaGreenH(const Texture& texture, Texture
     m_forward = true;
 }
 
-void Sprite_ParatroopaGreenH::setPosition(Vector2f pos)
+void Sprite_ParatroopaGreenH::setPosition(const Vector2f& pos)
 {
     m_startpos = pos.x;
 

@@ -18,7 +18,7 @@ Bonus_Coin::Bonus_Coin(const Texture& texture) : Placeable()
     m_sprite.setTextureRect(IntRect(0, 0, 19, 28));
 }
 
-void Bonus_Coin::setPosition(Vector2f pos)
+void Bonus_Coin::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

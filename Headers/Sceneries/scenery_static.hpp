@@ -14,7 +14,7 @@ class Scenery_Static : public Placeable
 
         Scenery_Static(const sf::Texture& texture, const sf::IntRect& rect);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

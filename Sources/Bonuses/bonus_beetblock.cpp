@@ -18,7 +18,7 @@ Bonus_BeetBlock::Bonus_BeetBlock(Texture* blockTexture) : Bonus_Block(blockTextu
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_BeetBlock::setPosition(Vector2f pos)
+void Bonus_BeetBlock::setPosition(const Vector2f& pos)
 {
     Bonus_Block::setPosition(pos);
 }

@@ -17,7 +17,7 @@ Mark_PlatformRedMoveV::Mark_PlatformRedMoveV(const Texture& texture, float targe
     m_aabb.height = 32;
 }
 
-void Mark_PlatformRedMoveV::setPosition(Vector2f pos)
+void Mark_PlatformRedMoveV::setPosition(const Vector2f& pos)
 {
     m_startpoint = pos.y;
 

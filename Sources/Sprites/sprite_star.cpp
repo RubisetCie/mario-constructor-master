@@ -28,7 +28,7 @@ Sprite_Star::Sprite_Star(const Texture& texture) : Pawn()
     m_aabb.height = 32;
 }
 
-void Sprite_Star::setPosition(Vector2f pos)
+void Sprite_Star::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

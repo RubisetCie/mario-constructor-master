@@ -14,7 +14,7 @@ class Sprite_Beet : public Fallable
 
         Sprite_Beet(const sf::Texture& texture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

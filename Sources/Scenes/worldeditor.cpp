@@ -81,10 +81,10 @@ Texture* worldButtonTex[2];
 Texture* worldText[3];
 Texture* worldInfo[4];
 Texture* worldMoveable;
-Texture* worldTextButton;
 Texture* worldTexmap;
 Texture* worldEyemap;
 Texture* worldReturnButtonTex;
+Texture* worldPanelTexb;
 
 RectangleShape* worldGrid[2];
 RectangleShape* worldBack;
@@ -101,7 +101,9 @@ Button* worldReturnButton;
 Button* worldButton[10];
 Button* worldInfoButton[30];
 
-Case* worldEyeCases[73];
+Vertex panelwInfo[36];
+
+Case* worldEyeCases[81];
 
 Matrix* matrixMarker;
 
@@ -1209,7 +1211,7 @@ bool Scene::WorldEditor()
                     if (helpText->getString() != "")
                         helpText->setString("");
 
-                    for (register unsigned int i = 0; i < 73; i++)
+                    for (register unsigned int i = 0; i < 81; i++)
                         worldEyeCases[i]->update(worldTexSelection, Eyecandy_Chosen);
                 }
 
@@ -1217,7 +1219,7 @@ bool Scene::WorldEditor()
 
                 mainTexture.draw(*worldEyemapSpr);
 
-                for (register unsigned int i = 0; i < 73; i++)
+                for (register unsigned int i = 0; i < 81; i++)
                     mainTexture.draw(*worldEyeCases[i]);
 
                 mainTexture.draw(*worldTexSelection);
@@ -1246,6 +1248,8 @@ bool Scene::WorldEditor()
                 }
 
                 mainTexture.clear(Color(173, 116, 84));
+
+                mainTexture.draw(panelwInfo, 36, Quads, worldPanelTexb);
 
                 mainTexture.draw(*worldTextSpr[0]);
                 mainTexture.draw(*worldTextSpr[1]);
@@ -1430,6 +1434,7 @@ bool Scene::WorldEditor()
     delete worldEyemap;
     delete worldCursor;
     delete worldPanelTex;
+    delete worldPanelTexb;
     delete worldBackTex[0];
 
     delete worldText[0];
@@ -1447,7 +1452,7 @@ bool Scene::WorldEditor()
     for (register unsigned int i = 0; i < 166; i++)
         delete worldTextures[i];
 
-    for (register unsigned int i = 0; i < 73; i++)
+    for (register unsigned int i = 0; i < 81; i++)
     {
         delete worldEyecandies[i];
         delete worldEyeCases[i];
@@ -1455,8 +1460,6 @@ bool Scene::WorldEditor()
 
     delete worldButtonTex[0];
     delete worldButtonTex[1];
-
-    delete worldTextButton;
 
     delete worldMoveable;
 
@@ -1654,6 +1657,43 @@ static bool InitAssets()
 
     matrixMarker = new Matrix(41, 31);
 
+    panelwInfo[0].texCoords = Vector2f(0, 0);
+    panelwInfo[1].texCoords = Vector2f(16, 0);
+    panelwInfo[2].texCoords = Vector2f(16, 16);
+    panelwInfo[3].texCoords = Vector2f(0, 16);
+    panelwInfo[4].texCoords = Vector2f(16, 0);
+    panelwInfo[5].texCoords = Vector2f(32, 0);
+    panelwInfo[6].texCoords = Vector2f(32, 16);
+    panelwInfo[7].texCoords = Vector2f(16, 16);
+    panelwInfo[8].texCoords = Vector2f(32, 0);
+    panelwInfo[9].texCoords = Vector2f(48, 0);
+    panelwInfo[10].texCoords = Vector2f(48, 16);
+    panelwInfo[11].texCoords = Vector2f(32, 16);
+    panelwInfo[12].texCoords = Vector2f(0, 16);
+    panelwInfo[13].texCoords = Vector2f(16, 16);
+    panelwInfo[14].texCoords = Vector2f(16, 32);
+    panelwInfo[15].texCoords = Vector2f(0, 32);
+    panelwInfo[16].texCoords = Vector2f(16, 16);
+    panelwInfo[17].texCoords = Vector2f(32, 16);
+    panelwInfo[18].texCoords = Vector2f(32, 32);
+    panelwInfo[19].texCoords = Vector2f(16, 32);
+    panelwInfo[20].texCoords = Vector2f(32, 16);
+    panelwInfo[21].texCoords = Vector2f(48, 16);
+    panelwInfo[22].texCoords = Vector2f(48, 32);
+    panelwInfo[23].texCoords = Vector2f(32, 32);
+    panelwInfo[24].texCoords = Vector2f(0, 32);
+    panelwInfo[25].texCoords = Vector2f(16, 32);
+    panelwInfo[26].texCoords = Vector2f(16, 48);
+    panelwInfo[27].texCoords = Vector2f(0, 48);
+    panelwInfo[28].texCoords = Vector2f(16, 32);
+    panelwInfo[29].texCoords = Vector2f(32, 32);
+    panelwInfo[30].texCoords = Vector2f(32, 48);
+    panelwInfo[31].texCoords = Vector2f(16, 48);
+    panelwInfo[32].texCoords = Vector2f(32, 32);
+    panelwInfo[33].texCoords = Vector2f(48, 32);
+    panelwInfo[34].texCoords = Vector2f(48, 48);
+    panelwInfo[35].texCoords = Vector2f(32, 48);
+
     {
         Image tempImg;
 
@@ -1694,6 +1734,11 @@ static bool InitAssets()
         worldReturnButtonTex = new Texture;
 
         if (!worldReturnButtonTex->loadFromFile("Data/Gfx/TitleScreen/Button_Return.png"))
+            allright = false;
+
+        worldPanelTexb = new Texture;
+
+        if (!worldPanelTexb->loadFromFile("Data/Gfx/Editor/Editor_Panel.png"))
             allright = false;
 
         worldText[0] = new Texture;
@@ -1741,14 +1786,6 @@ static bool InitAssets()
         worldInfo[3]->loadFromImage(tempImg);
 
         worldBackTex[0] = new Texture;
-
-        if (!tempImg.loadFromFile("Data/Gfx/Editor/Buttons/Button_Texture.png"))
-            allright = false;
-
-        tempImg.createMaskFromColor(Color::Magenta);
-
-        worldTextButton = new Texture;
-        worldTextButton->loadFromImage(tempImg);
 
         worldLightTex = new Texture;
 
@@ -1840,7 +1877,7 @@ static bool InitAssets()
             delete[] fileurl;
         }
 
-        for (register unsigned int i = 0; i < 73; i++)
+        for (register unsigned int i = 0; i < 81; i++)
         {
             char* fileurl = new char[46];
 
@@ -2020,6 +2057,14 @@ static bool InitAssets()
     worldEyeCases[70] = new Case(*entTex[2], IntRect(32, 32, 64, 64), 70);
     worldEyeCases[71] = new Case(*entTex[2], IntRect(32, 32, 64, 64), 71);
     worldEyeCases[72] = new Case(*entTex[2], IntRect(32, 32, 64, 64), 72);
+    worldEyeCases[73] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 73);
+    worldEyeCases[74] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 74);
+    worldEyeCases[75] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 75);
+    worldEyeCases[76] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 76);
+    worldEyeCases[77] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 77);
+    worldEyeCases[78] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 78);
+    worldEyeCases[79] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 79);
+    worldEyeCases[80] = new Case(*entTex[2], IntRect(0, 0, 32, 32), 80);
 
     worldReturnButton->setSound(&edbuttonClick);
 
@@ -2888,6 +2933,14 @@ static void Button_Eyecandies()
     worldEyeCases[70]->setPosition(Vector2f(worldcamPos.x + 192, worldcamPos.y - 32));
     worldEyeCases[71]->setPosition(Vector2f(worldcamPos.x + 96, worldcamPos.y - 224));
     worldEyeCases[72]->setPosition(Vector2f(worldcamPos.x + 96, worldcamPos.y - 160));
+    worldEyeCases[73]->setPosition(Vector2f(worldcamPos.x + 64, worldcamPos.y + 96));
+    worldEyeCases[74]->setPosition(Vector2f(worldcamPos.x + 96, worldcamPos.y + 96));
+    worldEyeCases[75]->setPosition(Vector2f(worldcamPos.x + 128, worldcamPos.y + 96));
+    worldEyeCases[76]->setPosition(Vector2f(worldcamPos.x + 160, worldcamPos.y + 96));
+    worldEyeCases[77]->setPosition(Vector2f(worldcamPos.x + 64, worldcamPos.y + 128));
+    worldEyeCases[78]->setPosition(Vector2f(worldcamPos.x + 96, worldcamPos.y + 128));
+    worldEyeCases[79]->setPosition(Vector2f(worldcamPos.x + 128, worldcamPos.y + 128));
+    worldEyeCases[80]->setPosition(Vector2f(worldcamPos.x + 160, worldcamPos.y + 128));
 
     worldTexSelection->setFillColor(Color(255, 255, 0, 128));
     worldTexSelection->setSize(Vector2f(32, 32));
@@ -2945,6 +2998,51 @@ static void Button_Markers()
 
 static void Button_Title()
 {
+    panelwInfo[0].position = Vector2f(worldcamPos.x - 314, worldcamPos.y - 220);
+    panelwInfo[1].position = Vector2f(worldcamPos.x - 300, worldcamPos.y - 220);
+    panelwInfo[2].position = Vector2f(worldcamPos.x - 300, worldcamPos.y - 204);
+    panelwInfo[3].position = Vector2f(worldcamPos.x - 314, worldcamPos.y - 204);
+
+    panelwInfo[4].position = Vector2f(worldcamPos.x - 300, worldcamPos.y - 220);
+    panelwInfo[5].position = Vector2f(worldcamPos.x + 300, worldcamPos.y - 220);
+    panelwInfo[6].position = Vector2f(worldcamPos.x + 300, worldcamPos.y - 204);
+    panelwInfo[7].position = Vector2f(worldcamPos.x - 300, worldcamPos.y - 204);
+
+    panelwInfo[8].position = Vector2f(worldcamPos.x + 300, worldcamPos.y - 220);
+    panelwInfo[9].position = Vector2f(worldcamPos.x + 314, worldcamPos.y - 220);
+    panelwInfo[10].position = Vector2f(worldcamPos.x + 314, worldcamPos.y - 204);
+    panelwInfo[11].position = Vector2f(worldcamPos.x + 300, worldcamPos.y - 204);
+
+    panelwInfo[12].position = Vector2f(worldcamPos.x - 314, worldcamPos.y - 204);
+    panelwInfo[13].position = Vector2f(worldcamPos.x - 300, worldcamPos.y - 204);
+    panelwInfo[14].position = Vector2f(worldcamPos.x - 300, worldcamPos.y + 170);
+    panelwInfo[15].position = Vector2f(worldcamPos.x - 314, worldcamPos.y + 170);
+
+    panelwInfo[16].position = Vector2f(worldcamPos.x - 300, worldcamPos.y - 204);
+    panelwInfo[17].position = Vector2f(worldcamPos.x + 300, worldcamPos.y - 204);
+    panelwInfo[18].position = Vector2f(worldcamPos.x + 300, worldcamPos.y + 170);
+    panelwInfo[19].position = Vector2f(worldcamPos.x - 300, worldcamPos.y + 170);
+
+    panelwInfo[20].position = Vector2f(worldcamPos.x + 300, worldcamPos.y - 204);
+    panelwInfo[21].position = Vector2f(worldcamPos.x + 314, worldcamPos.y - 204);
+    panelwInfo[22].position = Vector2f(worldcamPos.x + 314, worldcamPos.y + 170);
+    panelwInfo[23].position = Vector2f(worldcamPos.x + 300, worldcamPos.y + 170);
+
+    panelwInfo[24].position = Vector2f(worldcamPos.x - 314, worldcamPos.y + 170);
+    panelwInfo[25].position = Vector2f(worldcamPos.x - 300, worldcamPos.y + 170);
+    panelwInfo[26].position = Vector2f(worldcamPos.x - 300, worldcamPos.y + 186);
+    panelwInfo[27].position = Vector2f(worldcamPos.x - 314, worldcamPos.y + 186);
+
+    panelwInfo[28].position = Vector2f(worldcamPos.x - 300, worldcamPos.y + 170);
+    panelwInfo[29].position = Vector2f(worldcamPos.x + 300, worldcamPos.y + 170);
+    panelwInfo[30].position = Vector2f(worldcamPos.x + 300, worldcamPos.y + 186);
+    panelwInfo[31].position = Vector2f(worldcamPos.x - 300, worldcamPos.y + 186);
+
+    panelwInfo[32].position = Vector2f(worldcamPos.x + 300, worldcamPos.y + 170);
+    panelwInfo[33].position = Vector2f(worldcamPos.x + 314, worldcamPos.y + 170);
+    panelwInfo[34].position = Vector2f(worldcamPos.x + 314, worldcamPos.y + 186);
+    panelwInfo[35].position = Vector2f(worldcamPos.x + 300, worldcamPos.y + 186);
+
     worldInfoButton[0]->setPosition(worldcamPos.x-180, worldcamPos.y+180);
     worldInfoButton[1]->setPosition(worldcamPos.x, worldcamPos.y+180);
     worldInfoButton[2]->setPosition(worldcamPos.x+180, worldcamPos.y+180);
@@ -5213,7 +5311,7 @@ bool checkwLoadResources(ifstream& worldFile, LPCSTR filename)
         return false;
     }
 
-    if (CMLid[3] > EDITOR_VERSION)
+    if (CMLid[3] != EDITOR_VERSION)
     {
         MessageBox(NULL, "Error ! This World was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 

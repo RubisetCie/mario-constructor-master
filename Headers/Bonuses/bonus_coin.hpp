@@ -14,7 +14,7 @@ class Bonus_Coin : public Placeable
 
         Bonus_Coin(const sf::Texture& texture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

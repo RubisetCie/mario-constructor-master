@@ -29,7 +29,7 @@ Hazard_CannonHoming::~Hazard_CannonHoming()
     delete m_bullet;
 }
 
-void Hazard_CannonHoming::setPosition(Vector2f pos)
+void Hazard_CannonHoming::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

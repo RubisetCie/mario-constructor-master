@@ -12,9 +12,9 @@ class Hazard_RotodiscRC : public Hazard_Rotodisc
 {
     public :
 
-        Hazard_RotodiscRC(const sf::Texture& texture, sf::Vector2f disk_pos, float speed);
+        Hazard_RotodiscRC(const sf::Texture& texture, const sf::Vector2f& disk_pos, float speed);
 
-        void setPosition(sf::Vector2f);
+        void setPosition(const sf::Vector2f& pos);
 
         void secureUpdate();
 

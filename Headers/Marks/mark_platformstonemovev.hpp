@@ -14,7 +14,7 @@ class Mark_PlatformStoneMoveV : public PlatformMov
 
         Mark_PlatformStoneMoveV(const sf::Texture& texture, float target, float speed, Collider* const collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

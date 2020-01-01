@@ -21,7 +21,7 @@ Hazard_PodobooFountain::~Hazard_PodobooFountain()
         delete *it;
 }
 
-void Hazard_PodobooFountain::setPosition(Vector2f pos)
+void Hazard_PodobooFountain::setPosition(const Vector2f& pos)
 {
     m_position = pos;
 }

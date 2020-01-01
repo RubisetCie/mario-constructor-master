@@ -40,7 +40,7 @@ Sprite_Paratroopa::Sprite_Paratroopa(const Texture& texture, Texture* const turt
     m_onfloor = false;
 }
 
-void Sprite_Paratroopa::setPosition(Vector2f pos)
+void Sprite_Paratroopa::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

@@ -17,7 +17,7 @@ Bonus_PoisonBlockInv::Bonus_PoisonBlockInv(Texture* blockTexture, Collider* coll
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_PoisonBlockInv::setPosition(Vector2f pos)
+void Bonus_PoisonBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 }

@@ -18,7 +18,7 @@ Bonus_BeetBlockInv::Bonus_BeetBlockInv(Texture* blockTexture, Collider* collisio
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_BeetBlockInv::setPosition(Vector2f pos)
+void Bonus_BeetBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 }

@@ -39,7 +39,7 @@ Sprite_SpinyGreyBall::Sprite_SpinyGreyBall(const Texture& texture, const Texture
     m_onfloor = false;
 }
 
-void Sprite_SpinyGreyBall::setPosition(Vector2f pos)
+void Sprite_SpinyGreyBall::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

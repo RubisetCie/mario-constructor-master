@@ -16,7 +16,7 @@ class Sprite_ParatroopaYellow : public Pawn, public GotCollision, public GotSpee
 
         Sprite_ParatroopaYellow(const sf::Texture& sprite_texture, sf::Texture* const turtle_texture, sf::Texture* const shell_texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

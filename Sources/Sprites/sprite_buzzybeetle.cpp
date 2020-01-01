@@ -35,7 +35,7 @@ Sprite_BuzzyBeetle::Sprite_BuzzyBeetle(const Texture& sprite_texture, Texture* c
     m_frame = 0;
 }
 
-void Sprite_BuzzyBeetle::setPosition(Vector2f pos)
+void Sprite_BuzzyBeetle::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

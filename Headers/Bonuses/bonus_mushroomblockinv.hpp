@@ -14,7 +14,7 @@ class Bonus_MushroomBlockInv : public Bonus_BlockInv
 
         Bonus_MushroomBlockInv(sf::Texture* blockTexture, Collider* collision, char once);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

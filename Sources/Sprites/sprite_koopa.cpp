@@ -51,7 +51,7 @@ Sprite_Koopa::Sprite_Koopa(const Texture& sprite_texture, Texture* const shell_t
     m_frame = 0;
 }
 
-void Sprite_Koopa::setPosition(Vector2f pos)
+void Sprite_Koopa::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

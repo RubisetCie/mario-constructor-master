@@ -24,7 +24,7 @@ Sprite_ParatroopaRedV::Sprite_ParatroopaRedV(const Texture& texture, Texture* co
     m_forward = true;
 }
 
-void Sprite_ParatroopaRedV::setPosition(Vector2f pos)
+void Sprite_ParatroopaRedV::setPosition(const Vector2f& pos)
 {
     m_startpos = pos.y;
 

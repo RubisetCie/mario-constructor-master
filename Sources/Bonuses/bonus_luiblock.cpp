@@ -18,7 +18,7 @@ Bonus_LuiBlock::Bonus_LuiBlock(Texture* blockTexture) : Bonus_Block(blockTexture
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_LuiBlock::setPosition(Vector2f pos)
+void Bonus_LuiBlock::setPosition(const Vector2f& pos)
 {
     Bonus_Block::setPosition(pos);
 }

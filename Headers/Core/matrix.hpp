@@ -18,6 +18,7 @@ class Matrix
         void setValue(unsigned int x, unsigned int y, unsigned char value);
 
         unsigned char getValue(unsigned int x, unsigned int y);
+        unsigned char* getReference(unsigned int x, unsigned int y);
 
     private :
 

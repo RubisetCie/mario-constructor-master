@@ -62,7 +62,7 @@ Hazard_Centipede::~Hazard_Centipede()
         FMOD_Channel_Stop(m_channel);
 }
 
-void Hazard_Centipede::setPosition(Vector2f pos)
+void Hazard_Centipede::setPosition(const Vector2f& pos)
 {
     for (register unsigned char i = 0; i < 6; i++)
     {

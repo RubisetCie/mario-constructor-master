@@ -14,7 +14,7 @@ class Sprite_KoopaYellow : public Walkable
 
         Sprite_KoopaYellow(const sf::Texture& sprite_texture, sf::Texture* const shell_texture, Collider* collision, bool shell);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

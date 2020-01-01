@@ -15,7 +15,7 @@ using namespace std;
 VerticalPlatform_Entity::VerticalPlatform_Entity(Texture* texture, Texture* speedRegulatorTexture, Texture* sliderTexture, Texture* platformEndTex, Texture* editorMoveable, Texture* platformText, IntRect textRect, float x, float y, float originx, float originy, float regulatorPos, unsigned int type, bool iscloud) : Entity(texture, x, y, originx, originy, type)
 {
     m_sprites[0].setTexture(*speedRegulatorTexture);
-    m_sprites[0].setPosition(x-regulatorPos, y-48);
+    m_sprites[0].setPosition(x-regulatorPos, y-32);
 
     {
         extern bool sectionb;
@@ -46,7 +46,7 @@ VerticalPlatform_Entity::VerticalPlatform_Entity(Texture* texture, Texture* spee
 
         m_sprites[1].setTexture(*sliderTexture);
         m_sprites[1].setColor(Color::Red);
-        m_sprites[1].setPosition(regulatorPos.x+10, regulatorPos.y+12);
+        m_sprites[1].setPosition(regulatorPos.x+10, regulatorPos.y);
     }
 
     m_sprites[2].setTexture(*editorMoveable);

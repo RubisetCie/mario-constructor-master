@@ -18,7 +18,7 @@ using namespace std;
 
 Rotodisc_Entity::Rotodisc_Entity(Texture* texture, Texture* discText, Texture* editorMoveable, Texture* speedRegulatorTexture, Texture* sliderTexture, Texture* counterTex, float x, float y, float originx, float originy, unsigned int type, bool showCircle) : Entity(texture, x, y, originx, originy, type)
 {
-    m_sprite.setTextureRect(IntRect(800, 96, 32, 32));
+    m_sprite.setTextureRect(IntRect(896, 96, 32, 32));
 
     m_sprites[0].setTexture(*editorMoveable);
     m_sprites[0].setColor(Color(20, 20, 20, 255));
@@ -60,7 +60,7 @@ Rotodisc_Entity::Rotodisc_Entity(Texture* texture, Texture* discText, Texture* e
 
         m_sprites[3].setTexture(*sliderTexture);
         m_sprites[3].setColor(Color::Red);
-        m_sprites[3].setPosition(regulatorPos.x+10, regulatorPos.y+12);
+        m_sprites[3].setPosition(regulatorPos.x+10, regulatorPos.y);
     }
 
     if (counterTex != NULL)

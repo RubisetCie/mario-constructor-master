@@ -29,7 +29,7 @@ Dragger::Dragger(Texture* mover, Texture* fonttex, unsigned int number)
     m_grabnode = false;
 }
 
-void Dragger::setPosition(Vector2f position)
+void Dragger::setPosition(const Vector2f& position)
 {
     m_mover.setPosition(position);
     m_textid.setPosition(position + Vector2f(8, 8));

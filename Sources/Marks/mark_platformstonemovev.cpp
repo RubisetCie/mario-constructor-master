@@ -18,7 +18,7 @@ Mark_PlatformStoneMoveV::Mark_PlatformStoneMoveV(const Texture& texture, float t
     m_aabb.height = 32;
 }
 
-void Mark_PlatformStoneMoveV::setPosition(Vector2f pos)
+void Mark_PlatformStoneMoveV::setPosition(const Vector2f& pos)
 {
     m_startpoint = pos.y;
 

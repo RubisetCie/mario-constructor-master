@@ -20,7 +20,7 @@ Bonus_FlowerBlock::Bonus_FlowerBlock(Texture* blockTexture) : Bonus_Block(blockT
     m_frame = 12;
 }
 
-void Bonus_FlowerBlock::setPosition(Vector2f pos)
+void Bonus_FlowerBlock::setPosition(const Vector2f& pos)
 {
     Bonus_Block::setPosition(pos);
 }

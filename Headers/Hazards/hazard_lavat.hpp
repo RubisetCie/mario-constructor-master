@@ -14,7 +14,7 @@ class Hazard_LavaT : public Hazard_Lava
 
         Hazard_LavaT(const sf::Texture& texture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
 

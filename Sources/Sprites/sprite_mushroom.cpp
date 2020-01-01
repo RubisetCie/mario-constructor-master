@@ -25,7 +25,7 @@ Sprite_Mushroom::Sprite_Mushroom(const Texture& texture) : Walkable()
     m_aabb.height = 32;
 }
 
-void Sprite_Mushroom::setPosition(Vector2f pos)
+void Sprite_Mushroom::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

@@ -15,7 +15,7 @@ class Sprite_ThrowedCoin : public Pawn
 
         Sprite_ThrowedCoin(const sf::Texture& texture, sf::Vector2f speed, Sprite_Lakitu* parent);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

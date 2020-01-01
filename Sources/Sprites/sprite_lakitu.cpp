@@ -43,7 +43,7 @@ Sprite_Lakitu::Sprite_Lakitu(const Texture& texture, Collider* collision) : Pawn
     m_killed = false;
 }
 
-void Sprite_Lakitu::setPosition(Vector2f pos)
+void Sprite_Lakitu::setPosition(const Vector2f& pos)
 {
     m_array.append(Vertex(pos, Color::White, Vector2f(0, 0)));
     m_array.append(Vertex(Vector2f(pos.x + 31, pos.y), Color::White, Vector2f(31, 0)));

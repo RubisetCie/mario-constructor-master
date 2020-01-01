@@ -55,7 +55,7 @@ void Fallable::update()
     {
         if (swimming)
         {
-            if (m_movedistance < (FALLABLE_MAXVSPEED - sprite_gravity) / 2)
+            if (m_movedistance < (FALLABLE_MAXVSPEED - sprite_gravity) / 2.0f)
                 m_movedistance += sprite_gravity / 2;
         }
         else

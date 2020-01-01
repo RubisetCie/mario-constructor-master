@@ -14,7 +14,7 @@ class Sprite_Flower : public Fallable
 
         Sprite_Flower(const sf::Texture& texture);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

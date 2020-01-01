@@ -15,7 +15,7 @@ class Sprite_PlantL : public Placeable
 
         Sprite_PlantL(sf::Texture* texture, Collider* collision);
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
 

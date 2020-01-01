@@ -115,7 +115,7 @@ int WinMain(HINSTANCE thisInstance, HINSTANCE, LPSTR args, int showMode)
             return 1;
         }
 
-        if (CMLid[3] > EDITOR_VERSION)
+        if (CMLid[3] != EDITOR_VERSION)
         {
             MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
 

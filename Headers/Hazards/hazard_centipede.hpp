@@ -19,7 +19,7 @@ class Hazard_Centipede : public Placeable
         Hazard_Centipede(sf::Vector2f* nodes, short size, std::list<Collider*>::iterator collision);
         ~Hazard_Centipede();
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

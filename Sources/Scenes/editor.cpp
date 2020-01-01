@@ -65,10 +65,14 @@ extern "C"
 #include "../../Headers/Bonuses/bonus_coinblockinv.hpp"
 #include "../../Headers/Bonuses/bonus_brick.hpp"
 #include "../../Headers/Bonuses/bonus_coinbrick.hpp"
+#include "../../Headers/Bonuses/bonus_switch.hpp"
+#include "../../Headers/Bonuses/bonus_toggle.hpp"
 
 #include "../../Headers/Sceneries/scenery_static.hpp"
 #include "../../Headers/Sceneries/scenery_bush.hpp"
 #include "../../Headers/Sceneries/scenery_cloud.hpp"
+#include "../../Headers/Sceneries/scenery_scroll.hpp"
+#include "../../Headers/Sceneries/scenery_waterfall.hpp"
 
 #include "../../Headers/Marks/mark_waterplane.hpp"
 #include "../../Headers/Marks/mark_lavaplane.hpp"
@@ -133,6 +137,7 @@ extern "C"
 #include "../../Headers/Sprites/sprite_plantgreyl.hpp"
 #include "../../Headers/Sprites/sprite_plantgreyr.hpp"
 #include "../../Headers/Sprites/sprite_plantgreyb.hpp"
+#include "../../Headers/Sprites/sprite_staticplant.hpp"
 #include "../../Headers/Sprites/sprite_cheepcheepred.hpp"
 #include "../../Headers/Sprites/sprite_cheepcheepgreen.hpp"
 #include "../../Headers/Sprites/sprite_cheepcheepblue.hpp"
@@ -268,7 +273,7 @@ Sprite* infosText[12];
 Sprite* infoRegulator;
 Sprite* infoSRegulator;
 Sprite* gradientElements[3];
-Sprite* effectElements[3];
+Sprite* effectElements[6];
 Sprite* tilesetSpr;
 Sprite* itemHandled;
 
@@ -280,9 +285,9 @@ Vector2i camPosMem;
 RectangleShape* grid;
 RectangleShape* tilesetRect;
 RectangleShape* tileSelection;
-RectangleShape* background[14];
+RectangleShape* background[16];
 RectangleShape* gradientColor[2];
-RectangleShape* effectClouds;
+RectangleShape* effectClouds[2];
 RectangleShape* liquidRect[2];
 RectangleShape* spotRect;
 RectangleShape* spotCursor;
@@ -318,7 +323,7 @@ Button* layerButton[3];
 Button* typeButton[9];
 Button* prefsButton[6];
 Button* musicButton[23];
-Button* backgroundButton[14];
+Button* backgroundButton[16];
 Button* gradientButton[3];
 Button* effectButton[4];
 Button* fileButton[4];
@@ -329,15 +334,15 @@ Button* autoscrollButton[4];
 Button* autoscrollButton2[2];
 InfoButton* InfoButtons[6];
 
-CheckButton* effectCheckButton[3];
+CheckButton* effectCheckButton[6];
 CheckButton* bowserCheckButton[7];
 
 ElementButton* elementsEsssential[3];
-ElementButton* elementsPlatforms[23];
+ElementButton* elementsPlatforms[35];
 ElementButton* elementsBonus[30];
 ElementButton* elementsPipes[36];
-ElementButton* elementsSceneries[22];
-ElementButton* elementsEnemies[53];
+ElementButton* elementsSceneries[26];
+ElementButton* elementsEnemies[57];
 ElementButton* elementsHazards[46];
 
 Vertex panelInfo[36];
@@ -554,6 +559,8 @@ static void Background_None();
 static void Background_GreenHills();
 static void Background_RedHills();
 static void Background_DesertHills();
+static void Background_BlueHills();
+static void Background_SnowHills();
 static void Background_Night();
 static void Background_Water();
 static void Background_Rocks();
@@ -576,6 +583,9 @@ static void Effect_None();
 static void Effect_But1();
 static void Effect_But2();
 static void Effect_But3();
+static void Effect_But4();
+static void Effect_But5();
+static void Effect_But6();
 
 static void Info_LevelName();
 static void Info_LevelAuthor();
@@ -635,6 +645,7 @@ static void sliderBowserTrail(float sliderPos);
 static void Level_Save(const string& filename);
 static void Level_Load(const string& filename);
 static void Level_LoadEntry();
+static void Level_LoadObjects(ifstream& levelFile);
 static void Level_Test();
 static void Level_New();
 
@@ -1047,11 +1058,18 @@ bool Scene::Editor()
                         case 11 : mainTexture.draw(*background[10]);    break;
                         case 12 : mainTexture.draw(*background[11]);    break;
                         case 13 : mainTexture.draw(&backGradient[0], 4, Quads); mainTexture.draw(*background[13]);    break;
+                        case 14 : mainTexture.draw(&backGradient[0], 4, Quads); mainTexture.draw(*background[14]);     break;
+                        case 15 : mainTexture.draw(&backGradient[0], 4, Quads); mainTexture.draw(*background[15]);     break;
                         default : mainTexture.draw(&backGradient[0], 4, Quads); break;
                     }
 
-                    if (levelbEffectb != 0)
-                        mainTexture.draw(*effectClouds);
+                    if (levelbEffectb > 0)
+                    {
+                        if (levelbEffectb > 3)
+                            mainTexture.draw(*effectClouds[1]);
+
+                        mainTexture.draw(*effectClouds[0]);
+                    }
 
                     if (!listTileb1.empty())
                     {
@@ -1150,11 +1168,18 @@ bool Scene::Editor()
                         case 11 : mainTexture.draw(*background[10]);    break;
                         case 12 : mainTexture.draw(*background[11]);    break;
                         case 13 : mainTexture.draw(&backGradient[0], 4, Quads); mainTexture.draw(*background[12]);    break;
+                        case 14 : mainTexture.draw(&backGradient[0], 4, Quads); mainTexture.draw(*background[14]);     break;
+                        case 15 : mainTexture.draw(&backGradient[0], 4, Quads); mainTexture.draw(*background[15]);     break;
                         default : mainTexture.draw(&backGradient[0], 4, Quads); break;
                     }
 
-                    if (levelEffectb != 0)
-                        mainTexture.draw(*effectClouds);
+                    if (levelEffectb > 0)
+                    {
+                        if (levelEffectb > 3)
+                            mainTexture.draw(*effectClouds[1]);
+
+                        mainTexture.draw(*effectClouds[0]);
+                    }
 
                     if (!listTile1.empty())
                     {
@@ -1363,6 +1388,22 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPlatforms[22]);
                             break;
                         case 6 :
+                            mainTexture.draw(*elementsPlatforms[23]);
+                            mainTexture.draw(*elementsPlatforms[24]);
+                            mainTexture.draw(*elementsPlatforms[25]);
+                            mainTexture.draw(*elementsPlatforms[26]);
+                            mainTexture.draw(*elementsPlatforms[27]);
+                            mainTexture.draw(*elementsPlatforms[28]);
+                            break;
+                        case 7 :
+                            mainTexture.draw(*elementsPlatforms[29]);
+                            mainTexture.draw(*elementsPlatforms[30]);
+                            mainTexture.draw(*elementsPlatforms[31]);
+                            mainTexture.draw(*elementsPlatforms[32]);
+                            mainTexture.draw(*elementsPlatforms[33]);
+                            mainTexture.draw(*elementsPlatforms[34]);
+                            break;
+                        case 8 :
                             mainTexture.draw(*elementsBonus[0]);
                             mainTexture.draw(*elementsBonus[1]);
                             mainTexture.draw(*elementsBonus[2]);
@@ -1370,7 +1411,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsBonus[4]);
                             mainTexture.draw(*elementsBonus[5]);
                             break;
-                        case 7 :
+                        case 9 :
                             mainTexture.draw(*elementsBonus[6]);
                             mainTexture.draw(*elementsBonus[7]);
                             mainTexture.draw(*elementsBonus[8]);
@@ -1378,7 +1419,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsBonus[10]);
                             mainTexture.draw(*elementsBonus[11]);
                             break;
-                        case 8 :
+                        case 10 :
                             mainTexture.draw(*elementsBonus[12]);
                             mainTexture.draw(*elementsBonus[13]);
                             mainTexture.draw(*elementsBonus[14]);
@@ -1386,7 +1427,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsBonus[16]);
                             mainTexture.draw(*elementsBonus[17]);
                             break;
-                        case 9 :
+                        case 11 :
                             mainTexture.draw(*elementsBonus[18]);
                             mainTexture.draw(*elementsBonus[19]);
                             mainTexture.draw(*elementsBonus[20]);
@@ -1394,7 +1435,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsBonus[22]);
                             mainTexture.draw(*elementsBonus[23]);
                             break;
-                        case 10 :
+                        case 12 :
                             mainTexture.draw(*elementsBonus[24]);
                             mainTexture.draw(*elementsBonus[25]);
                             mainTexture.draw(*elementsBonus[26]);
@@ -1402,7 +1443,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsBonus[28]);
                             mainTexture.draw(*elementsBonus[29]);
                             break;
-                        case 11 :
+                        case 13 :
                             mainTexture.draw(*elementsPipes[0]);
                             mainTexture.draw(*elementsPipes[1]);
                             mainTexture.draw(*elementsPipes[2]);
@@ -1410,7 +1451,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPipes[4]);
                             mainTexture.draw(*elementsPipes[5]);
                             break;
-                        case 12 :
+                        case 14 :
                             mainTexture.draw(*elementsPipes[6]);
                             mainTexture.draw(*elementsPipes[7]);
                             mainTexture.draw(*elementsPipes[8]);
@@ -1418,7 +1459,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPipes[10]);
                             mainTexture.draw(*elementsPipes[11]);
                             break;
-                        case 13 :
+                        case 15 :
                             mainTexture.draw(*elementsPipes[12]);
                             mainTexture.draw(*elementsPipes[13]);
                             mainTexture.draw(*elementsPipes[14]);
@@ -1426,7 +1467,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPipes[16]);
                             mainTexture.draw(*elementsPipes[17]);
                             break;
-                        case 14 :
+                        case 16 :
                             mainTexture.draw(*elementsPipes[18]);
                             mainTexture.draw(*elementsPipes[19]);
                             mainTexture.draw(*elementsPipes[20]);
@@ -1434,7 +1475,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPipes[22]);
                             mainTexture.draw(*elementsPipes[23]);
                             break;
-                        case 15 :
+                        case 17 :
                             mainTexture.draw(*elementsPipes[24]);
                             mainTexture.draw(*elementsPipes[25]);
                             mainTexture.draw(*elementsPipes[26]);
@@ -1442,7 +1483,7 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPipes[28]);
                             mainTexture.draw(*elementsPipes[29]);
                             break;
-                        case 16 :
+                        case 18 :
                             mainTexture.draw(*elementsPipes[30]);
                             mainTexture.draw(*elementsPipes[31]);
                             mainTexture.draw(*elementsPipes[32]);
@@ -1450,62 +1491,68 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsPipes[34]);
                             mainTexture.draw(*elementsPipes[35]);
                             break;
-                        case 17 :
+                        case 19 :
                             mainTexture.draw(*elementsSceneries[0]);
                             mainTexture.draw(*elementsSceneries[1]);
                             mainTexture.draw(*elementsSceneries[2]);
                             break;
-                        case 18 :
+                        case 20 :
                             mainTexture.draw(*elementsSceneries[3]);
                             mainTexture.draw(*elementsSceneries[4]);
                             mainTexture.draw(*elementsSceneries[5]);
                             break;
-                        case 19 :
+                        case 21 :
                             mainTexture.draw(*elementsSceneries[6]);
                             mainTexture.draw(*elementsSceneries[7]);
                             mainTexture.draw(*elementsSceneries[8]);
                             break;
-                        case 20 :
+                        case 22 :
                             mainTexture.draw(*elementsSceneries[9]);
                             mainTexture.draw(*elementsSceneries[10]);
                             mainTexture.draw(*elementsSceneries[11]);
                             break;
-                        case 21 :
+                        case 23 :
                             mainTexture.draw(*elementsSceneries[12]);
                             mainTexture.draw(*elementsSceneries[13]);
                             mainTexture.draw(*elementsSceneries[14]);
                             break;
-                        case 22 :
+                        case 24 :
                             mainTexture.draw(*elementsSceneries[15]);
                             mainTexture.draw(*elementsSceneries[16]);
                             mainTexture.draw(*elementsSceneries[17]);
                             mainTexture.draw(*elementsSceneries[18]);
                             break;
-                        case 23 :
+                        case 25 :
                             mainTexture.draw(*elementsSceneries[19]);
+                            mainTexture.draw(*elementsSceneries[22]);
+                            mainTexture.draw(*elementsSceneries[23]);
+                            break;
+                        case 26 :
                             mainTexture.draw(*elementsSceneries[20]);
                             mainTexture.draw(*elementsSceneries[21]);
+                            mainTexture.draw(*elementsSceneries[24]);
+                            mainTexture.draw(*elementsSceneries[25]);
                             break;
-                        case 24 :
+                        case 27 :
                             mainTexture.draw(*elementsEnemies[0]);
                             mainTexture.draw(*elementsEnemies[1]);
                             mainTexture.draw(*elementsEnemies[2]);
                             mainTexture.draw(*elementsEnemies[3]);
                             mainTexture.draw(*elementsEnemies[4]);
                             break;
-                        case 25 :
+                        case 28 :
                             mainTexture.draw(*elementsEnemies[5]);
                             mainTexture.draw(*elementsEnemies[6]);
                             mainTexture.draw(*elementsEnemies[7]);
                             mainTexture.draw(*elementsEnemies[8]);
                             break;
-                        case 26 :
+                        case 29 :
                             mainTexture.draw(*elementsEnemies[9]);
                             mainTexture.draw(*elementsEnemies[10]);
                             mainTexture.draw(*elementsEnemies[11]);
                             mainTexture.draw(*elementsEnemies[12]);
                             break;
-                        case 27 :
+                        case 30 :
                             mainTexture.draw(*elementsEnemies[13]);
                             mainTexture.draw(*elementsEnemies[14]);
                             mainTexture.draw(*elementsEnemies[15]);
@@ -1513,122 +1560,128 @@ bool Scene::Editor()
                             mainTexture.draw(*elementsEnemies[17]);
                             mainTexture.draw(*elementsEnemies[18]);
                             break;
-                        case 28 :
+                        case 31 :
                             mainTexture.draw(*elementsEnemies[19]);
                             mainTexture.draw(*elementsEnemies[20]);
                             mainTexture.draw(*elementsEnemies[21]);
                             mainTexture.draw(*elementsEnemies[22]);
                             break;
-                        case 29 :
+                        case 32 :
+                            mainTexture.draw(*elementsEnemies[53]);
+                            mainTexture.draw(*elementsEnemies[54]);
+                            mainTexture.draw(*elementsEnemies[55]);
+                            mainTexture.draw(*elementsEnemies[56]);
+                            break;
+                        case 33 :
                             mainTexture.draw(*elementsEnemies[23]);
                             mainTexture.draw(*elementsEnemies[24]);
                             mainTexture.draw(*elementsEnemies[25]);
                             mainTexture.draw(*elementsEnemies[26]);
                             break;
-                        case 30 :
+                        case 34 :
                             mainTexture.draw(*elementsEnemies[27]);
                             mainTexture.draw(*elementsEnemies[28]);
                             mainTexture.draw(*elementsEnemies[29]);
                             mainTexture.draw(*elementsEnemies[30]);
                             break;
-                        case 31 :
+                        case 35 :
                             mainTexture.draw(*elementsEnemies[31]);
                             mainTexture.draw(*elementsEnemies[32]);
                             mainTexture.draw(*elementsEnemies[33]);
                             mainTexture.draw(*elementsEnemies[34]);
                             break;
-                        case 32 :
+                        case 36 :
                             mainTexture.draw(*elementsEnemies[35]);
                             mainTexture.draw(*elementsEnemies[36]);
                             mainTexture.draw(*elementsEnemies[37]);
                             mainTexture.draw(*elementsEnemies[38]);
                             break;
-                        case 33 :
+                        case 37 :
                             mainTexture.draw(*elementsEnemies[39]);
                             mainTexture.draw(*elementsEnemies[40]);
                             mainTexture.draw(*elementsEnemies[41]);
                             mainTexture.draw(*elementsEnemies[42]);
                             mainTexture.draw(*elementsEnemies[43]);
                             break;
-                        case 34 :
+                        case 38 :
                             mainTexture.draw(*elementsEnemies[44]);
                             mainTexture.draw(*elementsEnemies[45]);
                             mainTexture.draw(*elementsEnemies[46]);
                             break;
-                        case 35 :
+                        case 39 :
                             mainTexture.draw(*elementsEnemies[47]);
                             mainTexture.draw(*elementsEnemies[48]);
                             mainTexture.draw(*elementsEnemies[49]);
                             break;
-                        case 36 :
+                        case 40 :
                             mainTexture.draw(*elementsEnemies[50]);
                             mainTexture.draw(*elementsEnemies[51]);
                             mainTexture.draw(*elementsEnemies[52]);
                             break;
-                        case 37 :
+                        case 41 :
                             mainTexture.draw(*elementsHazards[0]);
                             mainTexture.draw(*elementsHazards[1]);
                             mainTexture.draw(*elementsHazards[2]);
                             mainTexture.draw(*elementsHazards[3]);
                             mainTexture.draw(*elementsHazards[4]);
                             break;
-                        case 38 :
+                        case 42 :
                             mainTexture.draw(*elementsHazards[5]);
                             mainTexture.draw(*elementsHazards[6]);
                             mainTexture.draw(*elementsHazards[7]);
                             mainTexture.draw(*elementsHazards[8]);
                             break;
-                        case 39 :
+                        case 43 :
                             mainTexture.draw(*elementsHazards[9]);
                             mainTexture.draw(*elementsHazards[10]);
                             mainTexture.draw(*elementsHazards[11]);
                             mainTexture.draw(*elementsHazards[12]);
                             break;
-                        case 40 :
+                        case 44 :
                             mainTexture.draw(*elementsHazards[13]);
                             mainTexture.draw(*elementsHazards[14]);
                             mainTexture.draw(*elementsHazards[15]);
                             mainTexture.draw(*elementsHazards[16]);
                             break;
-                        case 41 :
+                        case 45 :
                             mainTexture.draw(*elementsHazards[17]);
                             mainTexture.draw(*elementsHazards[18]);
                             mainTexture.draw(*elementsHazards[19]);
                             mainTexture.draw(*elementsHazards[20]);
                             break;
-                        case 42 :
+                        case 46 :
                             mainTexture.draw(*elementsHazards[21]);
                             mainTexture.draw(*elementsHazards[22]);
                             mainTexture.draw(*elementsHazards[23]);
                             mainTexture.draw(*elementsHazards[24]);
                             break;
-                        case 43 :
+                        case 47 :
                             mainTexture.draw(*elementsHazards[25]);
                             mainTexture.draw(*elementsHazards[26]);
                             mainTexture.draw(*elementsHazards[27]);
                             mainTexture.draw(*elementsHazards[28]);
                             mainTexture.draw(*elementsHazards[29]);
                             break;
-                        case 44 :
+                        case 48 :
                             mainTexture.draw(*elementsHazards[30]);
                             mainTexture.draw(*elementsHazards[31]);
                             mainTexture.draw(*elementsHazards[32]);
                             mainTexture.draw(*elementsHazards[33]);
                             mainTexture.draw(*elementsHazards[34]);
                             break;
-                        case 45 :
+                        case 49 :
                             mainTexture.draw(*elementsHazards[35]);
                             mainTexture.draw(*elementsHazards[36]);
                             mainTexture.draw(*elementsHazards[37]);
                             mainTexture.draw(*elementsHazards[38]);
                             break;
-                        case 46 :
+                        case 50 :
                             mainTexture.draw(*elementsHazards[39]);
                             mainTexture.draw(*elementsHazards[40]);
                             mainTexture.draw(*elementsHazards[41]);
                             mainTexture.draw(*elementsHazards[42]);
                             break;
-                        case 47 :
+                        case 51 :
                             mainTexture.draw(*elementsHazards[43]);
                             mainTexture.draw(*elementsHazards[44]);
                             mainTexture.draw(*elementsHazards[45]);
@@ -1713,6 +1766,22 @@ bool Scene::Editor()
                                 elementsPlatforms[22]->update();
                                 break;
                             case 6 :
+                                elementsPlatforms[23]->update();
+                                elementsPlatforms[24]->update();
+                                elementsPlatforms[25]->update();
+                                elementsPlatforms[26]->update();
+                                elementsPlatforms[27]->update();
+                                elementsPlatforms[28]->update();
+                                break;
+                            case 7 :
+                                elementsPlatforms[29]->update();
+                                elementsPlatforms[30]->update();
+                                elementsPlatforms[31]->update();
+                                elementsPlatforms[32]->update();
+                                elementsPlatforms[33]->update();
+                                elementsPlatforms[34]->update();
+                                break;
+                            case 8 :
                                 elementsBonus[0]->update();
                                 elementsBonus[1]->update();
                                 elementsBonus[2]->update();
@@ -1720,7 +1789,7 @@ bool Scene::Editor()
                                 elementsBonus[4]->update();
                                 elementsBonus[5]->update();
                                 break;
-                            case 7 :
+                            case 9 :
                                 elementsBonus[6]->update();
                                 elementsBonus[7]->update();
                                 elementsBonus[8]->update();
@@ -1728,7 +1797,7 @@ bool Scene::Editor()
                                 elementsBonus[10]->update();
                                 elementsBonus[11]->update();
                                 break;
-                            case 8 :
+                            case 10 :
                                 elementsBonus[12]->update();
                                 elementsBonus[13]->update();
                                 elementsBonus[14]->update();
@@ -1736,7 +1805,7 @@ bool Scene::Editor()
                                 elementsBonus[16]->update();
                                 elementsBonus[17]->update();
                                 break;
-                            case 9 :
+                            case 11 :
                                 elementsBonus[18]->update();
                                 elementsBonus[19]->update();
                                 elementsBonus[20]->update();
@@ -1744,7 +1813,7 @@ bool Scene::Editor()
                                 elementsBonus[22]->update();
                                 elementsBonus[23]->update();
                                 break;
-                            case 10 :
+                            case 12 :
                                 elementsBonus[24]->update();
                                 elementsBonus[25]->update();
                                 elementsBonus[26]->update();
@@ -1752,7 +1821,7 @@ bool Scene::Editor()
                                 elementsBonus[28]->update();
                                 elementsBonus[29]->update();
                                 break;
-                            case 11 :
+                            case 13 :
                                 elementsPipes[0]->update();
                                 elementsPipes[1]->update();
                                 elementsPipes[2]->update();
@@ -1760,7 +1829,7 @@ bool Scene::Editor()
                                 elementsPipes[4]->update();
                                 elementsPipes[5]->update();
                                 break;
-                            case 12 :
+                            case 14 :
                                 elementsPipes[6]->update();
                                 elementsPipes[7]->update();
                                 elementsPipes[8]->update();
@@ -1768,7 +1837,7 @@ bool Scene::Editor()
                                 elementsPipes[10]->update();
                                 elementsPipes[11]->update();
                                 break;
-                            case 13 :
+                            case 15 :
                                 elementsPipes[12]->update();
                                 elementsPipes[13]->update();
                                 elementsPipes[14]->update();
@@ -1776,7 +1845,7 @@ bool Scene::Editor()
                                 elementsPipes[16]->update();
                                 elementsPipes[17]->update();
                                 break;
-                            case 14 :
+                            case 16 :
                                 elementsPipes[18]->update();
                                 elementsPipes[19]->update();
                                 elementsPipes[20]->update();
@@ -1784,7 +1853,7 @@ bool Scene::Editor()
                                 elementsPipes[22]->update();
                                 elementsPipes[23]->update();
                                 break;
-                            case 15 :
+                            case 17 :
                                 elementsPipes[24]->update();
                                 elementsPipes[25]->update();
                                 elementsPipes[26]->update();
@@ -1792,7 +1861,7 @@ bool Scene::Editor()
                                 elementsPipes[28]->update();
                                 elementsPipes[29]->update();
                                 break;
-                            case 16 :
+                            case 18 :
                                 elementsPipes[30]->update();
                                 elementsPipes[31]->update();
                                 elementsPipes[32]->update();
@@ -1800,62 +1869,68 @@ bool Scene::Editor()
                                 elementsPipes[34]->update();
                                 elementsPipes[35]->update();
                                 break;
-                            case 17 :
+                            case 19 :
                                 elementsSceneries[0]->update();
                                 elementsSceneries[1]->update();
                                 elementsSceneries[2]->update();
                                 break;
-                            case 18 :
+                            case 20 :
                                 elementsSceneries[3]->update();
                                 elementsSceneries[4]->update();
                                 elementsSceneries[5]->update();
                                 break;
-                            case 19 :
+                            case 21 :
                                 elementsSceneries[6]->update();
                                 elementsSceneries[7]->update();
                                 elementsSceneries[8]->update();
                                 break;
-                            case 20 :
+                            case 22 :
                                 elementsSceneries[9]->update();
                                 elementsSceneries[10]->update();
                                 elementsSceneries[11]->update();
                                 break;
-                            case 21 :
+                            case 23 :
                                 elementsSceneries[12]->update();
                                 elementsSceneries[13]->update();
                                 elementsSceneries[14]->update();
                                 break;
-                            case 22 :
+                            case 24 :
                                 elementsSceneries[15]->update();
                                 elementsSceneries[16]->update();
                                 elementsSceneries[17]->update();
                                 elementsSceneries[18]->update();
                                 break;
-                            case 23 :
+                            case 25 :
                                 elementsSceneries[19]->update();
+                                elementsSceneries[22]->update();
+                                elementsSceneries[23]->update();
+                                break;
+                            case 26 :
                                 elementsSceneries[20]->update();
                                 elementsSceneries[21]->update();
+                                elementsSceneries[24]->update();
+                                elementsSceneries[25]->update();
                                 break;
-                            case 24 :
+                            case 27 :
                                 elementsEnemies[0]->update();
                                 elementsEnemies[1]->update();
                                 elementsEnemies[2]->update();
                                 elementsEnemies[3]->update();
                                 elementsEnemies[4]->update();
                                 break;
-                            case 25 :
+                            case 28 :
                                 elementsEnemies[5]->update();
                                 elementsEnemies[6]->update();
                                 elementsEnemies[7]->update();
                                 elementsEnemies[8]->update();
                                 break;
-                            case 26 :
+                            case 29 :
                                 elementsEnemies[9]->update();
                                 elementsEnemies[10]->update();
                                 elementsEnemies[11]->update();
                                 elementsEnemies[12]->update();
                                 break;
-                            case 27 :
+                            case 30 :
                                 elementsEnemies[13]->update();
                                 elementsEnemies[14]->update();
                                 elementsEnemies[15]->update();
@@ -1863,122 +1938,128 @@ bool Scene::Editor()
                                 elementsEnemies[17]->update();
                                 elementsEnemies[18]->update();
                                 break;
-                            case 28 :
+                            case 31 :
                                 elementsEnemies[19]->update();
                                 elementsEnemies[20]->update();
                                 elementsEnemies[21]->update();
                                 elementsEnemies[22]->update();
                                 break;
-                            case 29 :
+                            case 32 :
+                                elementsEnemies[53]->update();
+                                elementsEnemies[54]->update();
+                                elementsEnemies[55]->update();
+                                elementsEnemies[56]->update();
+                                break;
+                            case 33 :
                                 elementsEnemies[23]->update();
                                 elementsEnemies[24]->update();
                                 elementsEnemies[25]->update();
                                 elementsEnemies[26]->update();
                                 break;
-                            case 30 :
+                            case 34 :
                                 elementsEnemies[27]->update();
                                 elementsEnemies[28]->update();
                                 elementsEnemies[29]->update();
                                 elementsEnemies[30]->update();
                                 break;
-                            case 31 :
+                            case 35 :
                                 elementsEnemies[31]->update();
                                 elementsEnemies[32]->update();
                                 elementsEnemies[33]->update();
                                 elementsEnemies[34]->update();
                                 break;
-                            case 32 :
+                            case 36 :
                                 elementsEnemies[35]->update();
                                 elementsEnemies[36]->update();
                                 elementsEnemies[37]->update();
                                 elementsEnemies[38]->update();
                                 break;
-                            case 33 :
+                            case 37 :
                                 elementsEnemies[39]->update();
                                 elementsEnemies[40]->update();
                                 elementsEnemies[41]->update();
                                 elementsEnemies[42]->update();
                                 elementsEnemies[43]->update();
                                 break;
-                            case 34 :
+                            case 38 :
                                 elementsEnemies[44]->update();
                                 elementsEnemies[45]->update();
                                 elementsEnemies[46]->update();
                                 break;
-                            case 35 :
+                            case 39 :
                                 elementsEnemies[47]->update();
                                 elementsEnemies[48]->update();
                                 elementsEnemies[49]->update();
                                 break;
-                            case 36 :
+                            case 40 :
                                 elementsEnemies[50]->update();
                                 elementsEnemies[51]->update();
                                 elementsEnemies[52]->update();
                                 break;
-                            case 37 :
+                            case 41 :
                                 elementsHazards[0]->update();
                                 elementsHazards[1]->update();
                                 elementsHazards[2]->update();
                                 elementsHazards[3]->update();
                                 elementsHazards[4]->update();
                                 break;
-                            case 38 :
+                            case 42 :
                                 elementsHazards[5]->update();
                                 elementsHazards[6]->update();
                                 elementsHazards[7]->update();
                                 elementsHazards[8]->update();
                                 break;
-                            case 39 :
+                            case 43 :
                                 elementsHazards[9]->update();
                                 elementsHazards[10]->update();
                                 elementsHazards[11]->update();
                                 elementsHazards[12]->update();
                                 break;
-                            case 40 :
+                            case 44 :
                                 elementsHazards[13]->update();
                                 elementsHazards[14]->update();
                                 elementsHazards[15]->update();
                                 elementsHazards[16]->update();
                                 break;
-                            case 41 :
+                            case 45 :
                                 elementsHazards[17]->update();
                                 elementsHazards[18]->update();
                                 elementsHazards[19]->update();
                                 elementsHazards[20]->update();
                                 break;
-                            case 42 :
+                            case 46 :
                                 elementsHazards[21]->update();
                                 elementsHazards[22]->update();
                                 elementsHazards[23]->update();
                                 elementsHazards[24]->update();
                                 break;
-                            case 43 :
+                            case 47 :
                                 elementsHazards[25]->update();
                                 elementsHazards[26]->update();
                                 elementsHazards[27]->update();
                                 elementsHazards[28]->update();
                                 elementsHazards[29]->update();
                                 break;
-                            case 44 :
+                            case 48 :
                                 elementsHazards[30]->update();
                                 elementsHazards[31]->update();
                                 elementsHazards[32]->update();
                                 elementsHazards[33]->update();
                                 elementsHazards[34]->update();
                                 break;
-                            case 45 :
+                            case 49 :
                                 elementsHazards[35]->update();
                                 elementsHazards[36]->update();
                                 elementsHazards[37]->update();
                                 elementsHazards[38]->update();
                                 break;
-                            case 46 :
+                            case 50 :
                                 elementsHazards[39]->update();
                                 elementsHazards[40]->update();
                                 elementsHazards[41]->update();
                                 elementsHazards[42]->update();
                                 break;
-                            case 47 :
+                            case 51 :
                                 elementsHazards[43]->update();
                                 elementsHazards[44]->update();
                                 elementsHazards[45]->update();
@@ -2099,59 +2180,75 @@ bool Scene::Editor()
             case BACKGROUND :
                 mainTexture.clear(Color(173, 116, 84));
 
-                gradientPreview[0].position = Vector2f(camPos.x-291, camPos.y-152);
-                gradientPreview[1].position = Vector2f(camPos.x-110, camPos.y-152);
-                gradientPreview[2].position = Vector2f(camPos.x-110, camPos.y-88);
-                gradientPreview[3].position = Vector2f(camPos.x-291, camPos.y-88);
+                mainTexture.draw(panelInfo, 36, Quads, panelTex);
+
+                gradientPreview[0].position = Vector2f(camPos.x-254, camPos.y-168);
+                gradientPreview[1].position = Vector2f(camPos.x-166, camPos.y-168);
+                gradientPreview[2].position = Vector2f(camPos.x-166, camPos.y-104);
+                gradientPreview[3].position = Vector2f(camPos.x-254, camPos.y-104);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x-91, camPos.y-152);
-                gradientPreview[1].position = Vector2f(camPos.x+90, camPos.y-152);
-                gradientPreview[2].position = Vector2f(camPos.x+90, camPos.y-88);
-                gradientPreview[3].position = Vector2f(camPos.x-91, camPos.y-88);
+                gradientPreview[0].position = Vector2f(camPos.x+26, camPos.y-168);
+                gradientPreview[1].position = Vector2f(camPos.x+114, camPos.y-168);
+                gradientPreview[2].position = Vector2f(camPos.x+114, camPos.y-104);
+                gradientPreview[3].position = Vector2f(camPos.x+26, camPos.y-104);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x+107, camPos.y-152);
-                gradientPreview[1].position = Vector2f(camPos.x+288, camPos.y-152);
-                gradientPreview[2].position = Vector2f(camPos.x+288, camPos.y-88);
-                gradientPreview[3].position = Vector2f(camPos.x+107, camPos.y-88);
+                gradientPreview[0].position = Vector2f(camPos.x-254, camPos.y-88);
+                gradientPreview[1].position = Vector2f(camPos.x-166, camPos.y-88);
+                gradientPreview[2].position = Vector2f(camPos.x-166, camPos.y-24);
+                gradientPreview[3].position = Vector2f(camPos.x-254, camPos.y-24);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x-291, camPos.y-76);
-                gradientPreview[1].position = Vector2f(camPos.x-110, camPos.y-76);
-                gradientPreview[2].position = Vector2f(camPos.x-110, camPos.y-12);
-                gradientPreview[3].position = Vector2f(camPos.x-291, camPos.y-12);
+                gradientPreview[0].position = Vector2f(camPos.x+26, camPos.y-88);
+                gradientPreview[1].position = Vector2f(camPos.x+114, camPos.y-88);
+                gradientPreview[2].position = Vector2f(camPos.x+114, camPos.y-24);
+                gradientPreview[3].position = Vector2f(camPos.x+26, camPos.y-24);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x-91, camPos.y-76);
-                gradientPreview[1].position = Vector2f(camPos.x+90, camPos.y-76);
-                gradientPreview[2].position = Vector2f(camPos.x+90, camPos.y-12);
-                gradientPreview[3].position = Vector2f(camPos.x-91, camPos.y-12);
+                gradientPreview[0].position = Vector2f(camPos.x+166, camPos.y-88);
+                gradientPreview[1].position = Vector2f(camPos.x+254, camPos.y-88);
+                gradientPreview[2].position = Vector2f(camPos.x+254, camPos.y-24);
+                gradientPreview[3].position = Vector2f(camPos.x+166, camPos.y-24);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x+107, camPos.y-76);
-                gradientPreview[1].position = Vector2f(camPos.x+288, camPos.y-76);
-                gradientPreview[2].position = Vector2f(camPos.x+288, camPos.y-12);
-                gradientPreview[3].position = Vector2f(camPos.x+107, camPos.y-12);
+                gradientPreview[0].position = Vector2f(camPos.x-254, camPos.y-8);
+                gradientPreview[1].position = Vector2f(camPos.x-166, camPos.y-8);
+                gradientPreview[2].position = Vector2f(camPos.x-166, camPos.y+56);
+                gradientPreview[3].position = Vector2f(camPos.x-254, camPos.y+56);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x-291, camPos.y);
-                gradientPreview[1].position = Vector2f(camPos.x-110, camPos.y);
-                gradientPreview[2].position = Vector2f(camPos.x-110, camPos.y+64);
-                gradientPreview[3].position = Vector2f(camPos.x-291, camPos.y+64);
+                gradientPreview[0].position = Vector2f(camPos.x+26, camPos.y-8);
+                gradientPreview[1].position = Vector2f(camPos.x+114, camPos.y-8);
+                gradientPreview[2].position = Vector2f(camPos.x+114, camPos.y+56);
+                gradientPreview[3].position = Vector2f(camPos.x+26, camPos.y+56);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
-                gradientPreview[0].position = Vector2f(camPos.x-91, camPos.y);
-                gradientPreview[1].position = Vector2f(camPos.x+90, camPos.y);
-                gradientPreview[2].position = Vector2f(camPos.x+90, camPos.y+64);
-                gradientPreview[3].position = Vector2f(camPos.x-91, camPos.y+64);
+                gradientPreview[0].position = Vector2f(camPos.x+166, camPos.y-8);
+                gradientPreview[1].position = Vector2f(camPos.x+254, camPos.y-8);
+                gradientPreview[2].position = Vector2f(camPos.x+254, camPos.y+56);
+                gradientPreview[3].position = Vector2f(camPos.x+166, camPos.y+56);
+
+                mainTexture.draw(gradientPreview, 4, Quads);
+
+                gradientPreview[0].position = Vector2f(camPos.x-114, camPos.y+72);
+                gradientPreview[1].position = Vector2f(camPos.x-26, camPos.y+72);
+                gradientPreview[2].position = Vector2f(camPos.x-26, camPos.y+136);
+                gradientPreview[3].position = Vector2f(camPos.x-114, camPos.y+136);
+
+                mainTexture.draw(gradientPreview, 4, Quads);
+
+                gradientPreview[0].position = Vector2f(camPos.x+26, camPos.y+72);
+                gradientPreview[1].position = Vector2f(camPos.x+114, camPos.y+72);
+                gradientPreview[2].position = Vector2f(camPos.x+114, camPos.y+136);
+                gradientPreview[3].position = Vector2f(camPos.x+26, camPos.y+136);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
@@ -2183,6 +2280,8 @@ bool Scene::Editor()
                 mainTexture.draw(*backgroundButton[11]);
                 mainTexture.draw(*backgroundButton[12]);
                 mainTexture.draw(*backgroundButton[13]);
+                mainTexture.draw(*backgroundButton[14]);
+                mainTexture.draw(*backgroundButton[15]);
 
                 mainTexture.draw(*returnButton);
 
@@ -2207,6 +2306,8 @@ bool Scene::Editor()
                     backgroundButton[11]->update();
                     backgroundButton[12]->update();
                     backgroundButton[13]->update();
+                    backgroundButton[14]->update();
+                    backgroundButton[15]->update();
 
                     returnButton->update();
                 }
@@ -2214,6 +2315,8 @@ bool Scene::Editor()
                 break;
             case GRADIENT :
                 mainTexture.clear(Color(173, 116, 84));
+
+                mainTexture.draw(panelInfo, 36, Quads, panelTex);
 
                 if (!blockEditor)
                 {
@@ -2254,36 +2357,68 @@ bool Scene::Editor()
             case EFFECTS :
                 mainTexture.clear(Color(173, 116, 84));
 
-                gradientPreview[0].position = Vector2f(camPos.x-234, camPos.y-113);
-                gradientPreview[1].position = Vector2f(camPos.x-125, camPos.y-113);
-                gradientPreview[2].position = Vector2f(camPos.x-125, camPos.y-47);
-                gradientPreview[3].position = Vector2f(camPos.x-234, camPos.y-47);
+                mainTexture.draw(panelInfo, 36, Quads, panelTex);
+
+                gradientPreview[0].position = Vector2f(camPos.x-234, camPos.y-148);
+                gradientPreview[1].position = Vector2f(camPos.x-125, camPos.y-148);
+                gradientPreview[2].position = Vector2f(camPos.x-125, camPos.y-84);
+                gradientPreview[3].position = Vector2f(camPos.x-234, camPos.y-84);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
                 mainTexture.draw(*effectElements[0]);
 
-                gradientPreview[0].position = Vector2f(camPos.x-54, camPos.y-113);
-                gradientPreview[1].position = Vector2f(camPos.x+55, camPos.y-113);
-                gradientPreview[2].position = Vector2f(camPos.x+55, camPos.y-47);
-                gradientPreview[3].position = Vector2f(camPos.x-54, camPos.y-47);
+                gradientPreview[0].position = Vector2f(camPos.x-54, camPos.y-148);
+                gradientPreview[1].position = Vector2f(camPos.x+55, camPos.y-148);
+                gradientPreview[2].position = Vector2f(camPos.x+55, camPos.y-84);
+                gradientPreview[3].position = Vector2f(camPos.x-54, camPos.y-84);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
                 mainTexture.draw(*effectElements[1]);
 
-                gradientPreview[0].position = Vector2f(camPos.x+126, camPos.y-113);
-                gradientPreview[1].position = Vector2f(camPos.x+235, camPos.y-113);
-                gradientPreview[2].position = Vector2f(camPos.x+235, camPos.y-47);
-                gradientPreview[3].position = Vector2f(camPos.x+126, camPos.y-47);
+                gradientPreview[0].position = Vector2f(camPos.x+126, camPos.y-148);
+                gradientPreview[1].position = Vector2f(camPos.x+235, camPos.y-148);
+                gradientPreview[2].position = Vector2f(camPos.x+235, camPos.y-84);
+                gradientPreview[3].position = Vector2f(camPos.x+126, camPos.y-84);
 
                 mainTexture.draw(gradientPreview, 4, Quads);
 
                 mainTexture.draw(*effectElements[2]);
 
+                gradientPreview[0].position = Vector2f(camPos.x-234, camPos.y-62);
+                gradientPreview[1].position = Vector2f(camPos.x-125, camPos.y-62);
+                gradientPreview[2].position = Vector2f(camPos.x-125, camPos.y+2);
+                gradientPreview[3].position = Vector2f(camPos.x-234, camPos.y+2);
+
+                mainTexture.draw(gradientPreview, 4, Quads);
+
+                mainTexture.draw(*effectElements[3]);
+
+                gradientPreview[0].position = Vector2f(camPos.x-54, camPos.y-62);
+                gradientPreview[1].position = Vector2f(camPos.x+55, camPos.y-62);
+                gradientPreview[2].position = Vector2f(camPos.x+55, camPos.y+2);
+                gradientPreview[3].position = Vector2f(camPos.x-54, camPos.y+2);
+
+                mainTexture.draw(gradientPreview, 4, Quads);
+
+                mainTexture.draw(*effectElements[4]);
+
+                gradientPreview[0].position = Vector2f(camPos.x+126, camPos.y-62);
+                gradientPreview[1].position = Vector2f(camPos.x+235, camPos.y-62);
+                gradientPreview[2].position = Vector2f(camPos.x+235, camPos.y+2);
+                gradientPreview[3].position = Vector2f(camPos.x+126, camPos.y+2);
+
+                mainTexture.draw(gradientPreview, 4, Quads);
+
+                mainTexture.draw(*effectElements[5]);
+
                 mainTexture.draw(*effectCheckButton[0]);
                 mainTexture.draw(*effectCheckButton[1]);
                 mainTexture.draw(*effectCheckButton[2]);
+                mainTexture.draw(*effectCheckButton[3]);
+                mainTexture.draw(*effectCheckButton[4]);
+                mainTexture.draw(*effectCheckButton[5]);
 
                 mainTexture.draw(*effectButton[0]);
                 mainTexture.draw(*effectButton[1]);
@@ -2305,6 +2440,9 @@ bool Scene::Editor()
                     effectCheckButton[0]->update();
                     effectCheckButton[1]->update();
                     effectCheckButton[2]->update();
+                    effectCheckButton[3]->update();
+                    effectCheckButton[4]->update();
+                    effectCheckButton[5]->update();
 
                     returnButton->update();
                 }
@@ -2727,8 +2865,13 @@ bool Scene::Editor()
                         default : mainTexture.draw(&backGradient[0], 4, Quads); break;
                     }
 
-                    if (levelbEffectb != 0)
-                        mainTexture.draw(*effectClouds);
+                    if (levelbEffectb > 0)
+                    {
+                        if (levelbEffectb > 3)
+                            mainTexture.draw(*effectClouds[1]);
+
+                        mainTexture.draw(*effectClouds[0]);
+                    }
 
                     if (!listTileb1.empty())
                     {
@@ -2846,8 +2989,13 @@ bool Scene::Editor()
                         default : mainTexture.draw(&backGradient[0], 4, Quads); break;
                     }
 
-                    if (levelEffectb != 0)
-                        mainTexture.draw(*effectClouds);
+                    if (levelEffectb > 0)
+                    {
+                        if (levelEffectb > 3)
+                            mainTexture.draw(*effectClouds[1]);
+
+                        mainTexture.draw(*effectClouds[0]);
+                    }
 
                     if (!listTile1.empty())
                     {
@@ -3410,8 +3558,13 @@ bool Scene::Editor()
                         default : mainTexture.draw(&backGradient[0], 4, Quads); break;
                     }
 
-                    if (levelbEffectb != 0)
-                        mainTexture.draw(*effectClouds);
+                    if (levelbEffectb > 0)
+                    {
+                        if (levelbEffectb > 3)
+                            mainTexture.draw(*effectClouds[1]);
+
+                        mainTexture.draw(*effectClouds[0]);
+                    }
 
                     if (!listTileb1.empty())
                     {
@@ -3530,8 +3683,13 @@ bool Scene::Editor()
                         default : mainTexture.draw(&backGradient[0], 4, Quads); break;
                     }
 
-                    if (levelEffectb != 0)
-                        mainTexture.draw(*effectClouds);
+                    if (levelEffectb > 0)
+                    {
+                        if (levelEffectb > 3)
+                            mainTexture.draw(*effectClouds[1]);
+
+                        mainTexture.draw(*effectClouds[0]);
+                    }
 
                     if (!listTile1.empty())
                     {
@@ -3933,6 +4091,8 @@ bool Scene::Editor()
     delete backgroundTxt[9];
     delete backgroundTxt[10];
     delete backgroundTxt[11];
+    delete backgroundTxt[14];
+    delete backgroundTxt[15];
     delete effectTex[0];
     delete effectTex[1];
     delete effectTex[2];
@@ -4000,6 +4160,8 @@ bool Scene::Editor()
     delete backgroundButton[11];
     delete backgroundButton[12];
     delete backgroundButton[13];
+    delete backgroundButton[14];
+    delete backgroundButton[15];
     delete gradientButton[0];
     delete gradientButton[1];
     delete gradientButton[2];
@@ -4013,6 +4175,9 @@ bool Scene::Editor()
     delete effectCheckButton[0];
     delete effectCheckButton[1];
     delete effectCheckButton[2];
+    delete effectCheckButton[3];
+    delete effectCheckButton[4];
+    delete effectCheckButton[5];
     delete bowserCheckButton[0];
     delete bowserCheckButton[1];
     delete bowserCheckButton[2];
@@ -4051,6 +4216,9 @@ bool Scene::Editor()
     delete effectElements[0];
     delete effectElements[1];
     delete effectElements[2];
+    delete effectElements[3];
+    delete effectElements[4];
+    delete effectElements[5];
     delete tilesetSpr;
     delete background[0];
     delete background[1];
@@ -4064,7 +4232,10 @@ bool Scene::Editor()
     delete background[9];
     delete background[10];
     delete background[11];
-    delete effectClouds;
+    delete background[14];
+    delete background[15];
+    delete effectClouds[0];
+    delete effectClouds[1];
 
     if (background[12] != NULL)
         delete background[12];
@@ -4204,6 +4375,10 @@ bool Scene::Editor()
     delete sceneriesTxt[7];
     delete sceneriesTxt[8];
     delete sceneriesTxt[9];
+    delete sceneriesTxt[10];
+    delete sceneriesTxt[11];
+    delete sceneriesTxt[12];
+    delete sceneriesTxt[13];
 
     delete enemiesTxt[0];
     delete enemiesTxt[1];
@@ -4246,6 +4421,7 @@ bool Scene::Editor()
     delete enemiesTxt[38];
     delete enemiesTxt[39];
     delete enemiesTxt[40];
+    delete enemiesTxt[41];
 
     delete hazardsTxt[0];
     delete hazardsTxt[1];
@@ -4269,6 +4445,8 @@ bool Scene::Editor()
     delete marksTxt[7];
     delete marksTxt[8];
     delete marksTxt[9];
+    delete marksTxt[10];
+    delete marksTxt[11];
 
     delete marioTxt[0];
     delete marioTxt[1];
@@ -4285,7 +4463,7 @@ bool Scene::Editor()
     delete hudTxt[5];
     delete hudTxt[6];
 
-    for (register unsigned int i = 0; i < 23; i++)
+    for (register unsigned int i = 0; i < 35; i++)
         delete elementsPlatforms[i];
 
     for (register unsigned int i = 0; i < 30; i++)
@@ -4294,10 +4472,10 @@ bool Scene::Editor()
     for (register unsigned int i = 0; i < 36; i++)
         delete elementsPipes[i];
 
-    for (register unsigned int i = 0; i < 22; i++)
+    for (register unsigned int i = 0; i < 26; i++)
         delete elementsSceneries[i];
 
-    for (register unsigned int i = 0; i < 53; i++)
+    for (register unsigned int i = 0; i < 57; i++)
         delete elementsEnemies[i];
 
     for (register unsigned int i = 0; i < 46; i++)
@@ -4348,6 +4526,7 @@ bool Scene::Editor()
         FMOD_Sound_Release(sfxSamples[31]);
         FMOD_Sound_Release(sfxSamples[32]);
         FMOD_Sound_Release(sfxSamples[33]);
+        FMOD_Sound_Release(sfxSamples[34]);
 
         FMOD_Sound_Release(musicSamples[0]);
         FMOD_Sound_Release(musicSamples[1]);
@@ -4448,11 +4627,11 @@ static bool InitAssets()
     elementsLine = 0;
 
     lastLine_platforms = 1;
-    lastLine_bonuses = 6;
-    lastLine_sceneries = 11;
-    lastLine_pipes = 17;
-    lastLine_enemies = 24;
-    lastLine_hazards = 37;
+    lastLine_bonuses = 8;
+    lastLine_sceneries = 13;
+    lastLine_pipes = 19;
+    lastLine_enemies = 27;
+    lastLine_hazards = 41;
 
     setLiquidSpots = false;
 
@@ -4764,6 +4943,24 @@ static bool InitAssets()
         backgroundTxt[2]->loadFromImage(tempImg);
         backgroundTxt[2]->setRepeated(true);
 
+        if (!tempImg.loadFromFile("Data/Gfx/Backgrounds/Background_Blue.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        backgroundTxt[14] = new Texture;
+        backgroundTxt[14]->loadFromImage(tempImg);
+        backgroundTxt[14]->setRepeated(true);
+
+        if (!tempImg.loadFromFile("Data/Gfx/Backgrounds/Background_Snow.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        backgroundTxt[15] = new Texture;
+        backgroundTxt[15]->loadFromImage(tempImg);
+        backgroundTxt[15]->setRepeated(true);
+
         if (!tempImg.loadFromFile("Data/Gfx/Backgrounds/Background_Night.png"))
             allright = false;
 
@@ -4847,10 +5044,13 @@ static bool InitAssets()
 
         checkButtonTex->setSmooth(true);
 
-        speedRegTex = new Texture;
-
-        if (!speedRegTex->loadFromFile("Data/Gfx/Editor/Editor_SpeedRegulator.png"))
+        if (!tempImg.loadFromFile("Data/Gfx/Editor/Editor_SpeedRegulator.png"))
             allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        speedRegTex = new Texture;
+        speedRegTex->loadFromImage(tempImg);
 
         if (!tempImg.loadFromFile("Data/Gfx/Editor/Editor_Warps.png"))
             allright = false;
@@ -4888,10 +5088,13 @@ static bool InitAssets()
         if (!menuTextTex[3]->loadFromFile("Data/Gfx/Editor/Texts/Gradient_Help.png"))
             allright = false;
 
-        menuTextTex[4] = new Texture;
-
-        if (!menuTextTex[4]->loadFromFile("Data/Gfx/Editor/Texts/Gradient_Mode.png"))
+        if (!tempImg.loadFromFile("Data/Gfx/Editor/Texts/Gradient_Mode.png"))
             allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        menuTextTex[4] = new Texture;
+        menuTextTex[4]->loadFromImage(tempImg);
 
         menuTextTex[5] = new Texture;
 
@@ -5606,6 +5809,14 @@ static bool InitAssets()
         enemiesTxt[40] = new Texture;
         enemiesTxt[40]->loadFromImage(tempImg);
 
+        if (!tempImg.loadFromFile("Data/Gfx/Enemies/Enemy_Plant.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        enemiesTxt[41] = new Texture;
+        enemiesTxt[41]->loadFromImage(tempImg);
+
         if (!tempImg.loadFromFile("Data/Gfx/Hazards/Hazard_Lava.png"))
             allright = false;
 
@@ -5775,6 +5986,22 @@ static bool InitAssets()
         marksTxt[9] = new Texture;
         marksTxt[9]->loadFromImage(tempImg);
 
+        if (!tempImg.loadFromFile("Data/Gfx/Marks/Switches/Switch_Activator.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        marksTxt[10] = new Texture;
+        marksTxt[10]->loadFromImage(tempImg);
+
+        if (!tempImg.loadFromFile("Data/Gfx/Marks/Switches/Switch_Blocks.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        marksTxt[11] = new Texture;
+        marksTxt[11]->loadFromImage(tempImg);
+
         if (!tempImg.loadFromFile("Data/Gfx/Sceneries/Scenery_GreenBush.png"))
             allright = false;
 
@@ -5854,6 +6081,39 @@ static bool InitAssets()
 
         sceneriesTxt[9] = new Texture;
         sceneriesTxt[9]->loadFromImage(tempImg);
+
+        if (!tempImg.loadFromFile("Data/Gfx/Sceneries/Scenery_Waterfall.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        sceneriesTxt[10] = new Texture;
+        sceneriesTxt[10]->loadFromImage(tempImg);
+
+        if (!tempImg.loadFromFile("Data/Gfx/Sceneries/Scenery_Lavafall.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        sceneriesTxt[11] = new Texture;
+        sceneriesTxt[11]->loadFromImage(tempImg);
+        sceneriesTxt[11]->setRepeated(true);
+
+        if (!tempImg.loadFromFile("Data/Gfx/Sceneries/Scenery_SmallCastleSnow.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        sceneriesTxt[12] = new Texture;
+        sceneriesTxt[12]->loadFromImage(tempImg);
+
+        if (!tempImg.loadFromFile("Data/Gfx/Sceneries/Scenery_BigCastleSnow.png"))
+            allright = false;
+
+        tempImg.createMaskFromColor(Color::Magenta);
+
+        sceneriesTxt[13] = new Texture;
+        sceneriesTxt[13]->loadFromImage(tempImg);
 
         if (!tempImg.loadFromFile("Data/Gfx/Mario/Mario_Small.png"))
             allright = false;
@@ -6115,49 +6375,39 @@ static bool InitAssets()
     menuText[4] = new Sprite(*menuTextTex[4]);
     menuText[5] = new Sprite(*menuTextTex[5]);
 
-    infosText[0] = new Sprite(*infoTexts[0]);
-    infosText[1] = new Sprite(*infoTexts[0]);
-    infosText[2] = new Sprite(*infoTexts[0]);
-    infosText[3] = new Sprite(*infoTexts[0]);
+    infosText[0] = new Sprite(*infoTexts[0], IntRect(0, 0, 134, 21));
+    infosText[1] = new Sprite(*infoTexts[0], IntRect(0, 21, 134, 21));
+    infosText[2] = new Sprite(*infoTexts[0], IntRect(0, 42, 134, 21));
+    infosText[3] = new Sprite(*infoTexts[0], IntRect(0, 63, 134, 21));
     infosText[4] = new Sprite(*infoTexts[5]);
-    infosText[5] = new Sprite(*infoTexts[6]);
-    infosText[6] = new Sprite(*infoTexts[6]);
-    infosText[7] = new Sprite(*infoTexts[7]);
-    infosText[8] = new Sprite(*infoTexts[7]);
-    infosText[9] = new Sprite(*infoTexts[10]);
-    infosText[10] = new Sprite(*infoTexts[10]);
+    infosText[5] = new Sprite(*infoTexts[6], IntRect(0, 0, 226, 21));
+    infosText[6] = new Sprite(*infoTexts[6], IntRect(0, 21, 226, 21));
+    infosText[7] = new Sprite(*infoTexts[7], IntRect(0, 0, 104, 21));
+    infosText[8] = new Sprite(*infoTexts[7], IntRect(0, 21, 104, 21));
+    infosText[9] = new Sprite(*infoTexts[10], IntRect(0, 0, 140, 21));
+    infosText[10] = new Sprite(*infoTexts[10], IntRect(0, 21, 140, 21));
     infosText[11] = new Sprite(*infoTexts[12]);
 
     infoRegulator = new Sprite(*infoTexts[3]);
     infoSRegulator = new Sprite(*sliderSTex);
 
-    infosText[0]->setTextureRect(IntRect(0, 0, 134, 21));
-    infosText[1]->setTextureRect(IntRect(0, 21, 134, 21));
-    infosText[2]->setTextureRect(IntRect(0, 42, 134, 21));
-    infosText[3]->setTextureRect(IntRect(0, 63, 134, 21));
-    infosText[5]->setTextureRect(IntRect(0, 0, 226, 21));
-    infosText[6]->setTextureRect(IntRect(0, 21, 226, 21));
-    infosText[7]->setTextureRect(IntRect(0, 0, 104, 21));
-    infosText[8]->setTextureRect(IntRect(0, 21, 104, 21));
-    infosText[9]->setTextureRect(IntRect(0, 0, 140, 21));
-    infosText[10]->setTextureRect(IntRect(0, 21, 140, 21));
-    infosText[11]->setTextureRect(IntRect(0, 0, 46, 368));
-
     gradientElements[0] = new Sprite(*menuButtonTex[3]);
     gradientElements[1] = new Sprite(*menuButtonTex[3]);
     gradientElements[2] = new Sprite(*menuButtonTex[4]);
 
-    effectElements[0] = new Sprite(*menuButtonTex[6]);
-    effectElements[1] = new Sprite(*menuButtonTex[6]);
-    effectElements[2] = new Sprite(*menuButtonTex[6]);
+    effectElements[0] = new Sprite(*menuButtonTex[6], IntRect(0, 0, 111, 68));
+    effectElements[1] = new Sprite(*menuButtonTex[6], IntRect(111, 0, 111, 68));
+    effectElements[2] = new Sprite(*menuButtonTex[6], IntRect(222, 0, 111, 68));
+    effectElements[3] = new Sprite(*menuButtonTex[6], IntRect(0, 68, 111, 68));
+    effectElements[4] = new Sprite(*menuButtonTex[6], IntRect(111, 68, 111, 68));
+    effectElements[5] = new Sprite(*menuButtonTex[6], IntRect(222, 68, 111, 68));
 
     effectElements[0]->setOrigin(55, 34);
     effectElements[1]->setOrigin(55, 34);
     effectElements[2]->setOrigin(55, 34);
-
-    effectElements[0]->setTextureRect(IntRect(0, 0, 111, 68));
-    effectElements[1]->setTextureRect(IntRect(111, 0, 111, 68));
-    effectElements[2]->setTextureRect(IntRect(222, 0, 111, 68));
+    effectElements[3]->setOrigin(55, 34);
+    effectElements[4]->setOrigin(55, 34);
+    effectElements[5]->setOrigin(55, 34);
 
     circleSpr = NULL;
 
@@ -6189,18 +6439,20 @@ static bool InitAssets()
 
     backgroundButton[0] = new Button(*menuButtonTex[1], Background_None, "", IntRect(0, 0, 185, 68));
     backgroundButton[1] = new Button(*menuButtonTex[1], Background_Import, "", IntRect(185, 0, 185, 68));
-    backgroundButton[2] = new Button(*menuButtonTex[1], Background_GreenHills, "", IntRect(0, 68, 185, 68));
-    backgroundButton[3] = new Button(*menuButtonTex[1], Background_RedHills, "", IntRect(185, 68, 185, 68));
-    backgroundButton[4] = new Button(*menuButtonTex[1], Background_DesertHills, "", IntRect(370, 68, 185, 68));
-    backgroundButton[5] = new Button(*menuButtonTex[1], Background_Night, "", IntRect(0, 136, 185, 68));
-    backgroundButton[6] = new Button(*menuButtonTex[1], Background_Water, "", IntRect(185, 136, 185, 68));
-    backgroundButton[7] = new Button(*menuButtonTex[1], Background_Rocks, "", IntRect(370, 136, 185, 68));
-    backgroundButton[8] = new Button(*menuButtonTex[1], Background_Clouds, "", IntRect(0, 204, 185, 68));
-    backgroundButton[9] = new Button(*menuButtonTex[1], Background_DarkClouds, "", IntRect(185, 204, 185, 68));
-    backgroundButton[10] = new Button(*menuButtonTex[1], Background_Castle, "", IntRect(370, 204, 185, 68));
-    backgroundButton[11] = new Button(*menuButtonTex[1], Background_Cave, "", IntRect(0, 272, 185, 68));
-    backgroundButton[12] = new Button(*menuButtonTex[1], Background_DarkCave, "", IntRect(185, 272, 185, 68));
-    backgroundButton[13] = new Button(*menuButtonTex[1], Background_LavaCave, "", IntRect(370, 272, 185, 68));
+    backgroundButton[2] = new Button(*menuButtonTex[1], Background_GreenHills, "", IntRect(0, 68, 92, 68));
+    backgroundButton[3] = new Button(*menuButtonTex[1], Background_Cave, "", IntRect(92, 68, 92, 68));
+    backgroundButton[4] = new Button(*menuButtonTex[1], Background_Rocks, "", IntRect(184, 68, 92, 68));
+    backgroundButton[5] = new Button(*menuButtonTex[1], Background_Castle, "", IntRect(276, 68, 92, 68));
+    backgroundButton[6] = new Button(*menuButtonTex[1], Background_RedHills, "", IntRect(0, 136, 92, 68));
+    backgroundButton[7] = new Button(*menuButtonTex[1], Background_LavaCave, "", IntRect(92, 136, 92, 68));
+    backgroundButton[8] = new Button(*menuButtonTex[1], Background_Water, "", IntRect(184, 136, 92, 68));
+    backgroundButton[9] = new Button(*menuButtonTex[1], Background_DesertHills, "", IntRect(276, 136, 92, 68));
+    backgroundButton[10] = new Button(*menuButtonTex[1], Background_BlueHills, "", IntRect(0, 204, 92, 68));
+    backgroundButton[11] = new Button(*menuButtonTex[1], Background_DarkCave, "", IntRect(92, 204, 92, 68));
+    backgroundButton[12] = new Button(*menuButtonTex[1], Background_Night, "", IntRect(184, 204, 92, 68));
+    backgroundButton[13] = new Button(*menuButtonTex[1], Background_SnowHills, "", IntRect(276, 204, 92, 68));
+    backgroundButton[14] = new Button(*menuButtonTex[1], Background_Clouds, "", IntRect(0, 272, 92, 68));
+    backgroundButton[15] = new Button(*menuButtonTex[1], Background_DarkClouds, "", IntRect(92, 272, 92, 68));
 
     gradientButton[0] = new Button(*menuButtonTex[2], Gradient_Fit, "", IntRect(0, 0, 160, 54));
     gradientButton[1] = new Button(*menuButtonTex[2], Gradient_Top, "", IntRect(0, 54, 160, 54));
@@ -6222,7 +6474,7 @@ static bool InitAssets()
     editButton[3] = new Button(*infoTexts[2], Info_LevelTime, "", IntRect(0, 0, 160, 32));
     editButton[4] = new Button(*infoTexts[2], Info_BackAlpha, "", IntRect(0, 0, 160, 32));
     editButton[5] = new Button(*infoTexts[2], Info_FrontAlpha, "", IntRect(0, 0, 160, 32));
-    editButton[6] = new Button(*infoTexts[2], Info_BowserHealth, "Bowser's Health", IntRect(0, 0, 160, 32));
+    editButton[6] = new Button(*infoTexts[2], Info_BowserHealth, "Health", IntRect(0, 0, 160, 32));
     editButton[7] = new Button(*menuButtonTex[0], Info_BowserMusic, "", IntRect(0, 704, 200, 32));
 
     liquidButton[0] = new Button(*infoTexts[8], Info_LiquidNone, "", IntRect(0, 0, 112, 76));
@@ -6238,14 +6490,17 @@ static bool InitAssets()
     effectCheckButton[0] = new CheckButton(Effect_But1, *checkButtonTex);
     effectCheckButton[1] = new CheckButton(Effect_But2, *checkButtonTex);
     effectCheckButton[2] = new CheckButton(Effect_But3, *checkButtonTex);
+    effectCheckButton[3] = new CheckButton(Effect_But4, *checkButtonTex);
+    effectCheckButton[4] = new CheckButton(Effect_But5, *checkButtonTex);
+    effectCheckButton[5] = new CheckButton(Effect_But6, *checkButtonTex);
 
-    bowserCheckButton[0] = new CheckButton(Bowser_Check1, *checkButtonTex, "Bowser Jumps");
-    bowserCheckButton[1] = new CheckButton(Bowser_Check2, *checkButtonTex, "Bowser Moves");
-    bowserCheckButton[2] = new CheckButton(Bowser_Check3, *checkButtonTex, "Bowser Fire");
-    bowserCheckButton[3] = new CheckButton(Bowser_Check4, *checkButtonTex, "Bowser Triple-Fire");
-    bowserCheckButton[4] = new CheckButton(Bowser_Check5, *checkButtonTex, "Bowser Homing-Fire");
-    bowserCheckButton[5] = new CheckButton(Bowser_Check6, *checkButtonTex, "Bowser Cannon");
-    bowserCheckButton[6] = new CheckButton(Bowser_Check7, *checkButtonTex, "Enable Custom Battle Music");
+    bowserCheckButton[0] = new CheckButton(Bowser_Check1, *checkButtonTex, "Jumps");
+    bowserCheckButton[1] = new CheckButton(Bowser_Check2, *checkButtonTex, "Movements");
+    bowserCheckButton[2] = new CheckButton(Bowser_Check3, *checkButtonTex, "Fire");
+    bowserCheckButton[3] = new CheckButton(Bowser_Check4, *checkButtonTex, "Triple-Fire");
+    bowserCheckButton[4] = new CheckButton(Bowser_Check5, *checkButtonTex, "Homing-Fire");
+    bowserCheckButton[5] = new CheckButton(Bowser_Check6, *checkButtonTex, "Cannon");
+    bowserCheckButton[6] = new CheckButton(Bowser_Check7, *checkButtonTex, "Custom Battle Music");
 
     InfoButtons[0] = new InfoButton(*menuButtonTex[7], 0);
     InfoButtons[1] = new InfoButton(*menuButtonTex[7], 1);
@@ -6260,7 +6515,7 @@ static bool InitAssets()
     for (register int i = 0; i < 23; i++)
         musicButton[i]->setSound(NULL);
 
-    for (register int i = 0; i < 14; i++)
+    for (register int i = 0; i < 16; i++)
         backgroundButton[i]->setSound(&buttonClick);
 
     for (register int i = 0; i < 3; i++)
@@ -6269,7 +6524,7 @@ static bool InitAssets()
     for (register int i = 0; i < 4; i++)
         effectButton[i]->setSound(&buttonClick);
 
-    for (register int i = 0; i < 3; i++)
+    for (register int i = 0; i < 6; i++)
         effectCheckButton[i]->setSound(&buttonClick);
 
     for (register int i = 0; i < 7; i++)
@@ -6283,12 +6538,11 @@ static bool InitAssets()
     menuText[5]->setOrigin(182, 0);
 
     tilesetSpr = new Sprite(*mainTileset);
-    tilesetSpr->setTextureRect(IntRect(0, 0, 480, 416));
-    tilesetSpr->setPosition(80, 16);
+    tilesetSpr->setTextureRect(IntRect(0, 0, 576, 384));
 
-    background[0] = new RectangleShape(Vector2f(1280, 160));
-    background[1] = new RectangleShape(Vector2f(1280, 160));
-    background[2] = new RectangleShape(Vector2f(1280, 156));
+    background[0] = new RectangleShape(Vector2f(1280, 274));
+    background[1] = new RectangleShape(Vector2f(1280, 274));
+    background[2] = new RectangleShape(Vector2f(1280, 274));
     background[3] = new RectangleShape(Vector2f(1280, 178));
     background[4] = new RectangleShape(Vector2f(1280, 165));
     background[5] = new RectangleShape(Vector2f(1280, 101));
@@ -6298,6 +6552,8 @@ static bool InitAssets()
     background[9] = new RectangleShape(Vector2f(1280, 480));
     background[10] = new RectangleShape(Vector2f(1280, 480));
     background[11] = new RectangleShape(Vector2f(1280, 480));
+    background[14] = new RectangleShape(Vector2f(1280, 274));
+    background[15] = new RectangleShape(Vector2f(1280, 274));
 
     background[12] = NULL;
     background[13] = NULL;
@@ -6332,19 +6588,23 @@ static bool InitAssets()
     background[9]->setTexture(backgroundTxt[9]);
     background[10]->setTexture(backgroundTxt[10]);
     background[11]->setTexture(backgroundTxt[11]);
+    background[14]->setTexture(backgroundTxt[14]);
+    background[15]->setTexture(backgroundTxt[15]);
 
-    background[0]->setPosition(0, 320);
-    background[1]->setPosition(0, 320);
-    background[2]->setPosition(0, 324);
+    background[0]->setPosition(0, 206);
+    background[1]->setPosition(0, 206);
+    background[2]->setPosition(0, 206);
     background[3]->setPosition(0, 302);
     background[4]->setPosition(0, 315);
     background[5]->setPosition(0, 379);
     background[6]->setPosition(0, 160);
     background[7]->setPosition(0, 160);
+    background[14]->setPosition(0, 206);
+    background[15]->setPosition(0, 206);
 
-    background[0]->setTextureRect(IntRect(0, 0, 1280, 160));
-    background[1]->setTextureRect(IntRect(0, 0, 1280, 160));
-    background[2]->setTextureRect(IntRect(0, 0, 1280, 156));
+    background[0]->setTextureRect(IntRect(0, 0, 1280, 274));
+    background[1]->setTextureRect(IntRect(0, 0, 1280, 274));
+    background[2]->setTextureRect(IntRect(0, 0, 1280, 274));
     background[3]->setTextureRect(IntRect(0, 0, 1280, 178));
     background[4]->setTextureRect(IntRect(0, 0, 1280, 165));
     background[5]->setTextureRect(IntRect(0, 0, 1280, 101));
@@ -6354,6 +6614,8 @@ static bool InitAssets()
     background[9]->setTextureRect(IntRect(0, 0, 1280, 480));
     background[10]->setTextureRect(IntRect(0, 0, 1280, 480));
     background[11]->setTextureRect(IntRect(0, 0, 1280, 480));
+    background[14]->setTextureRect(IntRect(0, 0, 1280, 274));
+    background[15]->setTextureRect(IntRect(0, 0, 1280, 274));
 
     infoSlider[0] = new Regulator(infoTexts[4], "", sliderGravity);
     infoSlider[1] = new Regulator(infoTexts[4], "", sliderTime);
@@ -6378,20 +6640,23 @@ static bool InitAssets()
 
     autoscrollPathLine = new VertexArray(LinesStrip);
 
-    tilesetRect = new RectangleShape(Vector2f(481, 417));
+    tilesetRect = new RectangleShape(Vector2f(577, 385));
     tilesetRect->setTexture(gridTex);
-    tilesetRect->setTextureRect(IntRect(0, 0, 481, 417));
+    tilesetRect->setTextureRect(IntRect(0, 0, 577, 385));
 
     tileSelection = new RectangleShape;
 
     gradientColor[0] = new RectangleShape(Vector2f(157, 76));
     gradientColor[1] = new RectangleShape(Vector2f(157, 76));
 
-    effectClouds = new RectangleShape(Vector2f(1280, 63));
-    effectClouds->setTextureRect(IntRect(0, 0, 1280, 63));
+    effectClouds[0] = new RectangleShape(Vector2f(1280, 63));
+    effectClouds[0]->setTextureRect(IntRect(0, 0, 1280, 63));
+
+    effectClouds[1] = new RectangleShape(Vector2f(1280, 63));
+    effectClouds[1]->setTextureRect(IntRect(0, 0, 1280, 63));
+    effectClouds[1]->setPosition(0, 24);
 
     itemHandled = new Sprite;
-    itemHandled->setColor(Color(255, 255, 255, 128));
 
     fadeRect = new RectangleShape(Vector2f(640, 480));
     fadeRect->setFillColor(Color::Black);
@@ -6403,35 +6668,35 @@ static bool InitAssets()
     resizerButton[2] = new Button(*resizerTex, IncreaseHeight, "Increase Height");
     resizerButton[3] = new Button(*resizerTex, DecreaseWidth, "Decrease Width");
 
-    scrollButton[0] = new Button(*scrollTex, ScrollUp, "Scroll Up the Elements");
-    scrollButton[1] = new Button(*scrollTex, ScrollDown, "Scroll Down the Elements");
+    scrollButton[0] = new Button(*scrollTex, ScrollUp, "Scroll Up");
+    scrollButton[1] = new Button(*scrollTex, ScrollDown, "Scroll Down");
 
     layerButton[0] = new Button(*layerTex, ChangeLayerTo_Back, "Background Layer", IntRect(0, 0, 26, 26));
     layerButton[1] = new Button(*layerTex, ChangeLayerTo_Middle, "Middle Layer", IntRect(26, 0, 26, 26));
     layerButton[2] = new Button(*layerTex, ChangeLayerTo_Front, "Foreground Layer", IntRect(52, 0, 26, 26));
 
     typeButton[0] = new Button(*typeTex, Category_Essentials, "Essential Objects", IntRect(0, 0, 32, 32));
-    typeButton[1] = new Button(*typeTex, Category_Platforms, "Platforms Objects", IntRect(32, 0, 32, 32));
-    typeButton[2] = new Button(*typeTex, Category_Bonus, "Bonuses Objects", IntRect(64, 0, 32, 32));
+    typeButton[1] = new Button(*typeTex, Category_Platforms, "Platform Objects", IntRect(32, 0, 32, 32));
+    typeButton[2] = new Button(*typeTex, Category_Bonus, "Bonus Objects", IntRect(64, 0, 32, 32));
     typeButton[3] = new Button(*typeTex, Category_Tiles, "Tileset", IntRect(96, 0, 32, 32));
-    typeButton[4] = new Button(*typeTex, Category_Pipes, "Pipes Objects", IntRect(128, 0, 32, 32));
-    typeButton[5] = new Button(*typeTex, Category_Sceneries, "Sceneries Objects", IntRect(160, 0, 32, 32));
-    typeButton[6] = new Button(*typeTex, Category_Enemies, "Enemies Objects", IntRect(192, 0, 32, 32));
+    typeButton[4] = new Button(*typeTex, Category_Pipes, "Pipe Objects", IntRect(128, 0, 32, 32));
+    typeButton[5] = new Button(*typeTex, Category_Sceneries, "Scenery Objects", IntRect(160, 0, 32, 32));
+    typeButton[6] = new Button(*typeTex, Category_Enemies, "Enemy Objects", IntRect(192, 0, 32, 32));
     typeButton[7] = new Button(*typeTex, Category_Hazards, "Hazardous Objects", IntRect(224, 0, 32, 32));
-    typeButton[8] = new Button(*typeTex, Category_Warps, "Warps Pipes", IntRect(256, 0, 32, 32));
+    typeButton[8] = new Button(*typeTex, Category_Warps, "Warp Pipes", IntRect(256, 0, 32, 32));
 
-    prefsButton[0] = new Button(*prefsTex, Prefs_Music, "Set the Music", IntRect(0, 0, 26, 26));
-    prefsButton[1] = new Button(*prefsTex, Prefs_Background, "Set the Background", IntRect(26, 0, 26, 26));
-    prefsButton[2] = new Button(*prefsTex, Prefs_Gradient, "Set the Sky's Color", IntRect(52, 0, 26, 26));
-    prefsButton[3] = new Button(*prefsTex, Prefs_Effects, "Add some Effects", IntRect(78, 0, 26, 26));
-    prefsButton[4] = new Button(*prefsTex, Prefs_Title, "Set the Informations", IntRect(104, 0, 26, 26));
-    prefsButton[5] = new Button(*prefsTex, Prefs_Section, "Switch to the Other Section", IntRect(130, 0, 26, 26));
+    prefsButton[0] = new Button(*prefsTex, Prefs_Music, "Music", IntRect(0, 0, 26, 26));
+    prefsButton[1] = new Button(*prefsTex, Prefs_Background, "Background", IntRect(26, 0, 26, 26));
+    prefsButton[2] = new Button(*prefsTex, Prefs_Gradient, "Sky's Color", IntRect(52, 0, 26, 26));
+    prefsButton[3] = new Button(*prefsTex, Prefs_Effects, "Effects", IntRect(78, 0, 26, 26));
+    prefsButton[4] = new Button(*prefsTex, Prefs_Title, "Level Settings", IntRect(104, 0, 26, 26));
+    prefsButton[5] = new Button(*prefsTex, Prefs_Section, "Switch Section", IntRect(130, 0, 26, 26));
 
-    liquidButton2[0] = new Button(*liquidButtonTex, Liquid_SetHeight, "Set the Liquid Height", IntRect(0, 0, 26, 26));
-    liquidButton2[1] = new Button(*liquidButtonTex, Liquid_SetSpots, "Place the Liquid Spots", IntRect(26, 0, 26, 26));
+    liquidButton2[0] = new Button(*liquidButtonTex, Liquid_SetHeight, "Liquid Height", IntRect(0, 0, 26, 26));
+    liquidButton2[1] = new Button(*liquidButtonTex, Liquid_SetSpots, "Liquid Spots", IntRect(26, 0, 26, 26));
 
-    autoscrollButton2[0] = new Button(*autoscrollButtonTex, Autoscroll_AddNode, "Add a new node", IntRect(0, 0, 26, 26));
-    autoscrollButton2[1] = new Button(*autoscrollButtonTex, Autoscroll_EraseNode, "Remove the last node", IntRect(26, 0, 26, 26));
+    autoscrollButton2[0] = new Button(*autoscrollButtonTex, Autoscroll_AddNode, "Add Node", IntRect(0, 0, 26, 26));
+    autoscrollButton2[1] = new Button(*autoscrollButtonTex, Autoscroll_EraseNode, "Remove Last Node", IntRect(26, 0, 26, 26));
 
     elementsEsssential[0] = new ElementButton(*elements[0], IntRect(0, 0, 48, 48), 0, Elements_Essential);
     elementsEsssential[1] = new ElementButton(*elements[0], IntRect(48, 0, 48, 48), 1, Elements_Essential);
@@ -6460,6 +6725,18 @@ static bool InitAssets()
     elementsPlatforms[20] = new ElementButton(*elements[1], IntRect(960, 0, 48, 48), 23, Elements_Platforms);
     elementsPlatforms[21] = new ElementButton(*elements[1], IntRect(1008, 0, 48, 48), 24, Elements_Platforms);
     elementsPlatforms[22] = new ElementButton(*elements[1], IntRect(1056, 0, 48, 48), 25, Elements_Platforms);
+    elementsPlatforms[23] = new ElementButton(*elements[1], IntRect(1104, 0, 48, 48), 213, Elements_Platforms);
+    elementsPlatforms[24] = new ElementButton(*elements[1], IntRect(1152, 0, 48, 48), 214, Elements_Platforms);
+    elementsPlatforms[25] = new ElementButton(*elements[1], IntRect(1200, 0, 48, 48), 215, Elements_Platforms);
+    elementsPlatforms[26] = new ElementButton(*elements[1], IntRect(1248, 0, 48, 48), 216, Elements_Platforms);
+    elementsPlatforms[27] = new ElementButton(*elements[1], IntRect(1296, 0, 48, 48), 217, Elements_Platforms);
+    elementsPlatforms[28] = new ElementButton(*elements[1], IntRect(1344, 0, 48, 48), 218, Elements_Platforms);
+    elementsPlatforms[29] = new ElementButton(*elements[1], IntRect(1392, 0, 48, 48), 219, Elements_Platforms);
+    elementsPlatforms[30] = new ElementButton(*elements[1], IntRect(1440, 0, 48, 48), 220, Elements_Platforms);
+    elementsPlatforms[31] = new ElementButton(*elements[1], IntRect(1488, 0, 48, 48), 221, Elements_Platforms);
+    elementsPlatforms[32] = new ElementButton(*elements[1], IntRect(1536, 0, 48, 48), 222, Elements_Platforms);
+    elementsPlatforms[33] = new ElementButton(*elements[1], IntRect(1584, 0, 48, 48), 223, Elements_Platforms);
+    elementsPlatforms[34] = new ElementButton(*elements[1], IntRect(1632, 0, 48, 48), 224, Elements_Platforms);
 
     elementsBonus[0] = new ElementButton(*elements[2], IntRect(0, 0, 48, 48), 26, Elements_Bonus);
     elementsBonus[1] = new ElementButton(*elements[2], IntRect(48, 0, 48, 48), 27, Elements_Bonus);
@@ -6551,6 +6828,10 @@ static bool InitAssets()
     elementsSceneries[19] = new ElementButton(*elements[4], IntRect(912, 0, 48, 48), 111, Elements_Sceneries);
     elementsSceneries[20] = new ElementButton(*elements[4], IntRect(960, 0, 48, 48), 112, Elements_Sceneries);
     elementsSceneries[21] = new ElementButton(*elements[4], IntRect(1008, 0, 48, 48), 113, Elements_Sceneries);
+    elementsSceneries[22] = new ElementButton(*elements[4], IntRect(1056, 0, 48, 48), 229, Elements_Sceneries);
+    elementsSceneries[23] = new ElementButton(*elements[4], IntRect(1104, 0, 48, 48), 230, Elements_Sceneries);
+    elementsSceneries[24] = new ElementButton(*elements[4], IntRect(1152, 0, 48, 48), 231, Elements_Sceneries);
+    elementsSceneries[25] = new ElementButton(*elements[4], IntRect(1200, 0, 48, 48), 232, Elements_Sceneries);
 
     elementsEnemies[0] = new ElementButton(*elements[5], IntRect(0, 0, 48, 48), 114, Elements_Enemies);
     elementsEnemies[1] = new ElementButton(*elements[5], IntRect(48, 0, 48, 48), 115, Elements_Enemies);
@@ -6605,6 +6886,10 @@ static bool InitAssets()
     elementsEnemies[50] = new ElementButton(*elements[5], IntRect(384, 48, 48, 48), 164, Elements_Enemies);
     elementsEnemies[51] = new ElementButton(*elements[5], IntRect(432, 48, 48, 48), 165, Elements_Enemies);
     elementsEnemies[52] = new ElementButton(*elements[5], IntRect(480, 48, 48, 48), 166, Elements_Enemies);
+    elementsEnemies[53] = new ElementButton(*elements[5], IntRect(528, 48, 48, 48), 225, Elements_Enemies);
+    elementsEnemies[54] = new ElementButton(*elements[5], IntRect(576, 48, 48, 48), 226, Elements_Enemies);
+    elementsEnemies[55] = new ElementButton(*elements[5], IntRect(624, 48, 48, 48), 227, Elements_Enemies);
+    elementsEnemies[56] = new ElementButton(*elements[5], IntRect(672, 48, 48, 48), 228, Elements_Enemies);
 
     elementsHazards[0] = new ElementButton(*elements[6], IntRect(0, 0, 48, 48), 167, Elements_Hazards);
     elementsHazards[1] = new ElementButton(*elements[6], IntRect(48, 0, 48, 48), 168, Elements_Hazards);
@@ -6691,291 +6976,62 @@ static bool InitAssets()
 
     returnButton->setSound(&buttonClick);
 
-    resizerButton[0]->setSound(&buttonClick);
-    resizerButton[1]->setSound(&buttonClick);
-    resizerButton[2]->setSound(&buttonClick);
-    resizerButton[3]->setSound(&buttonClick);
+    for (register int i = 0; i < 4; i++)
+        resizerButton[i]->setSound(&buttonClick);
 
-    scrollButton[0]->setSound(&buttonClick);
-    scrollButton[1]->setSound(&buttonClick);
+    for (register int i = 0; i < 2; i++)
+        scrollButton[i]->setSound(&buttonClick);
 
-    layerButton[0]->setSound(&buttonClick);
-    layerButton[1]->setSound(&buttonClick);
-    layerButton[2]->setSound(&buttonClick);
+    for (register int i = 0; i < 3; i++)
+        layerButton[i]->setSound(&buttonClick);
 
-    typeButton[0]->setSound(&buttonClick);
-    typeButton[1]->setSound(&buttonClick);
-    typeButton[2]->setSound(&buttonClick);
-    typeButton[3]->setSound(&buttonClick);
-    typeButton[4]->setSound(&buttonClick);
-    typeButton[5]->setSound(&buttonClick);
-    typeButton[6]->setSound(&buttonClick);
-    typeButton[7]->setSound(&buttonClick);
-    typeButton[8]->setSound(&buttonClick);
+    for (register int i = 0; i < 9; i++)
+        typeButton[i]->setSound(&buttonClick);
 
-    prefsButton[0]->setSound(&buttonClick);
-    prefsButton[1]->setSound(&buttonClick);
-    prefsButton[2]->setSound(&buttonClick);
-    prefsButton[3]->setSound(&buttonClick);
-    prefsButton[4]->setSound(&buttonClick);
-    prefsButton[5]->setSound(&buttonClick);
+    for (register int i = 0; i < 6; i++)
+        prefsButton[i]->setSound(&buttonClick);
 
-    liquidButton2[0]->setSound(&buttonClick);
-    liquidButton2[1]->setSound(&buttonClick);
+    for (register int i = 0; i < 2; i++)
+        liquidButton2[i]->setSound(&buttonClick);
 
-    autoscrollButton2[0]->setSound(&buttonClick);
-    autoscrollButton2[1]->setSound(&buttonClick);
+    for (register int i = 0; i < 2; i++)
+        autoscrollButton2[i]->setSound(&buttonClick);
 
-    InfoButtons[0]->setSound(&buttonClick);
-    InfoButtons[1]->setSound(&buttonClick);
-    InfoButtons[2]->setSound(&buttonClick);
-    InfoButtons[3]->setSound(&buttonClick);
-    InfoButtons[4]->setSound(&buttonClick);
-    InfoButtons[5]->setSound(&buttonClick);
+    for (register int i = 0; i < 6; i++)
+        InfoButtons[i]->setSound(&buttonClick);
 
-    fileButton[0]->setSound(&buttonClick);
-    fileButton[1]->setSound(&buttonClick);
-    fileButton[2]->setSound(&buttonClick);
-    fileButton[3]->setSound(&buttonClick);
+    for (register int i = 0; i < 4; i++)
+        fileButton[i]->setSound(&buttonClick);
 
-    editButton[0]->setSound(&buttonClick);
-    editButton[1]->setSound(&buttonClick);
-    editButton[2]->setSound(&buttonClick);
-    editButton[3]->setSound(&buttonClick);
-    editButton[4]->setSound(&buttonClick);
-    editButton[5]->setSound(&buttonClick);
-    editButton[6]->setSound(&buttonClick);
-    editButton[7]->setSound(&buttonClick);
+    for (register int i = 0; i < 8; i++)
+        editButton[i]->setSound(&buttonClick);
 
-    liquidButton[0]->setSound(&buttonClick);
-    liquidButton[1]->setSound(&buttonClick);
-    liquidButton[2]->setSound(&buttonClick);
-    liquidButton[3]->setSound(&buttonClick);
+    for (register int i = 0; i < 4; i++)
+        liquidButton[i]->setSound(&buttonClick);
 
-    autoscrollButton[0]->setSound(&buttonClick);
-    autoscrollButton[1]->setSound(&buttonClick);
-    autoscrollButton[2]->setSound(&buttonClick);
-    autoscrollButton[3]->setSound(&buttonClick);
+    for (register int i = 0; i < 4; i++)
+        autoscrollButton[i]->setSound(&buttonClick);
 
-    elementsEsssential[0]->setSound(&buttonClick);
-    elementsEsssential[1]->setSound(&buttonClick);
-    elementsEsssential[2]->setSound(&buttonClick);
+    for (register int i = 0; i < 3; i++)
+        elementsEsssential[i]->setSound(&buttonClick);
 
-    elementsPlatforms[0]->setSound(&buttonClick);
-    elementsPlatforms[1]->setSound(&buttonClick);
-    elementsPlatforms[2]->setSound(&buttonClick);
-    elementsPlatforms[3]->setSound(&buttonClick);
-    elementsPlatforms[4]->setSound(&buttonClick);
-    elementsPlatforms[5]->setSound(&buttonClick);
-    elementsPlatforms[6]->setSound(&buttonClick);
-    elementsPlatforms[7]->setSound(&buttonClick);
-    elementsPlatforms[8]->setSound(&buttonClick);
-    elementsPlatforms[9]->setSound(&buttonClick);
-    elementsPlatforms[10]->setSound(&buttonClick);
-    elementsPlatforms[11]->setSound(&buttonClick);
-    elementsPlatforms[12]->setSound(&buttonClick);
-    elementsPlatforms[13]->setSound(&buttonClick);
-    elementsPlatforms[14]->setSound(&buttonClick);
-    elementsPlatforms[15]->setSound(&buttonClick);
-    elementsPlatforms[16]->setSound(&buttonClick);
-    elementsPlatforms[17]->setSound(&buttonClick);
-    elementsPlatforms[18]->setSound(&buttonClick);
-    elementsPlatforms[19]->setSound(&buttonClick);
-    elementsPlatforms[20]->setSound(&buttonClick);
-    elementsPlatforms[21]->setSound(&buttonClick);
-    elementsPlatforms[22]->setSound(&buttonClick);
+    for (register int i = 0; i < 35; i++)
+        elementsPlatforms[i]->setSound(&buttonClick);
 
-    elementsBonus[0]->setSound(&buttonClick);
-    elementsBonus[1]->setSound(&buttonClick);
-    elementsBonus[2]->setSound(&buttonClick);
-    elementsBonus[3]->setSound(&buttonClick);
-    elementsBonus[4]->setSound(&buttonClick);
-    elementsBonus[5]->setSound(&buttonClick);
-    elementsBonus[6]->setSound(&buttonClick);
-    elementsBonus[7]->setSound(&buttonClick);
-    elementsBonus[8]->setSound(&buttonClick);
-    elementsBonus[9]->setSound(&buttonClick);
-    elementsBonus[10]->setSound(&buttonClick);
-    elementsBonus[11]->setSound(&buttonClick);
-    elementsBonus[12]->setSound(&buttonClick);
-    elementsBonus[13]->setSound(&buttonClick);
-    elementsBonus[14]->setSound(&buttonClick);
-    elementsBonus[15]->setSound(&buttonClick);
-    elementsBonus[16]->setSound(&buttonClick);
-    elementsBonus[17]->setSound(&buttonClick);
-    elementsBonus[18]->setSound(&buttonClick);
-    elementsBonus[19]->setSound(&buttonClick);
-    elementsBonus[20]->setSound(&buttonClick);
-    elementsBonus[21]->setSound(&buttonClick);
-    elementsBonus[22]->setSound(&buttonClick);
-    elementsBonus[23]->setSound(&buttonClick);
-    elementsBonus[24]->setSound(&buttonClick);
-    elementsBonus[25]->setSound(&buttonClick);
-    elementsBonus[26]->setSound(&buttonClick);
-    elementsBonus[27]->setSound(&buttonClick);
-    elementsBonus[28]->setSound(&buttonClick);
-    elementsBonus[29]->setSound(&buttonClick);
+    for (register int i = 0; i < 30; i++)
+        elementsBonus[i]->setSound(&buttonClick);
 
-    elementsPipes[0]->setSound(&buttonClick);
-    elementsPipes[1]->setSound(&buttonClick);
-    elementsPipes[2]->setSound(&buttonClick);
-    elementsPipes[3]->setSound(&buttonClick);
-    elementsPipes[4]->setSound(&buttonClick);
-    elementsPipes[5]->setSound(&buttonClick);
-    elementsPipes[6]->setSound(&buttonClick);
-    elementsPipes[7]->setSound(&buttonClick);
-    elementsPipes[8]->setSound(&buttonClick);
-    elementsPipes[9]->setSound(&buttonClick);
-    elementsPipes[10]->setSound(&buttonClick);
-    elementsPipes[11]->setSound(&buttonClick);
-    elementsPipes[12]->setSound(&buttonClick);
-    elementsPipes[13]->setSound(&buttonClick);
-    elementsPipes[14]->setSound(&buttonClick);
-    elementsPipes[15]->setSound(&buttonClick);
-    elementsPipes[16]->setSound(&buttonClick);
-    elementsPipes[17]->setSound(&buttonClick);
-    elementsPipes[18]->setSound(&buttonClick);
-    elementsPipes[19]->setSound(&buttonClick);
-    elementsPipes[20]->setSound(&buttonClick);
-    elementsPipes[21]->setSound(&buttonClick);
-    elementsPipes[22]->setSound(&buttonClick);
-    elementsPipes[23]->setSound(&buttonClick);
-    elementsPipes[24]->setSound(&buttonClick);
-    elementsPipes[25]->setSound(&buttonClick);
-    elementsPipes[26]->setSound(&buttonClick);
-    elementsPipes[27]->setSound(&buttonClick);
-    elementsPipes[28]->setSound(&buttonClick);
-    elementsPipes[29]->setSound(&buttonClick);
-    elementsPipes[30]->setSound(&buttonClick);
-    elementsPipes[31]->setSound(&buttonClick);
-    elementsPipes[32]->setSound(&buttonClick);
-    elementsPipes[33]->setSound(&buttonClick);
-    elementsPipes[34]->setSound(&buttonClick);
-    elementsPipes[35]->setSound(&buttonClick);
+    for (register int i = 0; i < 36; i++)
+        elementsPipes[i]->setSound(&buttonClick);
 
-    elementsSceneries[0]->setSound(&buttonClick);
-    elementsSceneries[1]->setSound(&buttonClick);
-    elementsSceneries[2]->setSound(&buttonClick);
-    elementsSceneries[3]->setSound(&buttonClick);
-    elementsSceneries[4]->setSound(&buttonClick);
-    elementsSceneries[5]->setSound(&buttonClick);
-    elementsSceneries[6]->setSound(&buttonClick);
-    elementsSceneries[7]->setSound(&buttonClick);
-    elementsSceneries[8]->setSound(&buttonClick);
-    elementsSceneries[9]->setSound(&buttonClick);
-    elementsSceneries[10]->setSound(&buttonClick);
-    elementsSceneries[11]->setSound(&buttonClick);
-    elementsSceneries[12]->setSound(&buttonClick);
-    elementsSceneries[13]->setSound(&buttonClick);
-    elementsSceneries[14]->setSound(&buttonClick);
-    elementsSceneries[15]->setSound(&buttonClick);
-    elementsSceneries[16]->setSound(&buttonClick);
-    elementsSceneries[17]->setSound(&buttonClick);
-    elementsSceneries[18]->setSound(&buttonClick);
-    elementsSceneries[19]->setSound(&buttonClick);
-    elementsSceneries[20]->setSound(&buttonClick);
-    elementsSceneries[21]->setSound(&buttonClick);
+    for (register int i = 0; i < 26; i++)
+        elementsSceneries[i]->setSound(&buttonClick);
 
-    elementsEnemies[0]->setSound(&buttonClick);
-    elementsEnemies[1]->setSound(&buttonClick);
-    elementsEnemies[2]->setSound(&buttonClick);
-    elementsEnemies[3]->setSound(&buttonClick);
-    elementsEnemies[4]->setSound(&buttonClick);
-    elementsEnemies[5]->setSound(&buttonClick);
-    elementsEnemies[6]->setSound(&buttonClick);
-    elementsEnemies[7]->setSound(&buttonClick);
-    elementsEnemies[8]->setSound(&buttonClick);
-    elementsEnemies[9]->setSound(&buttonClick);
-    elementsEnemies[10]->setSound(&buttonClick);
-    elementsEnemies[11]->setSound(&buttonClick);
-    elementsEnemies[12]->setSound(&buttonClick);
-    elementsEnemies[13]->setSound(&buttonClick);
-    elementsEnemies[14]->setSound(&buttonClick);
-    elementsEnemies[15]->setSound(&buttonClick);
-    elementsEnemies[16]->setSound(&buttonClick);
-    elementsEnemies[17]->setSound(&buttonClick);
-    elementsEnemies[18]->setSound(&buttonClick);
-    elementsEnemies[19]->setSound(&buttonClick);
-    elementsEnemies[20]->setSound(&buttonClick);
-    elementsEnemies[21]->setSound(&buttonClick);
-    elementsEnemies[22]->setSound(&buttonClick);
-    elementsEnemies[23]->setSound(&buttonClick);
-    elementsEnemies[24]->setSound(&buttonClick);
-    elementsEnemies[25]->setSound(&buttonClick);
-    elementsEnemies[26]->setSound(&buttonClick);
-    elementsEnemies[27]->setSound(&buttonClick);
-    elementsEnemies[28]->setSound(&buttonClick);
-    elementsEnemies[29]->setSound(&buttonClick);
-    elementsEnemies[30]->setSound(&buttonClick);
-    elementsEnemies[31]->setSound(&buttonClick);
-    elementsEnemies[32]->setSound(&buttonClick);
-    elementsEnemies[33]->setSound(&buttonClick);
-    elementsEnemies[34]->setSound(&buttonClick);
-    elementsEnemies[35]->setSound(&buttonClick);
-    elementsEnemies[36]->setSound(&buttonClick);
-    elementsEnemies[37]->setSound(&buttonClick);
-    elementsEnemies[38]->setSound(&buttonClick);
-    elementsEnemies[39]->setSound(&buttonClick);
-    elementsEnemies[40]->setSound(&buttonClick);
-    elementsEnemies[41]->setSound(&buttonClick);
-    elementsEnemies[42]->setSound(&buttonClick);
-    elementsEnemies[43]->setSound(&buttonClick);
-    elementsEnemies[44]->setSound(&buttonClick);
-    elementsEnemies[45]->setSound(&buttonClick);
-    elementsEnemies[46]->setSound(&buttonClick);
-    elementsEnemies[47]->setSound(&buttonClick);
-    elementsEnemies[48]->setSound(&buttonClick);
-    elementsEnemies[49]->setSound(&buttonClick);
-    elementsEnemies[50]->setSound(&buttonClick);
-    elementsEnemies[51]->setSound(&buttonClick);
-    elementsEnemies[52]->setSound(&buttonClick);
+    for (register int i = 0; i < 57; i++)
+        elementsEnemies[i]->setSound(&buttonClick);
 
-    elementsHazards[0]->setSound(&buttonClick);
-    elementsHazards[1]->setSound(&buttonClick);
-    elementsHazards[2]->setSound(&buttonClick);
-    elementsHazards[3]->setSound(&buttonClick);
-    elementsHazards[4]->setSound(&buttonClick);
-    elementsHazards[5]->setSound(&buttonClick);
-    elementsHazards[6]->setSound(&buttonClick);
-    elementsHazards[7]->setSound(&buttonClick);
-    elementsHazards[8]->setSound(&buttonClick);
-    elementsHazards[9]->setSound(&buttonClick);
-    elementsHazards[10]->setSound(&buttonClick);
-    elementsHazards[11]->setSound(&buttonClick);
-    elementsHazards[12]->setSound(&buttonClick);
-    elementsHazards[13]->setSound(&buttonClick);
-    elementsHazards[14]->setSound(&buttonClick);
-    elementsHazards[15]->setSound(&buttonClick);
-    elementsHazards[16]->setSound(&buttonClick);
-    elementsHazards[17]->setSound(&buttonClick);
-    elementsHazards[18]->setSound(&buttonClick);
-    elementsHazards[19]->setSound(&buttonClick);
-    elementsHazards[20]->setSound(&buttonClick);
-    elementsHazards[21]->setSound(&buttonClick);
-    elementsHazards[22]->setSound(&buttonClick);
-    elementsHazards[23]->setSound(&buttonClick);
-    elementsHazards[24]->setSound(&buttonClick);
-    elementsHazards[25]->setSound(&buttonClick);
-    elementsHazards[26]->setSound(&buttonClick);
-    elementsHazards[27]->setSound(&buttonClick);
-    elementsHazards[28]->setSound(&buttonClick);
-    elementsHazards[29]->setSound(&buttonClick);
-    elementsHazards[30]->setSound(&buttonClick);
-    elementsHazards[31]->setSound(&buttonClick);
-    elementsHazards[32]->setSound(&buttonClick);
-    elementsHazards[33]->setSound(&buttonClick);
-    elementsHazards[34]->setSound(&buttonClick);
-    elementsHazards[35]->setSound(&buttonClick);
-    elementsHazards[36]->setSound(&buttonClick);
-    elementsHazards[37]->setSound(&buttonClick);
-    elementsHazards[38]->setSound(&buttonClick);
-    elementsHazards[39]->setSound(&buttonClick);
-    elementsHazards[40]->setSound(&buttonClick);
-    elementsHazards[41]->setSound(&buttonClick);
-    elementsHazards[42]->setSound(&buttonClick);
-    elementsHazards[43]->setSound(&buttonClick);
-    elementsHazards[44]->setSound(&buttonClick);
-    elementsHazards[45]->setSound(&buttonClick);
+    for (register int i = 0; i < 46; i++)
+        elementsHazards[i]->setSound(&buttonClick);
 
     #ifndef NOMUSIC
     result = FMOD_System_CreateSound(soundSystem, "Data/Sfx/Jump.wav", FMOD_DEFAULT, NULL, &sfxSamples[0]);
@@ -7144,6 +7200,11 @@ static bool InitAssets()
         allright = false;
 
     result = FMOD_System_CreateSound(soundSystem, "Data/Sfx/Storm.wav", FMOD_DEFAULT, NULL, &sfxSamples[33]);
+
+    if (result != FMOD_OK)
+        allright = false;
+
+    result = FMOD_System_CreateSound(soundSystem, "Data/Sfx/Switch.wav", FMOD_DEFAULT, NULL, &sfxSamples[34]);
 
     if (result != FMOD_OK)
         allright = false;
@@ -7320,13 +7381,14 @@ static bool InitAssets()
 
 static void UpdateAssetsEdition()
 {
-    int camX = 0;
-    int camY = 0;
-
     int camMouseX = 0;
     int camMouseY = 0;
 
-    if (mainWindow->hasFocus())
+    char camX = 0;
+    char camY = 0;
+
+    bool keySpeed;
+
     {
         bool focus = mainWindow->hasFocus();
 
@@ -7334,6 +7396,8 @@ static void UpdateAssetsEdition()
         bool keyRight = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[1])) && focus;
         bool keyDown = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[2])) && focus;
         bool keyUp = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[3])) && focus;
+
+        keySpeed = (Keyboard::isKeyPressed(Keyboard::LShift) || Keyboard::isKeyPressed(Keyboard::RShift)) && focus;
 
         if (keyLeft && !keyRight)
             camX = -1;
@@ -7399,10 +7463,15 @@ static void UpdateAssetsEdition()
     switch (camX)
     {
         case -1:
-            if (cameraSpeed.x > - (CAMSPEED - CAMACCEL))
-                cameraSpeed.x -= CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.x = -CAMSPEED * 2.0;
             else
-                cameraSpeed.x = -CAMSPEED;
+            {
+                if (cameraSpeed.x > - (CAMSPEED - CAMACCEL))
+                    cameraSpeed.x -= CAMACCEL;
+                else
+                    cameraSpeed.x = -CAMSPEED;
+            }
             break;
         case 0:
             if (cameraSpeed.x < -CAMDECEL)
@@ -7413,20 +7482,30 @@ static void UpdateAssetsEdition()
                 cameraSpeed.x = 0;
             break;
         case 1:
-            if (cameraSpeed.x < CAMSPEED - CAMACCEL)
-                cameraSpeed.x += CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.x = CAMSPEED * 2.0;
             else
-                cameraSpeed.x = CAMSPEED;
+            {
+                if (cameraSpeed.x < CAMSPEED - CAMACCEL)
+                    cameraSpeed.x += CAMACCEL;
+                else
+                    cameraSpeed.x = CAMSPEED;
+            }
             break;
     }
 
     switch (camY)
     {
         case -1:
-            if (cameraSpeed.y > - (CAMSPEED - CAMACCEL))
-                cameraSpeed.y -= CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.y = -CAMSPEED * 2.0;
             else
-                cameraSpeed.y = -CAMSPEED;
+            {
+                if (cameraSpeed.y > - (CAMSPEED - CAMACCEL))
+                    cameraSpeed.y -= CAMACCEL;
+                else
+                    cameraSpeed.y = -CAMSPEED;
+            }
             break;
         case 0:
             if (cameraSpeed.y < -CAMDECEL)
@@ -7437,10 +7516,15 @@ static void UpdateAssetsEdition()
                 cameraSpeed.y = 0;
             break;
         case 1:
-            if (cameraSpeed.y < CAMSPEED - CAMACCEL)
-                cameraSpeed.y += CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.y = CAMSPEED * 2.0;
             else
-                cameraSpeed.y = CAMSPEED;
+            {
+                if (cameraSpeed.y < CAMSPEED - CAMACCEL)
+                    cameraSpeed.y += CAMACCEL;
+                else
+                    cameraSpeed.y = CAMSPEED;
+            }
             break;
     }
 
@@ -7693,6 +7777,22 @@ static void UpdateAssetsEdition()
                 elementsPlatforms[22]->setPosition(camPos.x+176, camPos.y-142);
                 break;
             case 6 :
+                elementsPlatforms[23]->setPosition(camPos.x-28, camPos.y-142);
+                elementsPlatforms[24]->setPosition(camPos.x+22, camPos.y-142);
+                elementsPlatforms[25]->setPosition(camPos.x+72, camPos.y-142);
+                elementsPlatforms[26]->setPosition(camPos.x+122, camPos.y-142);
+                elementsPlatforms[27]->setPosition(camPos.x+172, camPos.y-142);
+                elementsPlatforms[28]->setPosition(camPos.x+222, camPos.y-142);
+                break;
+            case 7 :
+                elementsPlatforms[29]->setPosition(camPos.x-28, camPos.y-142);
+                elementsPlatforms[30]->setPosition(camPos.x+22, camPos.y-142);
+                elementsPlatforms[31]->setPosition(camPos.x+72, camPos.y-142);
+                elementsPlatforms[32]->setPosition(camPos.x+122, camPos.y-142);
+                elementsPlatforms[33]->setPosition(camPos.x+172, camPos.y-142);
+                elementsPlatforms[34]->setPosition(camPos.x+222, camPos.y-142);
+                break;
+            case 8 :
                 elementsBonus[0]->setPosition(camPos.x-28, camPos.y-142);
                 elementsBonus[1]->setPosition(camPos.x+22, camPos.y-142);
                 elementsBonus[2]->setPosition(camPos.x+72, camPos.y-142);
@@ -7700,7 +7800,7 @@ static void UpdateAssetsEdition()
                 elementsBonus[4]->setPosition(camPos.x+172, camPos.y-142);
                 elementsBonus[5]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 7 :
+            case 9 :
                 elementsBonus[6]->setPosition(camPos.x-28, camPos.y-142);
                 elementsBonus[7]->setPosition(camPos.x+22, camPos.y-142);
                 elementsBonus[8]->setPosition(camPos.x+72, camPos.y-142);
@@ -7708,7 +7808,7 @@ static void UpdateAssetsEdition()
                 elementsBonus[10]->setPosition(camPos.x+172, camPos.y-142);
                 elementsBonus[11]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 8 :
+            case 10 :
                 elementsBonus[12]->setPosition(camPos.x-28, camPos.y-142);
                 elementsBonus[13]->setPosition(camPos.x+22, camPos.y-142);
                 elementsBonus[14]->setPosition(camPos.x+72, camPos.y-142);
@@ -7716,7 +7816,7 @@ static void UpdateAssetsEdition()
                 elementsBonus[16]->setPosition(camPos.x+172, camPos.y-142);
                 elementsBonus[17]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 9 :
+            case 11 :
                 elementsBonus[18]->setPosition(camPos.x-28, camPos.y-142);
                 elementsBonus[19]->setPosition(camPos.x+22, camPos.y-142);
                 elementsBonus[20]->setPosition(camPos.x+72, camPos.y-142);
@@ -7724,7 +7824,7 @@ static void UpdateAssetsEdition()
                 elementsBonus[22]->setPosition(camPos.x+172, camPos.y-142);
                 elementsBonus[23]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 10 :
+            case 12 :
                 elementsBonus[24]->setPosition(camPos.x-28, camPos.y-142);
                 elementsBonus[25]->setPosition(camPos.x+22, camPos.y-142);
                 elementsBonus[26]->setPosition(camPos.x+72, camPos.y-142);
@@ -7732,7 +7832,7 @@ static void UpdateAssetsEdition()
                 elementsBonus[28]->setPosition(camPos.x+172, camPos.y-142);
                 elementsBonus[29]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 11 :
+            case 13 :
                 elementsPipes[0]->setPosition(camPos.x-28, camPos.y-142);
                 elementsPipes[1]->setPosition(camPos.x+22, camPos.y-142);
                 elementsPipes[2]->setPosition(camPos.x+72, camPos.y-142);
@@ -7740,7 +7840,7 @@ static void UpdateAssetsEdition()
                 elementsPipes[4]->setPosition(camPos.x+172, camPos.y-142);
                 elementsPipes[5]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 12 :
+            case 14 :
                 elementsPipes[6]->setPosition(camPos.x-28, camPos.y-142);
                 elementsPipes[7]->setPosition(camPos.x+22, camPos.y-142);
                 elementsPipes[8]->setPosition(camPos.x+72, camPos.y-142);
@@ -7748,7 +7848,7 @@ static void UpdateAssetsEdition()
                 elementsPipes[10]->setPosition(camPos.x+172, camPos.y-142);
                 elementsPipes[11]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 13 :
+            case 15 :
                 elementsPipes[12]->setPosition(camPos.x-28, camPos.y-142);
                 elementsPipes[13]->setPosition(camPos.x+22, camPos.y-142);
                 elementsPipes[14]->setPosition(camPos.x+72, camPos.y-142);
@@ -7756,7 +7856,7 @@ static void UpdateAssetsEdition()
                 elementsPipes[16]->setPosition(camPos.x+172, camPos.y-142);
                 elementsPipes[17]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 14 :
+            case 16 :
                 elementsPipes[18]->setPosition(camPos.x-28, camPos.y-142);
                 elementsPipes[19]->setPosition(camPos.x+22, camPos.y-142);
                 elementsPipes[20]->setPosition(camPos.x+72, camPos.y-142);
@@ -7764,7 +7864,7 @@ static void UpdateAssetsEdition()
                 elementsPipes[22]->setPosition(camPos.x+172, camPos.y-142);
                 elementsPipes[23]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 15 :
+            case 17 :
                 elementsPipes[24]->setPosition(camPos.x-28, camPos.y-142);
                 elementsPipes[25]->setPosition(camPos.x+22, camPos.y-142);
                 elementsPipes[26]->setPosition(camPos.x+72, camPos.y-142);
@@ -7772,7 +7872,7 @@ static void UpdateAssetsEdition()
                 elementsPipes[28]->setPosition(camPos.x+172, camPos.y-142);
                 elementsPipes[29]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 16 :
+            case 18 :
                 elementsPipes[30]->setPosition(camPos.x-28, camPos.y-142);
                 elementsPipes[31]->setPosition(camPos.x+22, camPos.y-142);
                 elementsPipes[32]->setPosition(camPos.x+72, camPos.y-142);
@@ -7780,62 +7880,68 @@ static void UpdateAssetsEdition()
                 elementsPipes[34]->setPosition(camPos.x+172, camPos.y-142);
                 elementsPipes[35]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 17 :
+            case 19 :
                 elementsSceneries[0]->setPosition(camPos.x+16, camPos.y-142);
                 elementsSceneries[1]->setPosition(camPos.x+96, camPos.y-142);
                 elementsSceneries[2]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 18 :
+            case 20 :
                 elementsSceneries[3]->setPosition(camPos.x+16, camPos.y-142);
                 elementsSceneries[4]->setPosition(camPos.x+96, camPos.y-142);
                 elementsSceneries[5]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 19 :
+            case 21 :
                 elementsSceneries[6]->setPosition(camPos.x+16, camPos.y-142);
                 elementsSceneries[7]->setPosition(camPos.x+96, camPos.y-142);
                 elementsSceneries[8]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 20 :
+            case 22 :
                 elementsSceneries[9]->setPosition(camPos.x+16, camPos.y-142);
                 elementsSceneries[10]->setPosition(camPos.x+96, camPos.y-142);
                 elementsSceneries[11]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 21 :
+            case 23 :
                 elementsSceneries[12]->setPosition(camPos.x+16, camPos.y-142);
                 elementsSceneries[13]->setPosition(camPos.x+96, camPos.y-142);
                 elementsSceneries[14]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 22 :
+            case 24 :
                 elementsSceneries[15]->setPosition(camPos.x+10, camPos.y-142);
                 elementsSceneries[16]->setPosition(camPos.x+68, camPos.y-142);
                 elementsSceneries[17]->setPosition(camPos.x+126, camPos.y-142);
                 elementsSceneries[18]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 23 :
+            case 25 :
                 elementsSceneries[19]->setPosition(camPos.x+16, camPos.y-142);
-                elementsSceneries[20]->setPosition(camPos.x+96, camPos.y-142);
-                elementsSceneries[21]->setPosition(camPos.x+176, camPos.y-142);
+                elementsSceneries[22]->setPosition(camPos.x+96, camPos.y-142);
+                elementsSceneries[23]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 24 :
+            case 26 :
+                elementsSceneries[20]->setPosition(camPos.x+10, camPos.y-142);
+                elementsSceneries[21]->setPosition(camPos.x+68, camPos.y-142);
+                elementsSceneries[24]->setPosition(camPos.x+126, camPos.y-142);
+                elementsSceneries[25]->setPosition(camPos.x+184, camPos.y-142);
+                break;
+            case 27 :
                 elementsEnemies[0]->setPosition(camPos.x-12, camPos.y-142);
                 elementsEnemies[1]->setPosition(camPos.x+42, camPos.y-142);
                 elementsEnemies[2]->setPosition(camPos.x+96, camPos.y-142);
                 elementsEnemies[3]->setPosition(camPos.x+150, camPos.y-142);
                 elementsEnemies[4]->setPosition(camPos.x+204, camPos.y-142);
                 break;
-            case 25 :
+            case 28 :
                 elementsEnemies[5]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[6]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[7]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[8]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 26 :
+            case 29 :
                 elementsEnemies[9]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[10]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[11]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[12]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 27 :
+            case 30 :
                 elementsEnemies[13]->setPosition(camPos.x-28, camPos.y-142);
                 elementsEnemies[14]->setPosition(camPos.x+22, camPos.y-142);
                 elementsEnemies[15]->setPosition(camPos.x+72, camPos.y-142);
@@ -7843,122 +7949,128 @@ static void UpdateAssetsEdition()
                 elementsEnemies[17]->setPosition(camPos.x+172, camPos.y-142);
                 elementsEnemies[18]->setPosition(camPos.x+222, camPos.y-142);
                 break;
-            case 28 :
+            case 31 :
                 elementsEnemies[19]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[20]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[21]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[22]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 29 :
+            case 32 :
+                elementsEnemies[53]->setPosition(camPos.x+10, camPos.y-142);
+                elementsEnemies[54]->setPosition(camPos.x+68, camPos.y-142);
+                elementsEnemies[55]->setPosition(camPos.x+126, camPos.y-142);
+                elementsEnemies[56]->setPosition(camPos.x+184, camPos.y-142);
+                break;
+            case 33 :
                 elementsEnemies[23]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[24]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[25]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[26]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 30 :
+            case 34 :
                 elementsEnemies[27]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[28]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[29]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[30]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 31 :
+            case 35 :
                 elementsEnemies[31]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[32]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[33]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[34]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 32 :
+            case 36 :
                 elementsEnemies[35]->setPosition(camPos.x+10, camPos.y-142);
                 elementsEnemies[36]->setPosition(camPos.x+68, camPos.y-142);
                 elementsEnemies[37]->setPosition(camPos.x+126, camPos.y-142);
                 elementsEnemies[38]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 33 :
+            case 37 :
                 elementsEnemies[39]->setPosition(camPos.x-12, camPos.y-142);
                 elementsEnemies[40]->setPosition(camPos.x+42, camPos.y-142);
                 elementsEnemies[41]->setPosition(camPos.x+96, camPos.y-142);
                 elementsEnemies[42]->setPosition(camPos.x+150, camPos.y-142);
                 elementsEnemies[43]->setPosition(camPos.x+204, camPos.y-142);
                 break;
-            case 34 :
+            case 38 :
                 elementsEnemies[44]->setPosition(camPos.x+16, camPos.y-142);
                 elementsEnemies[45]->setPosition(camPos.x+96, camPos.y-142);
                 elementsEnemies[46]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 35 :
+            case 39 :
                 elementsEnemies[47]->setPosition(camPos.x+16, camPos.y-142);
                 elementsEnemies[48]->setPosition(camPos.x+96, camPos.y-142);
                 elementsEnemies[49]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 36 :
+            case 40 :
                 elementsEnemies[50]->setPosition(camPos.x+16, camPos.y-142);
                 elementsEnemies[51]->setPosition(camPos.x+96, camPos.y-142);
                 elementsEnemies[52]->setPosition(camPos.x+176, camPos.y-142);
                 break;
-            case 37 :
+            case 41 :
                 elementsHazards[0]->setPosition(camPos.x-12, camPos.y-142);
                 elementsHazards[1]->setPosition(camPos.x+42, camPos.y-142);
                 elementsHazards[2]->setPosition(camPos.x+96, camPos.y-142);
                 elementsHazards[3]->setPosition(camPos.x+150, camPos.y-142);
                 elementsHazards[4]->setPosition(camPos.x+204, camPos.y-142);
                 break;
-            case 38 :
+            case 42 :
                 elementsHazards[5]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[6]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[7]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[8]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 39 :
+            case 43 :
                 elementsHazards[9]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[10]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[11]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[12]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 40 :
+            case 44 :
                 elementsHazards[13]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[14]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[15]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[16]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 41 :
+            case 45 :
                 elementsHazards[17]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[18]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[19]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[20]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 42 :
+            case 46 :
                 elementsHazards[21]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[22]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[23]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[24]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 43 :
+            case 47 :
                 elementsHazards[25]->setPosition(camPos.x-12, camPos.y-142);
                 elementsHazards[26]->setPosition(camPos.x+42, camPos.y-142);
                 elementsHazards[27]->setPosition(camPos.x+96, camPos.y-142);
                 elementsHazards[28]->setPosition(camPos.x+150, camPos.y-142);
                 elementsHazards[29]->setPosition(camPos.x+204, camPos.y-142);
                 break;
-            case 44 :
+            case 48 :
                 elementsHazards[30]->setPosition(camPos.x-12, camPos.y-142);
                 elementsHazards[31]->setPosition(camPos.x+42, camPos.y-142);
                 elementsHazards[32]->setPosition(camPos.x+96, camPos.y-142);
                 elementsHazards[33]->setPosition(camPos.x+150, camPos.y-142);
                 elementsHazards[34]->setPosition(camPos.x+204, camPos.y-142);
                 break;
-            case 45 :
+            case 49 :
                 elementsHazards[35]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[36]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[37]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[38]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 46 :
+            case 50 :
                 elementsHazards[39]->setPosition(camPos.x+10, camPos.y-142);
                 elementsHazards[40]->setPosition(camPos.x+68, camPos.y-142);
                 elementsHazards[41]->setPosition(camPos.x+126, camPos.y-142);
                 elementsHazards[42]->setPosition(camPos.x+184, camPos.y-142);
                 break;
-            case 47 :
+            case 51 :
                 elementsHazards[43]->setPosition(camPos.x+16, camPos.y-142);
                 elementsHazards[44]->setPosition(camPos.x+96, camPos.y-142);
                 elementsHazards[45]->setPosition(camPos.x+176, camPos.y-142);
@@ -7969,13 +8081,14 @@ static void UpdateAssetsEdition()
 
 static void UpdateAssetsLiquids()
 {
-    int camX = 0;
-    int camY = 0;
-
     int camMouseX = 0;
     int camMouseY = 0;
 
-    if (mainWindow->hasFocus())
+    char camX = 0;
+    char camY = 0;
+
+    bool keySpeed;
+
     {
         bool focus = mainWindow->hasFocus();
 
@@ -7983,6 +8096,8 @@ static void UpdateAssetsLiquids()
         bool keyRight = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[1])) && focus;
         bool keyDown = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[2])) && focus;
         bool keyUp = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[3])) && focus;
+
+        keySpeed = (Keyboard::isKeyPressed(Keyboard::LShift) || Keyboard::isKeyPressed(Keyboard::RShift)) && focus;
 
         if (keyLeft && !keyRight)
             camX = -1;
@@ -8007,7 +8122,9 @@ static void UpdateAssetsLiquids()
             else if (mpos_absolute.x > 640-MOUSEINFLUENCE && mpos_absolute.y < 448)
                 camMouseX = 1;
 
-            if (mpos_absolute.y > 480-MOUSEINFLUENCE && mpos_absolute.x < 572)
+            if (mpos_absolute.y < MOUSEINFLUENCE)
+                camMouseY = -1;
+            else if (mpos_absolute.y > 480-MOUSEINFLUENCE && mpos_absolute.x < 572)
                 camMouseY = 1;
         }
     }
@@ -8048,10 +8165,15 @@ static void UpdateAssetsLiquids()
     switch (camX)
     {
         case -1:
-            if (cameraSpeed.x > - (CAMSPEED - CAMACCEL))
-                cameraSpeed.x -= CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.x = -CAMSPEED * 2.0;
             else
-                cameraSpeed.x = -CAMSPEED;
+            {
+                if (cameraSpeed.x > - (CAMSPEED - CAMACCEL))
+                    cameraSpeed.x -= CAMACCEL;
+                else
+                    cameraSpeed.x = -CAMSPEED;
+            }
             break;
         case 0:
             if (cameraSpeed.x < -CAMDECEL)
@@ -8062,20 +8184,30 @@ static void UpdateAssetsLiquids()
                 cameraSpeed.x = 0;
             break;
         case 1:
-            if (cameraSpeed.x < CAMSPEED - CAMACCEL)
-                cameraSpeed.x += CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.x = CAMSPEED * 2.0;
             else
-                cameraSpeed.x = CAMSPEED;
+            {
+                if (cameraSpeed.x < CAMSPEED - CAMACCEL)
+                    cameraSpeed.x += CAMACCEL;
+                else
+                    cameraSpeed.x = CAMSPEED;
+            }
             break;
     }
 
     switch (camY)
     {
         case -1:
-            if (cameraSpeed.y > - (CAMSPEED - CAMACCEL))
-                cameraSpeed.y -= CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.y = -CAMSPEED * 2.0;
             else
-                cameraSpeed.y = -CAMSPEED;
+            {
+                if (cameraSpeed.y > - (CAMSPEED - CAMACCEL))
+                    cameraSpeed.y -= CAMACCEL;
+                else
+                    cameraSpeed.y = -CAMSPEED;
+            }
             break;
         case 0:
             if (cameraSpeed.y < -CAMDECEL)
@@ -8086,10 +8218,15 @@ static void UpdateAssetsLiquids()
                 cameraSpeed.y = 0;
             break;
         case 1:
-            if (cameraSpeed.y < CAMSPEED - CAMACCEL)
-                cameraSpeed.y += CAMACCEL;
+            if (keySpeed)
+                cameraSpeed.y = CAMSPEED * 2.0;
             else
-                cameraSpeed.y = CAMSPEED;
+            {
+                if (cameraSpeed.y < CAMSPEED - CAMACCEL)
+                    cameraSpeed.y += CAMACCEL;
+                else
+                    cameraSpeed.y = CAMSPEED;
+            }
             break;
     }
 
@@ -8235,9 +8372,9 @@ static void UpdateAssetsTileset()
 
     Uint8 selectionAlpha = tileSelection->getFillColor().a;
 
-    if (mpos_absolute.x > 80 && mpos_absolute.x < 560 && mpos_absolute.y > 16 && mpos_absolute.y < 432)
+    if (mpos_absolute.x > 32 && mpos_absolute.x < 608 && mpos_absolute.y > 16 && mpos_absolute.y < 400)
     {
-        tileSelection->setPosition((roundf((mpos_absolute.x + 16) / 32) * 32) + (camPos.x-336), (roundf((mpos_absolute.y + 16) / 32) * 32) + (camPos.y-256));
+        tileSelection->setPosition((roundf(mpos_absolute.x / 32) * 32) + (camPos.x-320), (roundf((mpos_absolute.y + 16) / 32) * 32) + (camPos.y-256));
 
         if (selectionWillFadeOut)
         {
@@ -8271,12 +8408,12 @@ static void UpdateAssetsTileset()
 
     if (mousePressed == 1)
     {
-        if (mpos_absolute.x > 80 && mpos_absolute.x < 560 && mpos_absolute.y > 16 && mpos_absolute.y < 432)
+        if (mpos_absolute.x > 32 && mpos_absolute.x < 608 && mpos_absolute.y > 16 && mpos_absolute.y < 400)
         {
             FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
 
-            tileNumbX = ((mpos_absolute.x - 16) / 32) - 2;
-            tileNumbY = ((mpos_absolute.y - 16) / 32);
+            tileNumbX = (mpos_absolute.x / 32) - 1;
+            tileNumbY = (mpos_absolute.y - 16) / 32;
 
             #ifdef DEBUGMODE
             cout << "Tile X : " << tileNumbX << endl << "Tile Y : " << tileNumbY << endl;
@@ -8284,6 +8421,7 @@ static void UpdateAssetsTileset()
 
             itemHandled->setTexture(*mainTileset);
             itemHandled->setTextureRect(IntRect(tileNumbX * 32, tileNumbY * 32, 32, 32));
+            itemHandled->setColor(Color(255, 255, 255, 128));
             itemHandled->setRotation(0);
             itemHandled->setOrigin(0, 0);
 
@@ -8804,11 +8942,39 @@ static void Selection_Pipes()
 
 static void Selection_Sceneries()
 {
-    if (mousePressed == 1 && (mpos_absolute.x > -16 && mpos_absolute.x < 656 && mpos_absolute.y > -16 && mpos_absolute.y < 496) && !blockMouse)
+    if (mousePressed > 0 && (mpos_absolute.x > -16 && mpos_absolute.x < 656 && mpos_absolute.y > -16 && mpos_absolute.y < 496) && !blockMouse)
     {
-        if (toolbarVisible)
+        bool placement(true);
+
+        if (elementSelected != 230)
         {
-            if (!(mpos_absolute.y < 150 || (mpos_absolute.x < 133 && mpos_absolute.y > 448) || (mpos_absolute.x > 459 && mpos_absolute.y > 448)))
+            if (mousePressed > 1)
+                placement = false;
+        }
+
+        if (placement)
+        {
+            if (toolbarVisible)
+            {
+                if (!(mpos_absolute.y < 150 || (mpos_absolute.x < 133 && mpos_absolute.y > 448) || (mpos_absolute.x > 459 && mpos_absolute.y > 448)))
+                {
+                    if (sectionb)
+                    {
+                        if (listSceneriesb.size() == 400)
+                            MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                        else
+                            Placements_Sceneries(entityMatrixb, listSceneriesb);
+                    }
+                    else
+                    {
+                        if (listSceneries.size() == 400)
+                            MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                        else
+                            Placements_Sceneries(entityMatrix, listSceneries);
+                    }
+                }
+            }
+            else
             {
                 if (sectionb)
                 {
@@ -8824,23 +8990,6 @@ static void Selection_Sceneries()
                     else
                         Placements_Sceneries(entityMatrix, listSceneries);
                 }
-            }
-        }
-        else
-        {
-            if (sectionb)
-            {
-                if (listSceneriesb.size() == 400)
-                    MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
-                else
-                    Placements_Sceneries(entityMatrixb, listSceneriesb);
-            }
-            else
-            {
-                if (listSceneries.size() == 400)
-                    MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
-                else
-                    Placements_Sceneries(entityMatrix, listSceneries);
             }
         }
     }
@@ -8872,7 +9021,7 @@ static void Selection_Enemies()
     {
         bool placement(true);
 
-        if (elementSelected < 161 || elementSelected > 163)
+        if ((elementSelected < 161 || elementSelected > 163) && elementSelected < 225)
         {
             if (mousePressed > 1)
                 placement = false;
@@ -9525,7 +9674,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 32));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(32, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 32, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9538,7 +9687,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 33));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(64, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 33, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9551,7 +9700,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 34));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(96, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 34, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9564,7 +9713,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 35));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(128, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 35, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9577,7 +9726,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 36));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(160, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 36, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9590,7 +9739,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 37));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(192, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 37, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9603,7 +9752,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 38));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 38, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9616,7 +9765,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(480, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 39));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 39, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9629,7 +9778,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(512, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 40));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 40, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9642,7 +9791,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(544, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 41));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 41, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9655,7 +9804,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(576, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 42));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 42, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9668,7 +9817,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(608, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 43));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 43, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9772,7 +9921,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 51));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(0, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 51, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9808,7 +9957,7 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(640, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 54));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 54));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9821,7 +9970,163 @@ static void Placements_Bonus(Matrix* currentMatrix, Matrix* tileMatrix, list<Ent
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(672, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 55));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 55));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 213 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(0, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 213));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 214 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(0, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 214, 1, 0, true));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 215 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(0, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 215));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 216 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(32, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 216));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 217 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(32, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 217, 1, 0, true));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 218 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(32, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 218));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 219 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(64, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 219));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 220 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(64, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 220, 1, 0, true));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 221 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(64, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 221));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 222 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(96, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 222));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 223 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(96, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 223, 1, 0, true));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 224 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
+                tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(96, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 224));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -9843,8 +10148,8 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 15, 0));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 16, 0));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 18, 0));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 19, 0));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -9856,8 +10161,8 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 15, 1));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 16, 1));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 18, 1));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 19, 1));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -9869,8 +10174,8 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 15, 2));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 16, 2));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 18, 2));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 19, 2));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -9879,84 +10184,6 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             }
             break;
         case 59 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 15, 3));
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 15, 4));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 60 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 16, 3));
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 16, 4));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 61 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 17, 3));
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 17, 4));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 62 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 17, 0));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 18, 0));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 63 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 17, 1));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 18, 1));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 64 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 17, 2));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 18, 2));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 65 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -9969,7 +10196,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 66 :
+        case 60 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -9982,7 +10209,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 67 :
+        case 61 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -9995,12 +10222,12 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 68 :
+        case 62 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 19, 0));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 20, 0));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 20, 0));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 21, 0));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10008,12 +10235,12 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 69 :
+        case 63 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 19, 1));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 20, 1));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 20, 1));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 21, 1));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10021,12 +10248,12 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 70 :
+        case 64 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 19, 2));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 20, 2));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 20, 2));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 21, 2));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10034,7 +10261,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 71 :
+        case 65 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10047,7 +10274,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 72 :
+        case 66 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10060,7 +10287,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 73 :
+        case 67 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10073,12 +10300,90 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
+        case 68 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 22, 0));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 23, 0));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 69 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 22, 1));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 23, 1));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 70 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 22, 2));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 23, 2));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 71 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 24, 3));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 24, 4));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 72 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 25, 3));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 25, 4));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 73 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 26, 3));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 26, 4));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
         case 74 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 21, 0));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 22, 0));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 24, 0));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 25, 0));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10090,8 +10395,8 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 21, 1));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 22, 1));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 24, 1));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 25, 1));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10103,8 +10408,8 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 21, 2));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 22, 2));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 24, 2));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 25, 2));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10113,84 +10418,6 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
             }
             break;
         case 77 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 15, 5));
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 15, 6));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 78 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 16, 5));
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 16, 6));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 79 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 17, 5));
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 17, 6));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 80 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 23, 0));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 24, 0));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 81 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 23, 1));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 24, 1));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 82 :
-            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
-                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
-            {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 23, 2));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 24, 2));
-
-                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
-                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
-
-                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
-            }
-            break;
-        case 83 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10203,7 +10430,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 84 :
+        case 78 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10216,7 +10443,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 85 :
+        case 79 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10229,12 +10456,12 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 86 :
+        case 80 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 25, 0));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 26, 0));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 26, 0));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 27, 0));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10242,12 +10469,12 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 87 :
+        case 81 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 25, 1));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 26, 1));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 26, 1));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 27, 1));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10255,12 +10482,12 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 88 :
+        case 82 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 25, 2));
-                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 26, 2));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 26, 2));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 27, 2));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
@@ -10268,7 +10495,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 89 :
+        case 83 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10281,7 +10508,7 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 90 :
+        case 84 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
@@ -10294,12 +10521,90 @@ static void Placements_Pipes(Matrix* tileMatrix, list<Tile>& currentList)
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
             }
             break;
-        case 91 :
+        case 85 :
             if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
                 tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
             {
                 currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 23, 5));
                 currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 23, 6));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 86 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 28, 0));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 29, 0));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 87 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 28, 1));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 29, 1));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 88 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue((cursorPos.x / 32) + 1, cursorPos.y / 32) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 28, 2));
+                currentList.emplace_back(Tile(cursorPos.x+32, cursorPos.y, 29, 2));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 89 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 24, 5));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 24, 6));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 90 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 25, 5));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 25, 6));
+
+                tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
+                tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 91 :
+            if (tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0 &&
+                tileMatrix->getValue(cursorPos.x / 32, (cursorPos.y / 32) + 1) == 0)
+            {
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, 26, 5));
+                currentList.emplace_back(Tile(cursorPos.x, cursorPos.y+32, 26, 6));
 
                 tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 2);
                 tileMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 2);
@@ -10319,7 +10624,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 92 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 352, 32, 64), cursorPos.x, cursorPos.y, -1, 32, 92));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GREEN_TREE, cursorPos.x, cursorPos.y, -1, 32, 92));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10329,7 +10634,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 93 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 320, 32, 96), cursorPos.x, cursorPos.y, 0, 64, 93));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GREEN_BIGTREE, cursorPos.x, cursorPos.y, 0, 64, 93));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10349,7 +10654,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 95 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 352, 32, 64), cursorPos.x, cursorPos.y, -1, 32, 95));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GRAY_TREE, cursorPos.x, cursorPos.y, -1, 32, 95));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10359,7 +10664,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 96 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 320, 32, 96), cursorPos.x, cursorPos.y, 0, 64, 96));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GRAY_BIGTREE, cursorPos.x, cursorPos.y, 0, 64, 96));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10379,7 +10684,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 98 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 352, 32, 64), cursorPos.x, cursorPos.y, -1, 32, 98));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_YELLOW_TREE, cursorPos.x, cursorPos.y, -1, 32, 98));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10389,7 +10694,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 99 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 320, 32, 96), cursorPos.x, cursorPos.y, 0, 64, 99));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_YELLOW_BIGTREE, cursorPos.x, cursorPos.y, 0, 64, 99));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10409,7 +10714,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 101 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 352, 32, 64), cursorPos.x, cursorPos.y, -1, 32, 101));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_RED_TREE, cursorPos.x, cursorPos.y, -1, 32, 101));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10419,7 +10724,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 102 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 320, 32, 96), cursorPos.x, cursorPos.y, 0, 64, 102));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_RED_BIGTREE, cursorPos.x, cursorPos.y, 0, 64, 102));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10439,7 +10744,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 104 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 352, 32, 64), cursorPos.x, cursorPos.y, -1, 32, 104));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_BLUE_TREE, cursorPos.x, cursorPos.y, -1, 32, 104));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10449,7 +10754,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 105 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 320, 32, 96), cursorPos.x, cursorPos.y, 0, 64, 105));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_BLUE_BIGTREE, cursorPos.x, cursorPos.y, 0, 64, 105));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10469,7 +10774,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 107 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 288, 160, 32), cursorPos.x, cursorPos.y, 64, 0, 107));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_FENCE, cursorPos.x, cursorPos.y, 64, 0, 107));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10479,7 +10784,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 108 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 288, 160, 32), cursorPos.x, cursorPos.y, 64, 0, 108));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_SNOWFENCE, cursorPos.x, cursorPos.y, 64, 0, 108));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -10530,6 +10835,46 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
                 currentList.emplace_back(new Entity(sceneriesTxt[9], cursorPos.x, cursorPos.y, 141, 160, 113));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 229 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity_MultiText(sceneriesTxt[10], IntRect(0, 0, 95, 91), cursorPos.x, cursorPos.y, 31, -5, 229));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 230 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity(sceneriesTxt[11], cursorPos.x, cursorPos.y, 11, 0, 230));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 231 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity(sceneriesTxt[12], cursorPos.x, cursorPos.y, 77, 128, 231));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 232 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity(sceneriesTxt[13], cursorPos.x, cursorPos.y, 141, 160, 232));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11107,7 +11452,7 @@ static void Placements_Enemies(Matrix* currentMatrix, Matrix* tileMatrix, list<E
         case 158:
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(64, 0, 31, 48), cursorPos.x, cursorPos.y, 0, 16, 158));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 31, 48), cursorPos.x, cursorPos.y, 0, 16, 158));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11117,7 +11462,7 @@ static void Placements_Enemies(Matrix* currentMatrix, Matrix* tileMatrix, list<E
         case 159:
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(95, 0, 31, 48), cursorPos.x, cursorPos.y, 0, 16, 159));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(63, 0, 31, 48), cursorPos.x, cursorPos.y, 0, 16, 159));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11127,7 +11472,7 @@ static void Placements_Enemies(Matrix* currentMatrix, Matrix* tileMatrix, list<E
         case 160:
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(126, 0, 31, 48), cursorPos.x, cursorPos.y, 0, 16, 160));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(94, 0, 31, 48), cursorPos.x, cursorPos.y, 0, 16, 160));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11167,7 +11512,7 @@ static void Placements_Enemies(Matrix* currentMatrix, Matrix* tileMatrix, list<E
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 2)
             {
-                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 163));
+                currentList.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(0, 0, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 163, 1, 0, true));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11269,6 +11614,46 @@ static void Placements_Enemies(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             }
 
             break;
+        case 225 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), cursorPos.x, cursorPos.y, -1, -1, 225));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 226 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), cursorPos.x, cursorPos.y, 32, -1, 226, 1, 270));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 227 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), cursorPos.x, cursorPos.y, -1, 31, 227, 1, 90));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
+        case 228 :
+            if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
+            {
+                currentList.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), cursorPos.x, cursorPos.y, 32, 32, 228, 1, 180));
+
+                currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
+
+                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
+            }
+            break;
     }
 }
 
@@ -11322,7 +11707,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(832, 96, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 171));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_LAVABOTTOM, cursorPos.x, cursorPos.y, 0, 0, 171));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11439,7 +11824,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 96, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 180));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKETOP, cursorPos.x, cursorPos.y, 0, 0, 180));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11452,7 +11837,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 192, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 181));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKEBOTTOM, cursorPos.x, cursorPos.y, 0, 0, 181));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11465,7 +11850,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 128, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 182));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKELEFT, cursorPos.x, cursorPos.y, 0, 0, 182));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11478,7 +11863,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 160, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 183));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKERIGHT, cursorPos.x, cursorPos.y, 0, 0, 183));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11595,7 +11980,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 192));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLTOP, cursorPos.x, cursorPos.y, 0, 0, 192));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11608,7 +11993,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 193));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLTOPB, cursorPos.x, cursorPos.y, 0, 0, 193));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11621,7 +12006,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 194));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLMIDV, cursorPos.x, cursorPos.y, 0, 0, 194));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11634,7 +12019,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 195));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLBOT, cursorPos.x, cursorPos.y, 0, 0, 195));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11647,7 +12032,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 196));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLBOTB, cursorPos.x, cursorPos.y, 0, 0, 196));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11660,7 +12045,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 197));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLLEF, cursorPos.x, cursorPos.y, 0, 0, 197));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11673,7 +12058,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 198));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLLEFB, cursorPos.x, cursorPos.y, 0, 0, 198));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11686,7 +12071,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 199));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLMIDH, cursorPos.x, cursorPos.y, 0, 0, 199));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11699,7 +12084,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 200));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLRIG, cursorPos.x, cursorPos.y, 0, 0, 200));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11712,7 +12097,7 @@ static void Placements_Hazards(Matrix* currentMatrix, Matrix* tileMatrix, list<E
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1 &&
                 tileMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
             {
-                currentList.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 224, 32, 32), cursorPos.x, cursorPos.y, 0, 0, 201));
+                currentList.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLRIGB, cursorPos.x, cursorPos.y, 0, 0, 201));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -11950,8 +12335,8 @@ static void Erasment_Pipes(Matrix* currentMatrix, Matrix* entMatrix, list<Tile>&
 {
     Vector2f cursorPos(itemHandled->getPosition());
 
-    if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 2 &&
-        entMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
+    if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 2/* &&
+        entMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0*/)
     {
         for (list<Tile>::iterator it = currentList.begin(); it != currentList.end(); it++)
         {
@@ -11959,7 +12344,24 @@ static void Erasment_Pipes(Matrix* currentMatrix, Matrix* entMatrix, list<Tile>&
             {
                 Vector2f tilePos = it->m_quad[0].texCoords;
 
-                if (tilePos == Vector2f(480, 0))
+                if (tilePos == Vector2f(576, 0) ||
+                    tilePos == Vector2f(576, 32) ||
+                    tilePos == Vector2f(576, 64) ||
+                    tilePos == Vector2f(640, 0) ||
+                    tilePos == Vector2f(640, 32) ||
+                    tilePos == Vector2f(640, 64) ||
+                    tilePos == Vector2f(704, 0) ||
+                    tilePos == Vector2f(704, 32) ||
+                    tilePos == Vector2f(704, 64) ||
+                    tilePos == Vector2f(768, 0) ||
+                    tilePos == Vector2f(768, 32) ||
+                    tilePos == Vector2f(768, 64) ||
+                    tilePos == Vector2f(832, 0) ||
+                    tilePos == Vector2f(832, 32) ||
+                    tilePos == Vector2f(832, 64) ||
+                    tilePos == Vector2f(896, 0) ||
+                    tilePos == Vector2f(896, 32) ||
+                    tilePos == Vector2f(896, 64))
                 {
                     list<Tile>::iterator tilesToErase[2];
 
@@ -11979,687 +12381,24 @@ static void Erasment_Pipes(Matrix* currentMatrix, Matrix* entMatrix, list<Tile>&
 
                     break;
                 }
-                else if (tilePos == Vector2f(480, 32))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(480, 64))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(544, 0))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(544, 32))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(544, 64))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(608, 0))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(608, 32))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(608, 64))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(672, 0))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(672, 32))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(672, 64))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(736, 0))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(736, 32))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(736, 64))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(800, 0))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(800, 32))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(800, 64))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue((cursorPos.x / 32) + 1, cursorPos.y / 32, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(480, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(512, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(544, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(576, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(608, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(640, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(672, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(704, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(736, 96))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(480, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(512, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(544, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(576, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(608, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(640, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(672, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(704, 160))
-                {
-                    list<Tile>::iterator tilesToErase[2];
-
-                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    currentMatrix->setValue(cursorPos.x / 32, (cursorPos.y / 32) + 1, 0);
-
-                    tilesToErase[0] = it;
-
-                    it++;
-
-                    tilesToErase[1] = it;
-
-                    currentList.erase(tilesToErase[0]);
-                    currentList.erase(tilesToErase[1]);
-
-                    FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(2), itemDelete, 0, NULL);
-
-                    break;
-                }
-                else if (tilePos == Vector2f(736, 160))
+                else if (tilePos == Vector2f(576, 96) ||
+                         tilePos == Vector2f(608, 96) ||
+                         tilePos == Vector2f(640, 96) ||
+                         tilePos == Vector2f(672, 96) ||
+                         tilePos == Vector2f(704, 96) ||
+                         tilePos == Vector2f(736, 96) ||
+                         tilePos == Vector2f(768, 96) ||
+                         tilePos == Vector2f(800, 96) ||
+                         tilePos == Vector2f(832, 96) ||
+                         tilePos == Vector2f(576, 160) ||
+                         tilePos == Vector2f(608, 160) ||
+                         tilePos == Vector2f(640, 160) ||
+                         tilePos == Vector2f(672, 160) ||
+                         tilePos == Vector2f(704, 160) ||
+                         tilePos == Vector2f(736, 160) ||
+                         tilePos == Vector2f(768, 160) ||
+                         tilePos == Vector2f(800, 160) ||
+                         tilePos == Vector2f(832, 160))
                 {
                     list<Tile>::iterator tilesToErase[2];
 
@@ -12700,10 +12439,7 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
             {
                 if ((*it)->getOriginalPosition() == cursorPos)
                 {
-                    unsigned int entType = (*it)->getType();
-
-                    if (entType >= 92 && entType <= 113)
-                        currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
+                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
 
                     delete *it;
 
@@ -13242,6 +12978,8 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
                         tileMatrix->setValue((cursorPos.x / 32) + 4, cursorPos.y / 32, 0);
                         tileMatrix->setValue((cursorPos.x / 32) + 5, cursorPos.y / 32, 0);
                     }
+                    else if (entType >= 225 && entType <= 228)
+                        currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
 
                     delete *it;
 
@@ -13259,7 +12997,9 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
                 {
                     unsigned int entType = (*it)->getType();
 
-                    if (entType >= 26 && entType <= 51)
+                    if ((entType >= 26 && entType <= 51) ||
+                        (entType >= 53 && entType <= 91) ||
+                        (entType >= 213 && entType <= 224))
                     {
                         currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
 
@@ -13267,12 +13007,6 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
                     }
                     else if (entType == 52)
                         currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    else if (entType >= 53 && entType <= 91)
-                    {
-                        currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-
-                        tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    }
 
                     delete *it;
 
@@ -13290,10 +13024,7 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
             {
                 if ((*it)->getOriginalPosition() == cursorPos)
                 {
-                    unsigned int entType = (*it)->getType();
-
-                    if (entType >= 92 && entType <= 113)
-                        currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
+                    currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
 
                     delete *it;
 
@@ -13832,6 +13563,8 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
                         tileMatrix->setValue((cursorPos.x / 32) + 4, cursorPos.y / 32, 0);
                         tileMatrix->setValue((cursorPos.x / 32) + 5, cursorPos.y / 32, 0);
                     }
+                    else if (entType >= 225 && entType <= 228)
+                        currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
 
                     delete *it;
 
@@ -13849,7 +13582,9 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
                 {
                     unsigned int entType = (*it)->getType();
 
-                    if (entType >= 26 && entType <= 51)
+                    if ((entType >= 26 && entType <= 51) ||
+                        (entType >= 53 && entType <= 91) ||
+                        (entType >= 213 && entType <= 224))
                     {
                         currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
 
@@ -13857,12 +13592,6 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix)
                     }
                     else if (entType == 52)
                         currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    else if (entType >= 53 && entType <= 91)
-                    {
-                        currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-
-                        tileMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 0);
-                    }
 
                     delete *it;
 
@@ -14155,18 +13884,20 @@ static void RecalculateBounds()
                 break;
         }
 
-        background[0]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[1]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[2]->setPosition(0, (roomScaleb.y * 480) - 156);
+        background[0]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[1]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[2]->setPosition(0, (roomScaleb.y * 480) - 274);
         background[3]->setPosition(0, (roomScaleb.y * 480) - 178);
         background[4]->setPosition(0, (roomScaleb.y * 480) - 165);
         background[5]->setPosition(0, (roomScaleb.y * 480) - 101);
         background[6]->setPosition(0, (roomScaleb.y * 480) - 320);
         background[7]->setPosition(0, (roomScaleb.y * 480) - 320);
+        background[14]->setPosition(0, (roomScaleb.y * 480) - 320);
+        background[15]->setPosition(0, (roomScaleb.y * 480) - 320);
 
-        background[0]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScaleb.x * 640, 156));
+        background[0]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[1]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[2]->setSize(Vector2f(roomScaleb.x * 640, 274));
         background[3]->setSize(Vector2f(roomScaleb.x * 640, 178));
         background[4]->setSize(Vector2f(roomScaleb.x * 640, 165));
         background[5]->setSize(Vector2f(roomScaleb.x * 640, 101));
@@ -14176,6 +13907,8 @@ static void RecalculateBounds()
         background[9]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
         background[10]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
         background[11]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
+        background[14]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[15]->setSize(Vector2f(roomScaleb.x * 640, 274));
 
         if (background[13] != NULL)
             background[13]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
@@ -14193,9 +13926,9 @@ static void RecalculateBounds()
 
         liquidRect[1]->setSize(Vector2f(roomScaleb.x * 640, liquidRect[1]->getSize().y));
 
-        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 156));
+        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
         background[3]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 178));
         background[4]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 165));
         background[5]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 101));
@@ -14205,14 +13938,19 @@ static void RecalculateBounds()
         background[9]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
         background[10]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
         background[11]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
+        background[14]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[15]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
 
         if (background[13] != NULL)
             background[13]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
 
         liquidRect[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, liquidRect[1]->getTextureRect().height));
 
-        effectClouds->setSize(Vector2f(roomScaleb.x * 640, 63));
-        effectClouds->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+        effectClouds[0]->setSize(Vector2f(roomScaleb.x * 640, 63));
+        effectClouds[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+
+        effectClouds[1]->setSize(Vector2f(roomScaleb.x * 640, 63));
+        effectClouds[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
 
         layer1TileMatrixb->resize(roomScaleb.x * 20, roomScaleb.y * 15);
         layer2TileMatrixb->resize(roomScaleb.x * 20, roomScaleb.y * 15);
@@ -14462,18 +14200,20 @@ static void RecalculateBounds()
                 break;
         }
 
-        background[0]->setPosition(0, (roomScale.y * 480) - 160);
-        background[1]->setPosition(0, (roomScale.y * 480) - 160);
-        background[2]->setPosition(0, (roomScale.y * 480) - 156);
+        background[0]->setPosition(0, (roomScale.y * 480) - 274);
+        background[1]->setPosition(0, (roomScale.y * 480) - 274);
+        background[2]->setPosition(0, (roomScale.y * 480) - 274);
         background[3]->setPosition(0, (roomScale.y * 480) - 178);
         background[4]->setPosition(0, (roomScale.y * 480) - 165);
         background[5]->setPosition(0, (roomScale.y * 480) - 101);
         background[6]->setPosition(0, (roomScale.y * 480) - 320);
         background[7]->setPosition(0, (roomScale.y * 480) - 320);
+        background[14]->setPosition(0, (roomScale.y * 480) - 274);
+        background[15]->setPosition(0, (roomScale.y * 480) - 274);
 
-        background[0]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScale.x * 640, 156));
+        background[0]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[1]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[2]->setSize(Vector2f(roomScale.x * 640, 274));
         background[3]->setSize(Vector2f(roomScale.x * 640, 178));
         background[4]->setSize(Vector2f(roomScale.x * 640, 165));
         background[5]->setSize(Vector2f(roomScale.x * 640, 101));
@@ -14483,6 +14223,8 @@ static void RecalculateBounds()
         background[9]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
         background[10]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
         background[11]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
+        background[14]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[15]->setSize(Vector2f(roomScale.x * 640, 274));
 
         if (background[12] != NULL)
             background[12]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
@@ -14500,9 +14242,9 @@ static void RecalculateBounds()
 
         liquidRect[0]->setSize(Vector2f(roomScale.x * 640, liquidRect[0]->getSize().y));
 
-        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 156));
+        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
         background[3]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 178));
         background[4]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 165));
         background[5]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 101));
@@ -14512,14 +14254,19 @@ static void RecalculateBounds()
         background[9]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
         background[10]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
         background[11]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
+        background[14]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[15]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
 
         if (background[12] != NULL)
             background[12]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
 
         liquidRect[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, liquidRect[0]->getTextureRect().height));
 
-        effectClouds->setSize(Vector2f(roomScale.x * 640, 63));
-        effectClouds->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+        effectClouds[0]->setSize(Vector2f(roomScale.x * 640, 63));
+        effectClouds[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+
+        effectClouds[1]->setSize(Vector2f(roomScale.x * 640, 63));
+        effectClouds[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
 
         layer1TileMatrix->resize(roomScale.x * 20, roomScale.y * 15);
         layer2TileMatrix->resize(roomScale.x * 20, roomScale.y * 15);
@@ -15188,7 +14935,7 @@ void RecalculateInfos(unsigned char info)
 
 static void ScrollUp()
 {
-    if (elementsLine > 1 && elementsLine <= 5)
+    if (elementsLine > 1 && elementsLine <= 7)
     {
         elementsLine--;
 
@@ -15196,7 +14943,7 @@ static void ScrollUp()
 
         FreezeAllButtons();
     }
-    else if (elementsLine > 6 && elementsLine <= 10)
+    else if (elementsLine > 8 && elementsLine <= 12)
     {
         elementsLine--;
 
@@ -15204,7 +14951,7 @@ static void ScrollUp()
 
         FreezeAllButtons();
     }
-    else if (elementsLine > 11 && elementsLine <= 16)
+    else if (elementsLine > 13 && elementsLine <= 18)
     {
         elementsLine--;
 
@@ -15212,7 +14959,7 @@ static void ScrollUp()
 
         FreezeAllButtons();
     }
-    else if (elementsLine > 17 && elementsLine <= 23)
+    else if (elementsLine > 19 && elementsLine <= 26)
     {
         elementsLine--;
 
@@ -15220,7 +14967,7 @@ static void ScrollUp()
 
         FreezeAllButtons();
     }
-    else if (elementsLine > 24 && elementsLine <= 36)
+    else if (elementsLine > 27 && elementsLine <= 40)
     {
         elementsLine--;
 
@@ -15228,7 +14975,7 @@ static void ScrollUp()
 
         FreezeAllButtons();
     }
-    else if (elementsLine > 37 && elementsLine <= 47)
+    else if (elementsLine > 41 && elementsLine <= 51)
     {
         elementsLine--;
 
@@ -15240,7 +14987,7 @@ static void ScrollUp()
 
 static void ScrollDown()
 {
-    if (elementsLine >= 1 && elementsLine < 5)
+    if (elementsLine >= 1 && elementsLine < 7)
     {
         elementsLine++;
 
@@ -15248,7 +14995,7 @@ static void ScrollDown()
 
         FreezeAllButtons();
     }
-    else if (elementsLine >= 6 && elementsLine < 10)
+    else if (elementsLine >= 8 && elementsLine < 12)
     {
         elementsLine++;
 
@@ -15256,7 +15003,7 @@ static void ScrollDown()
 
         FreezeAllButtons();
     }
-    else if (elementsLine >= 11 && elementsLine < 16)
+    else if (elementsLine >= 13 && elementsLine < 18)
     {
         elementsLine++;
 
@@ -15264,7 +15011,7 @@ static void ScrollDown()
 
         FreezeAllButtons();
     }
-    else if (elementsLine >= 17 && elementsLine < 23)
+    else if (elementsLine >= 19 && elementsLine < 26)
     {
         elementsLine++;
 
@@ -15272,7 +15019,7 @@ static void ScrollDown()
 
         FreezeAllButtons();
     }
-    else if (elementsLine >= 24 && elementsLine < 36)
+    else if (elementsLine >= 27 && elementsLine < 40)
     {
         elementsLine++;
 
@@ -15280,7 +15027,7 @@ static void ScrollDown()
 
         FreezeAllButtons();
     }
-    else if (elementsLine >= 37 && elementsLine < 47)
+    else if (elementsLine >= 41 && elementsLine < 51)
     {
         elementsLine++;
 
@@ -15295,7 +15042,7 @@ static void FreezeAllButtons()
     for (register unsigned int i = 0; i < 3; i++)
         elementsEsssential[i]->freeze();
 
-    for (register unsigned int i = 0; i < 23; i++)
+    for (register unsigned int i = 0; i < 35; i++)
         elementsPlatforms[i]->freeze();
 
     for (register unsigned int i = 0; i < 30; i++)
@@ -15304,10 +15051,10 @@ static void FreezeAllButtons()
     for (register unsigned int i = 0; i < 36; i++)
         elementsPipes[i]->freeze();
 
-    for (register unsigned int i = 0; i < 22; i++)
+    for (register unsigned int i = 0; i < 26; i++)
         elementsSceneries[i]->freeze();
 
-    for (register unsigned int i = 0; i < 53; i++)
+    for (register unsigned int i = 0; i < 57; i++)
         elementsEnemies[i]->freeze();
 
     for (register unsigned int i = 0; i < 46; i++)
@@ -15483,8 +15230,8 @@ static void Category_Tiles()
     tileSelection->setSize(Vector2f(32, 32));
     tileSelection->setFillColor(Color(255, 255, 0, 128));
 
-    tilesetSpr->setPosition(camPos.x-240, camPos.y-224);
-    tilesetRect->setPosition(camPos.x-240, camPos.y-224);
+    tilesetSpr->setPosition(camPos.x-288, camPos.y-224);
+    tilesetRect->setPosition(camPos.x-288, camPos.y-224);
 
     returnButton->setPosition(camPos.x-282, camPos.y+206);
 
@@ -15493,7 +15240,7 @@ static void Category_Tiles()
     for (register unsigned int i = 0; i < 3; i++)
         elementsEsssential[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 23; i++)
+    for (register unsigned int i = 0; i < 35; i++)
         elementsPlatforms[i]->Unselected();
 
     for (register unsigned int i = 0; i < 30; i++)
@@ -15502,10 +15249,10 @@ static void Category_Tiles()
     for (register unsigned int i = 0; i < 36; i++)
         elementsPipes[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 22; i++)
+    for (register unsigned int i = 0; i < 26; i++)
         elementsSceneries[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 53; i++)
+    for (register unsigned int i = 0; i < 57; i++)
         elementsEnemies[i]->Unselected();
 
     for (register unsigned int i = 0; i < 46; i++)
@@ -15552,7 +15299,7 @@ static void Category_Warps()
     for (register unsigned int i = 0; i < 3; i++)
         elementsEsssential[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 23; i++)
+    for (register unsigned int i = 0; i < 35; i++)
         elementsPlatforms[i]->Unselected();
 
     for (register unsigned int i = 0; i < 30; i++)
@@ -15561,16 +15308,17 @@ static void Category_Warps()
     for (register unsigned int i = 0; i < 36; i++)
         elementsPipes[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 22; i++)
+    for (register unsigned int i = 0; i < 26; i++)
         elementsSceneries[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 53; i++)
+    for (register unsigned int i = 0; i < 57; i++)
         elementsEnemies[i]->Unselected();
 
     for (register unsigned int i = 0; i < 46; i++)
         elementsHazards[i]->Unselected();
 
     itemHandled->setTexture(*warpsTex);
+    itemHandled->setColor(Color(255, 255, 255, 128));
     itemHandled->setOrigin(0, 0);
     itemHandled->setRotation(0);
 
@@ -15628,20 +15376,67 @@ static void Prefs_Background()
 {
     menuText[2]->setPosition(camPos.x, camPos.y-226);
 
-    backgroundButton[0]->setPosition(camPos.x+84, camPos.y+320);
-    backgroundButton[1]->setPosition(camPos.x+283, camPos.y+320);
-    backgroundButton[2]->setPosition(camPos.x-16, camPos.y+16);
-    backgroundButton[3]->setPosition(camPos.x+184, camPos.y+16);
-    backgroundButton[4]->setPosition(camPos.x+382, camPos.y+16);
-    backgroundButton[5]->setPosition(camPos.x-16, camPos.y+92);
-    backgroundButton[6]->setPosition(camPos.x+184, camPos.y+92);
-    backgroundButton[7]->setPosition(camPos.x+382, camPos.y+92);
-    backgroundButton[8]->setPosition(camPos.x-16, camPos.y+168);
-    backgroundButton[9]->setPosition(camPos.x+184, camPos.y+168);
-    backgroundButton[10]->setPosition(camPos.x+382, camPos.y+168);
-    backgroundButton[11]->setPosition(camPos.x-16, camPos.y+244);
-    backgroundButton[12]->setPosition(camPos.x+184, camPos.y+244);
-    backgroundButton[13]->setPosition(camPos.x+382, camPos.y+244);
+    panelInfo[0].position = Vector2f(camPos.x - 292, camPos.y - 188);
+    panelInfo[1].position = Vector2f(camPos.x - 278, camPos.y - 188);
+    panelInfo[2].position = Vector2f(camPos.x - 278, camPos.y - 172);
+    panelInfo[3].position = Vector2f(camPos.x - 292, camPos.y - 172);
+
+    panelInfo[4].position = Vector2f(camPos.x - 278, camPos.y - 188);
+    panelInfo[5].position = Vector2f(camPos.x + 278, camPos.y - 188);
+    panelInfo[6].position = Vector2f(camPos.x + 278, camPos.y - 172);
+    panelInfo[7].position = Vector2f(camPos.x - 278, camPos.y - 172);
+
+    panelInfo[8].position = Vector2f(camPos.x + 278, camPos.y - 188);
+    panelInfo[9].position = Vector2f(camPos.x + 292, camPos.y - 188);
+    panelInfo[10].position = Vector2f(camPos.x + 292, camPos.y - 172);
+    panelInfo[11].position = Vector2f(camPos.x + 278, camPos.y - 172);
+
+    panelInfo[12].position = Vector2f(camPos.x - 292, camPos.y - 172);
+    panelInfo[13].position = Vector2f(camPos.x - 278, camPos.y - 172);
+    panelInfo[14].position = Vector2f(camPos.x - 278, camPos.y + 214);
+    panelInfo[15].position = Vector2f(camPos.x - 292, camPos.y + 214);
+
+    panelInfo[16].position = Vector2f(camPos.x - 278, camPos.y - 172);
+    panelInfo[17].position = Vector2f(camPos.x + 278, camPos.y - 172);
+    panelInfo[18].position = Vector2f(camPos.x + 278, camPos.y + 214);
+    panelInfo[19].position = Vector2f(camPos.x - 278, camPos.y + 214);
+
+    panelInfo[20].position = Vector2f(camPos.x + 278, camPos.y - 172);
+    panelInfo[21].position = Vector2f(camPos.x + 292, camPos.y - 172);
+    panelInfo[22].position = Vector2f(camPos.x + 292, camPos.y + 214);
+    panelInfo[23].position = Vector2f(camPos.x + 278, camPos.y + 214);
+
+    panelInfo[24].position = Vector2f(camPos.x - 292, camPos.y + 214);
+    panelInfo[25].position = Vector2f(camPos.x - 278, camPos.y + 214);
+    panelInfo[26].position = Vector2f(camPos.x - 278, camPos.y + 230);
+    panelInfo[27].position = Vector2f(camPos.x - 292, camPos.y + 230);
+
+    panelInfo[28].position = Vector2f(camPos.x - 278, camPos.y + 214);
+    panelInfo[29].position = Vector2f(camPos.x + 278, camPos.y + 214);
+    panelInfo[30].position = Vector2f(camPos.x + 278, camPos.y + 230);
+    panelInfo[31].position = Vector2f(camPos.x - 278, camPos.y + 230);
+
+    panelInfo[32].position = Vector2f(camPos.x + 278, camPos.y + 214);
+    panelInfo[33].position = Vector2f(camPos.x + 292, camPos.y + 214);
+    panelInfo[34].position = Vector2f(camPos.x + 292, camPos.y + 230);
+    panelInfo[35].position = Vector2f(camPos.x + 278, camPos.y + 230);
+
+    backgroundButton[0]->setPosition(camPos.x-8, camPos.y+320);
+    backgroundButton[1]->setPosition(camPos.x+191, camPos.y+320);
+    backgroundButton[2]->setPosition(camPos.x-71, camPos.y);
+    backgroundButton[3]->setPosition(camPos.x+69, camPos.y);
+    backgroundButton[4]->setPosition(camPos.x+209, camPos.y);
+    backgroundButton[5]->setPosition(camPos.x+349, camPos.y);
+    backgroundButton[6]->setPosition(camPos.x-71, camPos.y+80);
+    backgroundButton[7]->setPosition(camPos.x+69, camPos.y+80);
+    backgroundButton[8]->setPosition(camPos.x+209, camPos.y+80);
+    backgroundButton[9]->setPosition(camPos.x+349, camPos.y+80);
+    backgroundButton[10]->setPosition(camPos.x-71, camPos.y+160);
+    backgroundButton[11]->setPosition(camPos.x+69, camPos.y+160);
+    backgroundButton[12]->setPosition(camPos.x+209, camPos.y+160);
+    backgroundButton[13]->setPosition(camPos.x+349, camPos.y+160);
+    backgroundButton[14]->setPosition(camPos.x+69, camPos.y+240);
+    backgroundButton[15]->setPosition(camPos.x+209, camPos.y+240);
 
     returnButton->setPosition(camPos.x-282, camPos.y+206);
 
@@ -15665,11 +15460,56 @@ static void Prefs_Background()
 
 static void Prefs_Gradient()
 {
+    panelInfo[0].position = Vector2f(camPos.x - 308, camPos.y - 110);
+    panelInfo[1].position = Vector2f(camPos.x - 292, camPos.y - 110);
+    panelInfo[2].position = Vector2f(camPos.x - 292, camPos.y - 94);
+    panelInfo[3].position = Vector2f(camPos.x - 308, camPos.y - 94);
+
+    panelInfo[4].position = Vector2f(camPos.x - 292, camPos.y - 110);
+    panelInfo[5].position = Vector2f(camPos.x + 292, camPos.y - 110);
+    panelInfo[6].position = Vector2f(camPos.x + 292, camPos.y - 94);
+    panelInfo[7].position = Vector2f(camPos.x - 292, camPos.y - 94);
+
+    panelInfo[8].position = Vector2f(camPos.x + 292, camPos.y - 110);
+    panelInfo[9].position = Vector2f(camPos.x + 308, camPos.y - 110);
+    panelInfo[10].position = Vector2f(camPos.x + 308, camPos.y - 94);
+    panelInfo[11].position = Vector2f(camPos.x + 292, camPos.y - 94);
+
+    panelInfo[12].position = Vector2f(camPos.x - 308, camPos.y - 94);
+    panelInfo[13].position = Vector2f(camPos.x - 292, camPos.y - 94);
+    panelInfo[14].position = Vector2f(camPos.x - 292, camPos.y + 176);
+    panelInfo[15].position = Vector2f(camPos.x - 308, camPos.y + 176);
+
+    panelInfo[16].position = Vector2f(camPos.x - 292, camPos.y - 94);
+    panelInfo[17].position = Vector2f(camPos.x + 292, camPos.y - 94);
+    panelInfo[18].position = Vector2f(camPos.x + 292, camPos.y + 176);
+    panelInfo[19].position = Vector2f(camPos.x - 292, camPos.y + 176);
+
+    panelInfo[20].position = Vector2f(camPos.x + 292, camPos.y - 94);
+    panelInfo[21].position = Vector2f(camPos.x + 308, camPos.y - 94);
+    panelInfo[22].position = Vector2f(camPos.x + 308, camPos.y + 176);
+    panelInfo[23].position = Vector2f(camPos.x + 292, camPos.y + 176);
+
+    panelInfo[24].position = Vector2f(camPos.x - 308, camPos.y + 176);
+    panelInfo[25].position = Vector2f(camPos.x - 292, camPos.y + 176);
+    panelInfo[26].position = Vector2f(camPos.x - 292, camPos.y + 192);
+    panelInfo[27].position = Vector2f(camPos.x - 308, camPos.y + 192);
+
+    panelInfo[28].position = Vector2f(camPos.x - 292, camPos.y + 176);
+    panelInfo[29].position = Vector2f(camPos.x + 292, camPos.y + 176);
+    panelInfo[30].position = Vector2f(camPos.x + 292, camPos.y + 192);
+    panelInfo[31].position = Vector2f(camPos.x - 292, camPos.y + 192);
+
+    panelInfo[32].position = Vector2f(camPos.x + 292, camPos.y + 176);
+    panelInfo[33].position = Vector2f(camPos.x + 308, camPos.y + 176);
+    panelInfo[34].position = Vector2f(camPos.x + 308, camPos.y + 192);
+    panelInfo[35].position = Vector2f(camPos.x + 292, camPos.y + 192);
+
     tileSelection->setSize(Vector2f(159, 78));
     tileSelection->setFillColor(Color(128, 255, 255, 128));
 
     menuText[3]->setPosition(camPos.x, camPos.y-226);
-    menuText[4]->setPosition(camPos.x, camPos.y+184);
+    menuText[4]->setPosition(camPos.x, camPos.y+158);
 
     gradientButton[0]->setPosition(camPos.x+210, camPos.y+1);
     gradientButton[1]->setPosition(camPos.x+210, camPos.y+67);
@@ -15696,13 +15536,64 @@ static void Prefs_Effects()
 {
     menuText[5]->setPosition(camPos.x, camPos.y-226);
 
-    effectElements[0]->setPosition(camPos.x-180, camPos.y-80);
-    effectElements[1]->setPosition(camPos.x, camPos.y-80);
-    effectElements[2]->setPosition(camPos.x+180, camPos.y-80);
+    panelInfo[0].position = Vector2f(camPos.x - 308, camPos.y - 176);
+    panelInfo[1].position = Vector2f(camPos.x - 292, camPos.y - 176);
+    panelInfo[2].position = Vector2f(camPos.x - 292, camPos.y - 160);
+    panelInfo[3].position = Vector2f(camPos.x - 308, camPos.y - 160);
 
-    effectCheckButton[0]->setPosition(camPos.x-180, camPos.y-24);
-    effectCheckButton[1]->setPosition(camPos.x, camPos.y-24);
-    effectCheckButton[2]->setPosition(camPos.x+180, camPos.y-24);
+    panelInfo[4].position = Vector2f(camPos.x - 292, camPos.y - 176);
+    panelInfo[5].position = Vector2f(camPos.x + 292, camPos.y - 176);
+    panelInfo[6].position = Vector2f(camPos.x + 292, camPos.y - 160);
+    panelInfo[7].position = Vector2f(camPos.x - 292, camPos.y - 160);
+
+    panelInfo[8].position = Vector2f(camPos.x + 292, camPos.y - 176);
+    panelInfo[9].position = Vector2f(camPos.x + 308, camPos.y - 176);
+    panelInfo[10].position = Vector2f(camPos.x + 308, camPos.y - 160);
+    panelInfo[11].position = Vector2f(camPos.x + 292, camPos.y - 160);
+
+    panelInfo[12].position = Vector2f(camPos.x - 308, camPos.y - 160);
+    panelInfo[13].position = Vector2f(camPos.x - 292, camPos.y - 160);
+    panelInfo[14].position = Vector2f(camPos.x - 292, camPos.y + 204);
+    panelInfo[15].position = Vector2f(camPos.x - 308, camPos.y + 204);
+
+    panelInfo[16].position = Vector2f(camPos.x - 292, camPos.y - 160);
+    panelInfo[17].position = Vector2f(camPos.x + 292, camPos.y - 160);
+    panelInfo[18].position = Vector2f(camPos.x + 292, camPos.y + 204);
+    panelInfo[19].position = Vector2f(camPos.x - 292, camPos.y + 204);
+
+    panelInfo[20].position = Vector2f(camPos.x + 292, camPos.y - 160);
+    panelInfo[21].position = Vector2f(camPos.x + 308, camPos.y - 160);
+    panelInfo[22].position = Vector2f(camPos.x + 308, camPos.y + 204);
+    panelInfo[23].position = Vector2f(camPos.x + 292, camPos.y + 204);
+
+    panelInfo[24].position = Vector2f(camPos.x - 308, camPos.y + 204);
+    panelInfo[25].position = Vector2f(camPos.x - 292, camPos.y + 204);
+    panelInfo[26].position = Vector2f(camPos.x - 292, camPos.y + 220);
+    panelInfo[27].position = Vector2f(camPos.x - 308, camPos.y + 220);
+
+    panelInfo[28].position = Vector2f(camPos.x - 292, camPos.y + 204);
+    panelInfo[29].position = Vector2f(camPos.x + 292, camPos.y + 204);
+    panelInfo[30].position = Vector2f(camPos.x + 292, camPos.y + 220);
+    panelInfo[31].position = Vector2f(camPos.x - 292, camPos.y + 220);
+
+    panelInfo[32].position = Vector2f(camPos.x + 292, camPos.y + 204);
+    panelInfo[33].position = Vector2f(camPos.x + 308, camPos.y + 204);
+    panelInfo[34].position = Vector2f(camPos.x + 308, camPos.y + 220);
+    panelInfo[35].position = Vector2f(camPos.x + 292, camPos.y + 220);
+
+    effectElements[0]->setPosition(camPos.x-180, camPos.y-116);
+    effectElements[1]->setPosition(camPos.x, camPos.y-116);
+    effectElements[2]->setPosition(camPos.x+180, camPos.y-116);
+    effectElements[3]->setPosition(camPos.x-180, camPos.y-30);
+    effectElements[4]->setPosition(camPos.x, camPos.y-30);
+    effectElements[5]->setPosition(camPos.x+180, camPos.y-30);
+
+    effectCheckButton[0]->setPosition(camPos.x-268, camPos.y-116);
+    effectCheckButton[1]->setPosition(camPos.x-88, camPos.y-116);
+    effectCheckButton[2]->setPosition(camPos.x+92, camPos.y-116);
+    effectCheckButton[3]->setPosition(camPos.x-268, camPos.y-30);
+    effectCheckButton[4]->setPosition(camPos.x-88, camPos.y-30);
+    effectCheckButton[5]->setPosition(camPos.x+92, camPos.y-30);
 
     effectButton[0]->setPosition(camPos.x-206, camPos.y+190);
     effectButton[1]->setPosition(camPos.x, camPos.y+190);
@@ -15826,18 +15717,20 @@ static void Prefs_Section()
                 break;
         }
 
-        background[0]->setPosition(0, (roomScale.y * 480) - 160);
-        background[1]->setPosition(0, (roomScale.y * 480) - 160);
-        background[2]->setPosition(0, (roomScale.y * 480) - 156);
+        background[0]->setPosition(0, (roomScale.y * 480) - 274);
+        background[1]->setPosition(0, (roomScale.y * 480) - 274);
+        background[2]->setPosition(0, (roomScale.y * 480) - 274);
         background[3]->setPosition(0, (roomScale.y * 480) - 178);
         background[4]->setPosition(0, (roomScale.y * 480) - 165);
         background[5]->setPosition(0, (roomScale.y * 480) - 101);
         background[6]->setPosition(0, (roomScale.y * 480) - 320);
         background[7]->setPosition(0, (roomScale.y * 480) - 320);
+        background[14]->setPosition(0, (roomScale.y * 480) - 274);
+        background[15]->setPosition(0, (roomScale.y * 480) - 274);
 
-        background[0]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScale.x * 640, 156));
+        background[0]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[1]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[2]->setSize(Vector2f(roomScale.x * 640, 274));
         background[3]->setSize(Vector2f(roomScale.x * 640, 178));
         background[4]->setSize(Vector2f(roomScale.x * 640, 165));
         background[5]->setSize(Vector2f(roomScale.x * 640, 101));
@@ -15847,13 +15740,15 @@ static void Prefs_Section()
         background[9]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
         background[10]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
         background[11]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
+        background[14]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[15]->setSize(Vector2f(roomScale.x * 640, 274));
 
         if (background[12] != NULL)
             background[12]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
 
-        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 156));
+        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
         background[3]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 178));
         background[4]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 165));
         background[5]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 101));
@@ -15863,18 +15758,26 @@ static void Prefs_Section()
         background[9]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
         background[10]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
         background[11]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
+        background[14]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[15]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
 
         if (background[12] != NULL)
             background[12]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
 
-        effectClouds->setSize(Vector2f(roomScale.x * 640, 63));
-        effectClouds->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+        effectClouds[0]->setSize(Vector2f(roomScale.x * 640, 63));
+        effectClouds[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+
+        effectClouds[1]->setSize(Vector2f(roomScale.x * 640, 63));
+        effectClouds[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
 
         switch (levelEffectb)
         {
-            case 1 : effectClouds->setTexture(effectTex[0]); break;
-            case 2 : effectClouds->setTexture(effectTex[1]); break;
-            case 3 : effectClouds->setTexture(effectTex[2]); break;
+            case 1 : effectClouds[0]->setTexture(effectTex[0]); break;
+            case 2 : effectClouds[0]->setTexture(effectTex[1]); break;
+            case 3 : effectClouds[0]->setTexture(effectTex[2]); break;
+            case 4 : effectClouds[0]->setTexture(effectTex[0]); effectClouds[1]->setTexture(effectTex[0]); break;
+            case 5 : effectClouds[0]->setTexture(effectTex[1]); effectClouds[1]->setTexture(effectTex[1]); break;
+            case 6 : effectClouds[0]->setTexture(effectTex[2]); effectClouds[1]->setTexture(effectTex[2]); break;
             default : break;
         }
 
@@ -15917,18 +15820,20 @@ static void Prefs_Section()
                 break;
         }
 
-        background[0]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[1]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[2]->setPosition(0, (roomScaleb.y * 480) - 156);
+        background[0]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[1]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[2]->setPosition(0, (roomScaleb.y * 480) - 274);
         background[3]->setPosition(0, (roomScaleb.y * 480) - 178);
         background[4]->setPosition(0, (roomScaleb.y * 480) - 165);
         background[5]->setPosition(0, (roomScaleb.y * 480) - 101);
         background[6]->setPosition(0, (roomScaleb.y * 480) - 320);
         background[7]->setPosition(0, (roomScaleb.y * 480) - 320);
+        background[14]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[15]->setPosition(0, (roomScaleb.y * 480) - 274);
 
-        background[0]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScaleb.x * 640, 156));
+        background[0]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[1]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[2]->setSize(Vector2f(roomScaleb.x * 640, 274));
         background[3]->setSize(Vector2f(roomScaleb.x * 640, 178));
         background[4]->setSize(Vector2f(roomScaleb.x * 640, 165));
         background[5]->setSize(Vector2f(roomScaleb.x * 640, 101));
@@ -15938,13 +15843,15 @@ static void Prefs_Section()
         background[9]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
         background[10]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
         background[11]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
+        background[14]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[15]->setSize(Vector2f(roomScaleb.x * 640, 274));
 
         if (background[13] != NULL)
             background[13]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
 
-        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 156));
+        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
         background[3]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 178));
         background[4]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 165));
         background[5]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 101));
@@ -15954,18 +15861,26 @@ static void Prefs_Section()
         background[9]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
         background[10]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
         background[11]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
+        background[14]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[15]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
 
         if (background[13] != NULL)
             background[13]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
 
-        effectClouds->setSize(Vector2f(roomScaleb.x * 640, 63));
-        effectClouds->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+        effectClouds[0]->setSize(Vector2f(roomScaleb.x * 640, 63));
+        effectClouds[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+
+        effectClouds[1]->setSize(Vector2f(roomScaleb.x * 640, 63));
+        effectClouds[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
 
         switch (levelbEffectb)
         {
-            case 1 : effectClouds->setTexture(effectTex[0]); break;
-            case 2 : effectClouds->setTexture(effectTex[1]); break;
-            case 3 : effectClouds->setTexture(effectTex[2]); break;
+            case 1 : effectClouds[0]->setTexture(effectTex[0]); break;
+            case 2 : effectClouds[0]->setTexture(effectTex[1]); break;
+            case 3 : effectClouds[0]->setTexture(effectTex[2]); break;
+            case 4 : effectClouds[0]->setTexture(effectTex[0]); effectClouds[1]->setTexture(effectTex[0]); break;
+            case 5 : effectClouds[0]->setTexture(effectTex[1]); effectClouds[1]->setTexture(effectTex[1]); break;
+            case 6 : effectClouds[0]->setTexture(effectTex[2]); effectClouds[1]->setTexture(effectTex[2]); break;
             default : break;
         }
 
@@ -17554,7 +17469,7 @@ static void Background_RedHills()
 
     blockMouse = true;
 
-    backgroundButton[3]->freeze();
+    backgroundButton[6]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17600,7 +17515,99 @@ static void Background_DesertHills()
 
     blockMouse = true;
 
-    backgroundButton[4]->freeze();
+    backgroundButton[9]->freeze();
+
+    currentMenu = EDITION;
+}
+
+static void Background_BlueHills()
+{
+    if (sectionb)
+    {
+        levelbBackground = 14;
+
+        if (backgroundTxt[13] != NULL)
+        {
+            delete backgroundTxt[13];
+            backgroundTxt[13] = NULL;
+        }
+
+        if (background[13] != NULL)
+        {
+            delete background[13];
+            background[13] = NULL;
+        }
+
+        removeResource(3);
+    }
+    else
+    {
+        levelBackground = 14;
+
+        if (backgroundTxt[12] != NULL)
+        {
+            delete backgroundTxt[12];
+            backgroundTxt[12] = NULL;
+        }
+
+        if (background[12] != NULL)
+        {
+            delete background[12];
+            background[12] = NULL;
+        }
+
+        removeResource(1);
+    }
+
+    blockMouse = true;
+
+    backgroundButton[10]->freeze();
+
+    currentMenu = EDITION;
+}
+
+static void Background_SnowHills()
+{
+    if (sectionb)
+    {
+        levelbBackground = 15;
+
+        if (backgroundTxt[13] != NULL)
+        {
+            delete backgroundTxt[13];
+            backgroundTxt[13] = NULL;
+        }
+
+        if (background[13] != NULL)
+        {
+            delete background[13];
+            background[13] = NULL;
+        }
+
+        removeResource(3);
+    }
+    else
+    {
+        levelBackground = 15;
+
+        if (backgroundTxt[12] != NULL)
+        {
+            delete backgroundTxt[12];
+            backgroundTxt[12] = NULL;
+        }
+
+        if (background[12] != NULL)
+        {
+            delete background[12];
+            background[12] = NULL;
+        }
+
+        removeResource(1);
+    }
+
+    blockMouse = true;
+
+    backgroundButton[13]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17646,7 +17653,7 @@ static void Background_Night()
 
     blockMouse = true;
 
-    backgroundButton[5]->freeze();
+    backgroundButton[12]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17692,7 +17699,7 @@ static void Background_Water()
 
     blockMouse = true;
 
-    backgroundButton[6]->freeze();
+    backgroundButton[8]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17738,7 +17745,7 @@ static void Background_Rocks()
 
     blockMouse = true;
 
-    backgroundButton[7]->freeze();
+    backgroundButton[4]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17784,7 +17791,7 @@ static void Background_Clouds()
 
     blockMouse = true;
 
-    backgroundButton[8]->freeze();
+    backgroundButton[14]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17830,7 +17837,7 @@ static void Background_DarkClouds()
 
     blockMouse = true;
 
-    backgroundButton[9]->freeze();
+    backgroundButton[15]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17876,7 +17883,7 @@ static void Background_Castle()
 
     blockMouse = true;
 
-    backgroundButton[10]->freeze();
+    backgroundButton[5]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17922,7 +17929,7 @@ static void Background_Cave()
 
     blockMouse = true;
 
-    backgroundButton[11]->freeze();
+    backgroundButton[3]->freeze();
 
     currentMenu = EDITION;
 }
@@ -17968,7 +17975,7 @@ static void Background_DarkCave()
 
     blockMouse = true;
 
-    backgroundButton[12]->freeze();
+    backgroundButton[11]->freeze();
 
     currentMenu = EDITION;
 }
@@ -18014,7 +18021,7 @@ static void Background_LavaCave()
 
     blockMouse = true;
 
-    backgroundButton[13]->freeze();
+    backgroundButton[7]->freeze();
 
     currentMenu = EDITION;
 }
@@ -18290,6 +18297,9 @@ static void Effect_But1()
 {
     effectCheckButton[1]->setChecked(false);
     effectCheckButton[2]->setChecked(false);
+    effectCheckButton[3]->setChecked(false);
+    effectCheckButton[4]->setChecked(false);
+    effectCheckButton[5]->setChecked(false);
 
     if (effectCheckButton[0]->getChecked())
     {
@@ -18298,7 +18308,7 @@ static void Effect_But1()
         else
             levelEffectb = 1;
 
-        effectClouds->setTexture(effectTex[0]);
+        effectClouds[0]->setTexture(effectTex[0]);
     }
     else
     {
@@ -18313,6 +18323,9 @@ static void Effect_But2()
 {
     effectCheckButton[0]->setChecked(false);
     effectCheckButton[2]->setChecked(false);
+    effectCheckButton[3]->setChecked(false);
+    effectCheckButton[4]->setChecked(false);
+    effectCheckButton[5]->setChecked(false);
 
     if (effectCheckButton[1]->getChecked())
     {
@@ -18321,7 +18334,7 @@ static void Effect_But2()
         else
             levelEffectb = 2;
 
-        effectClouds->setTexture(effectTex[1]);
+        effectClouds[0]->setTexture(effectTex[1]);
     }
     else
     {
@@ -18336,6 +18349,9 @@ static void Effect_But3()
 {
     effectCheckButton[0]->setChecked(false);
     effectCheckButton[1]->setChecked(false);
+    effectCheckButton[3]->setChecked(false);
+    effectCheckButton[4]->setChecked(false);
+    effectCheckButton[5]->setChecked(false);
 
     if (effectCheckButton[2]->getChecked())
     {
@@ -18344,7 +18360,88 @@ static void Effect_But3()
         else
             levelEffectb = 3;
 
-        effectClouds->setTexture(effectTex[2]);
+        effectClouds[0]->setTexture(effectTex[2]);
+    }
+    else
+    {
+        if (sectionb)
+            levelbEffectb = 0;
+        else
+            levelEffectb = 0;
+    }
+}
+
+static void Effect_But4()
+{
+    effectCheckButton[0]->setChecked(false);
+    effectCheckButton[1]->setChecked(false);
+    effectCheckButton[2]->setChecked(false);
+    effectCheckButton[4]->setChecked(false);
+    effectCheckButton[5]->setChecked(false);
+
+    if (effectCheckButton[3]->getChecked())
+    {
+        if (sectionb)
+            levelbEffectb = 4;
+        else
+            levelEffectb = 4;
+
+        effectClouds[0]->setTexture(effectTex[0]);
+        effectClouds[1]->setTexture(effectTex[0]);
+    }
+    else
+    {
+        if (sectionb)
+            levelbEffectb = 0;
+        else
+            levelEffectb = 0;
+    }
+}
+
+static void Effect_But5()
+{
+    effectCheckButton[0]->setChecked(false);
+    effectCheckButton[1]->setChecked(false);
+    effectCheckButton[2]->setChecked(false);
+    effectCheckButton[3]->setChecked(false);
+    effectCheckButton[5]->setChecked(false);
+
+    if (effectCheckButton[4]->getChecked())
+    {
+        if (sectionb)
+            levelbEffectb = 5;
+        else
+            levelEffectb = 5;
+
+        effectClouds[0]->setTexture(effectTex[1]);
+        effectClouds[1]->setTexture(effectTex[1]);
+    }
+    else
+    {
+        if (sectionb)
+            levelbEffectb = 0;
+        else
+            levelEffectb = 0;
+    }
+}
+
+static void Effect_But6()
+{
+    effectCheckButton[0]->setChecked(false);
+    effectCheckButton[1]->setChecked(false);
+    effectCheckButton[2]->setChecked(false);
+    effectCheckButton[3]->setChecked(false);
+    effectCheckButton[4]->setChecked(false);
+
+    if (effectCheckButton[5]->getChecked())
+    {
+        if (sectionb)
+            levelbEffectb = 6;
+        else
+            levelEffectb = 6;
+
+        effectClouds[0]->setTexture(effectTex[2]);
+        effectClouds[1]->setTexture(effectTex[2]);
     }
     else
     {
@@ -19762,13 +19859,13 @@ static void Level_Load(const string& filename)
     lastWarp = NULL;
     warpsCount = 0;
 
-    for (register unsigned int i = 0; i < 53; i++)
+    for (register unsigned int i = 0; i < 57; i++)
         elementsEnemies[i]->Unselected();
 
     for (register unsigned int i = 0; i < 3; i++)
         elementsEsssential[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 23; i++)
+    for (register unsigned int i = 0; i < 35; i++)
         elementsPlatforms[i]->Unselected();
 
     for (register unsigned int i = 0; i < 30; i++)
@@ -19777,7 +19874,7 @@ static void Level_Load(const string& filename)
     for (register unsigned int i = 0; i < 36; i++)
         elementsPipes[i]->Unselected();
 
-    for (register unsigned int i = 0; i < 22; i++)
+    for (register unsigned int i = 0; i < 26; i++)
         elementsSceneries[i]->Unselected();
 
     for (register unsigned int i = 0; i < 46; i++)
@@ -19978,4986 +20075,8 @@ static void Level_Load(const string& filename)
 
     autoscrollPathLine = new VertexArray(LinesStrip);
 
-    levelFile.read(reinterpret_cast<char*>(&levelMusic), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelbMusic), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&levelBackground), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelbBackground), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&topColor.r), 1);
-    levelFile.read(reinterpret_cast<char*>(&topColor.g), 1);
-    levelFile.read(reinterpret_cast<char*>(&topColor.b), 1);
-    levelFile.read(reinterpret_cast<char*>(&bottomColor.r), 1);
-    levelFile.read(reinterpret_cast<char*>(&bottomColor.g), 1);
-    levelFile.read(reinterpret_cast<char*>(&bottomColor.b), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelGradient), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&topColorb.r), 1);
-    levelFile.read(reinterpret_cast<char*>(&topColorb.g), 1);
-    levelFile.read(reinterpret_cast<char*>(&topColorb.b), 1);
-    levelFile.read(reinterpret_cast<char*>(&bottomColorb.r), 1);
-    levelFile.read(reinterpret_cast<char*>(&bottomColorb.g), 1);
-    levelFile.read(reinterpret_cast<char*>(&bottomColorb.b), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelbGradient), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&levelEffect), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelEffectb), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&levelbEffect), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelbEffectb), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&startArea), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelGravity), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelTime), 2);
-
-    levelFile.read(reinterpret_cast<char*>(&levelAutoscroll), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelAutoscrollSpeed), 4);
-
-    {
-        unsigned char nodeSize;
-
-        levelFile.read(reinterpret_cast<char*>(&nodeSize), 1);
-
-        if (nodeSize != 0)
-        {
-            for (register unsigned char i = 0; i < nodeSize; i++)
-            {
-                Vector2f currentNode;
-
-                levelFile.read(reinterpret_cast<char*>(&currentNode.x), 4);
-                levelFile.read(reinterpret_cast<char*>(&currentNode.y), 4);
-
-                levelAutoscrollPath.emplace_back(Dragger(editorMoveable, liquidTriggerText, i));
-                levelAutoscrollPath.back().setPosition(currentNode);
-
-                autoscrollPathLine->append(Vertex(static_cast<Vector2f>(currentNode + Vector2f(16, 16)), Color::White));
-            }
-        }
-    }
-
-    levelFile.read(reinterpret_cast<char*>(&levelBackAlpha), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelFrontAlpha), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&levelBackAlphab), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelFrontAlphab), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&levelLiquidType), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelLiquidHeight), 4);
-
-    switch (levelLiquidType)
-    {
-        case 1 :
-            liquidRect[0]->setTexture(effectTxt[7]);
-            liquidRect[0]->setSize(Vector2f(roomScale.x * 640, 16));
-            liquidRect[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 16));
-
-            liquidRect[0]->setPosition(Vector2f(0, levelLiquidHeight - 16));
-            break;
-        case 2 :
-            liquidRect[0]->setTexture(hazardsTxt[0]);
-            liquidRect[0]->setSize(Vector2f(roomScale.x * 640, 32));
-            liquidRect[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 32));
-
-            liquidRect[0]->setPosition(Vector2f(0, levelLiquidHeight - 32));
-            break;
-    }
-
-    {
-        unsigned char spotSize;
-
-        levelFile.read(reinterpret_cast<char*>(&spotSize), 1);
-
-        if (spotSize != 0)
-        {
-            for (register unsigned char i = 0; i < spotSize; i++)
-            {
-                TriggerData data;
-
-                levelFile.read(reinterpret_cast<char*>(&data), sizeof(TriggerData));
-
-                levelLiquidTrigger.emplace_back(Trigger(Vector2f(data.x, data.y), Vector2f(data.width, data.height), levelLiquidTrigger.size(), liquidTriggerText, editorMoveable, liquidRegulatorTex, data.targetHeight));
-            }
-        }
-    }
-
-    levelFile.read(reinterpret_cast<char*>(&levelLiquidTypeb), 1);
-    levelFile.read(reinterpret_cast<char*>(&levelLiquidHeightb), 4);
-
-    switch (levelLiquidTypeb)
-    {
-        case 1 :
-            liquidRect[1]->setTexture(effectTxt[7]);
-            liquidRect[1]->setSize(Vector2f(roomScaleb.x * 640, 16));
-            liquidRect[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 16));
-
-            liquidRect[1]->setPosition(Vector2f(0, levelLiquidHeightb - 16));
-            break;
-        case 2 :
-            liquidRect[1]->setTexture(hazardsTxt[0]);
-            liquidRect[1]->setSize(Vector2f(roomScaleb.x * 640, 32));
-            liquidRect[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 32));
-
-            liquidRect[1]->setPosition(Vector2f(0, levelLiquidHeightb - 32));
-            break;
-    }
-
-    {
-        unsigned char spotSize;
-
-        levelFile.read(reinterpret_cast<char*>(&spotSize), 1);
-
-        if (spotSize != 0)
-        {
-            for (register unsigned char i = 0; i < spotSize; i++)
-            {
-                TriggerData data;
-
-                levelFile.read(reinterpret_cast<char*>(&data), sizeof(TriggerData));
-
-                levelLiquidTriggerb.emplace_back(Trigger(Vector2f(data.x, data.y), Vector2f(data.width, data.height), levelLiquidTriggerb.size(), liquidTriggerText, editorMoveable, liquidRegulatorTex, data.targetHeight));
-            }
-        }
-    }
-
-    levelFile.read(reinterpret_cast<char*>(&levelLiquidSpeed), 4);
-
-    levelFile.read(reinterpret_cast<char*>(&bowserAttacks[0]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserAttacks[1]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserAttacks[2]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserAttacks[3]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserAttacks[4]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserAttacks[5]), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&bowserFrequences[0]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserFrequences[1]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserFrequences[2]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserFrequences[3]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserFrequences[4]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserFrequences[5]), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&bowserSpeeds[0]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserSpeeds[1]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserSpeeds[2]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserSpeeds[3]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserSpeeds[4]), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserSpeeds[5]), 1);
-
-    levelFile.read(reinterpret_cast<char*>(&bowserTrail), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserHealth), 1);
-    levelFile.read(reinterpret_cast<char*>(&bowserMusic), 1);
-
-    {
-        TCHAR getString[MAX_PATH];
-
-        levelFile.read(getString, 1);
-
-        if (getString[0] != '\0')
-        {
-            levelFile.seekg(-1, ios::cur);
-
-            for (register unsigned int j = 0; true; j++)
-            {
-                levelFile.read(&getString[j], 1);
-
-                if (getString[j] == '\0')
-                    break;
-            }
-
-            levelName = getString;
-        }
-        else
-            levelName.clear();
-    }
-
-    {
-        TCHAR getString[MAX_PATH];
-
-        levelFile.read(getString, 1);
-
-        if (getString[0] != '\0')
-        {
-            levelFile.seekg(-1, ios::cur);
-
-            for (register unsigned int j = 0; true; j++)
-            {
-                levelFile.read(&getString[j], 1);
-
-                if (getString[j] == '\0')
-                    break;
-            }
-
-            levelAuthor = getString;
-        }
-        else
-            levelAuthor.clear();
-    }
-
-    {
-        unsigned int listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 4);
-
-        if (listSize != 0)
-        {
-            for (register unsigned int i = 0; i < listSize; i++)
-            {
-                TileData currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(TileData));
-
-                listTile1.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
-
-                if (currentData.tilex < 15)
-                    layer1TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 1);
-                else
-                    layer1TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 2);
-            }
-        }
-    }
-
-    {
-        unsigned int listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 4);
-
-        if (listSize != 0)
-        {
-            for (register unsigned int i = 0; i < listSize; i++)
-            {
-                TileData currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(TileData));
-
-                listTile2.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
-
-                if (currentData.tilex < 15)
-                    layer2TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 1);
-                else
-                    layer2TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 2);
-            }
-        }
-    }
-
-    {
-        unsigned int listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 4);
-
-        if (listSize != 0)
-        {
-            for (register unsigned int i = 0; i < listSize; i++)
-            {
-                TileData currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(TileData));
-
-                listTile3.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
-
-                if (currentData.tilex < 15)
-                    layer3TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 1);
-                else
-                    layer3TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 2);
-            }
-        }
-    }
-
-    {
-        unsigned int listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 4);
-
-        if (listSize != 0)
-        {
-            for (register unsigned int i = 0; i < listSize; i++)
-            {
-                TileData currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(TileData));
-
-                listTileb1.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
-
-                if (currentData.tilex < 15)
-                    layer1TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 1);
-                else
-                    layer1TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 2);
-            }
-        }
-    }
-
-    {
-        unsigned int listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 4);
-
-        if (listSize != 0)
-        {
-            for (register unsigned int i = 0; i < listSize; i++)
-            {
-                TileData currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(TileData));
-
-                listTileb2.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
-
-                if (currentData.tilex < 15)
-                    layer2TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 1);
-                else
-                    layer2TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 2);
-            }
-        }
-    }
-
-    {
-        unsigned int listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 4);
-
-        if (listSize != 0)
-        {
-            for (register unsigned int i = 0; i < listSize; i++)
-            {
-                TileData currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(TileData));
-
-                listTileb3.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
-
-                if (currentData.tilex < 15)
-                    layer3TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 1);
-                else
-                    layer3TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 2);
-            }
-        }
-    }
-
-    switch (layerNumb)
-    {
-        case 0 : ChangeLayerTo_Back(); break;
-        case 1 : ChangeLayerTo_Middle(); break;
-        case 2 : ChangeLayerTo_Front(); break;
-    }
-
-    {
-        unsigned short listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 2);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                Vector2f entPos;
-                unsigned char entType;
-
-                levelFile.read(reinterpret_cast<char*>(&entType), 1);
-
-                levelFile.read(reinterpret_cast<char*>(&entPos.x), 4);
-                levelFile.read(reinterpret_cast<char*>(&entPos.y), 4);
-
-                switch (entType)
-                {
-                    case 92 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 352, 32, 64), entPos.x, entPos.y, -1, 32, 92)); break;
-                    case 93 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 320, 32, 96), entPos.x, entPos.y, 0, 64, 93)); break;
-                    case 94 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[0], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 94)); break;
-                    case 95 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 352, 32, 64), entPos.x, entPos.y, -1, 32, 95)); break;
-                    case 96 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 320, 32, 96), entPos.x, entPos.y, 0, 64, 96)); break;
-                    case 97 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[1], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 97)); break;
-                    case 98 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 352, 32, 64), entPos.x, entPos.y, -1, 32, 98)); break;
-                    case 99 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 320, 32, 96), entPos.x, entPos.y, 0, 64, 99)); break;
-                    case 100 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[2], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 100)); break;
-                    case 101 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 352, 32, 64), entPos.x, entPos.y, -1, 32, 101)); break;
-                    case 102 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 320, 32, 96), entPos.x, entPos.y, 0, 64, 102)); break;
-                    case 103 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[3], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 103)); break;
-                    case 104 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 352, 32, 64), entPos.x, entPos.y, -1, 32, 104)); break;
-                    case 105 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 320, 32, 96), entPos.x, entPos.y, 0, 64, 105)); break;
-                    case 106 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[4], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 106)); break;
-                    case 107 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 288, 160, 32), entPos.x, entPos.y, 64, 0, 107)); break;
-                    case 108 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 288, 160, 32), entPos.x, entPos.y, 64, 0, 108)); break;
-                    case 109 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[5], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 109)); break;
-                    case 110 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[6], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 110)); break;
-                    case 111 : listSceneries.emplace_back(new Entity(sceneriesTxt[7], entPos.x, entPos.y, 47, 128, 111)); break;
-                    case 112 : listSceneries.emplace_back(new Entity(sceneriesTxt[8], entPos.x, entPos.y, 77, 128, 112)); break;
-                    case 113 : listSceneries.emplace_back(new Entity(sceneriesTxt[9], entPos.x, entPos.y, 141, 160, 113)); break;
-                }
-
-                entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-            }
-        }
-    }
-
-    {
-        unsigned short listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 2);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                vector<float> entData;
-                unsigned char entType;
-                float currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&entType), 1);
-
-                switch (entType)
-                {
-                    case 0 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-                        startPosition.x = currentData;
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-                        startPosition.y = currentData;
-
-                        sectionb = false;
-
-                        camPos = static_cast<Vector2i>(startPosition) + Vector2i(16, 16);
-
-                        if (camPos.x < 320)
-                            camPos.x = 320;
-
-                        if (camPos.y < 240)
-                            camPos.y = 240;
-
-                        if (camPos.x > roomScale.x * 640 - 320)
-                            camPos.x = roomScale.x * 640 - 320;
-
-                        if (camPos.y > roomScale.y * 480 - 240)
-                            camPos.y = roomScale.y * 480 - 240;
-
-                        listEntities.emplace_back(new Entity_MultiText(marioTxt[1], IntRect(48, 8, 31, 56), entData[0], entData[1], 0, 24, 0));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1]/32) - 1, 3);
-
-                        break;
-                    case 1 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(marksTxt[7], IntRect(107, 0, 107, 111), entData[0], entData[1], 28, 79, 1));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1]/32) - 1, 3);
-
-                        break;
-                    case 2 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new LevelEnd_Entity(marksTxt[8], marksTxt[9], editorMoveable, entData[0], entData[1]));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 3 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 32, 0, 32, 3, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 4 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 32, 0, 32, 4, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 5 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 32, 0, 32, 5, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 6 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 32, 0, 32, 6, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 7 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new FallPlatform_Entity(marksTxt[0], editorTxt[0], entData[0], entData[1], 32, 0, 32, 7, false));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 8 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 0, 0, 0, 8, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 9 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 0, 0, 0, 9, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 10 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 0, 0, 0, 10, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 11 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 0, 0, 0, 11, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 12 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new FallPlatform_Entity(marksTxt[1], editorTxt[0], entData[0], entData[1], 0, 0, 0, 12, false));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 13 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 45, 0, 45, 13, true));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 14 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 45, 0, 45, 14, true));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 15 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 45, 0, 45, 15, true));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 16 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 45, 0, 45, 16, true));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 17 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new FallPlatform_Entity(marksTxt[2], editorTxt[0], entData[0], entData[1], 45, 0, 45, 17, true));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 18 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 43, 0, 43, 18, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 19 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 43, 0, 43, 19, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 20 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 43, 0, 43, 20, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 21 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 43, 0, 43, 21, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 22 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new FallPlatform_Entity(marksTxt[3], editorTxt[0], entData[0], entData[1], 43, 0, 43, 22, false));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 23 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(marksTxt[4], IntRect(0, 0, 32, 64), entData[0], entData[1], 0, 32, 23));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1]/32) - 1, 2);
-
-                        break;
-                    case 24 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(marksTxt[5], IntRect(0, 0, 32, 64), entData[0], entData[1], 0, 32, 24));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1]/32) - 1, 2);
-
-                        break;
-                    case 25 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(marksTxt[6], IntRect(0, 0, 32, 64), entData[0], entData[1], 0, 32, 25));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1]/32) - 1, 2);
-
-                        break;
-                    case 114 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[0], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 114));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 115 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[1], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 115));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 116 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[2], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 116));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 117 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[3], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 117));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 118 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[4], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 118));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 119 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[5], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 119));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 120 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[6], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 120));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 121 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[7], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 121));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 122 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[8], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 122));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 123 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[14], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 123));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 124 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[15], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 124));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 125 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[16], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 125));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 126 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[17], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 126));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 127 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalEnemy_Entity(enemiesTxt[9], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 127));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 128 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalEnemy_Entity(enemiesTxt[10], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 128));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 129 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new HorizontalEnemy_Entity(enemiesTxt[11], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 129));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 130 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalEnemy_Entity(enemiesTxt[9], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 130));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 131 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalEnemy_Entity(enemiesTxt[10], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 131));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 132 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new VerticalEnemy_Entity(enemiesTxt[11], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 132));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 133 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(enemiesTxt[9], editorTxt[0], entData[0], entData[1], 0, 14, 133));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 134 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(enemiesTxt[10], editorTxt[0], entData[0], entData[1], 0, 14, 134));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 135 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(enemiesTxt[11], editorTxt[0], entData[0], entData[1], 0, 14, 135));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 136 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[12], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 14, 136));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 137 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], -17, 15, 137));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 138 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], 16, 15, 138, 1, 270));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 139 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], 15, 47, 139, 1, 90));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 140 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], 48, 47, 140, 1, 180));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 141 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], -17, 15, 141));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 142 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], 16, 15, 142, 1, 270));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 143 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], 15, 47, 143, 1, 90));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 144 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], 48, 47, 144, 1, 180));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 145 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], -17, 15, 145));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 146 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], 16, 15, 146, 1, 270));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 147 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], 15, 47, 147, 1, 90));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 148 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], 48, 47, 148, 1, 180));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 149 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[21], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 149));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 150 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[22], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 150));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 151 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[23], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 151));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 152 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[24], IntRect(0, 0, 31, 37), entData[0], entData[1], 0, 5, 152));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 153 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[25], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 153));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 154 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[26], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 154));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 155 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[27], IntRect(66, 0, 33, 48), entData[0], entData[1], 0, 16, 155));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 156 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[28], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 156));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 157 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[29], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 157));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 158 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(64, 0, 31, 48), entData[0], entData[1], 0, 16, 158));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 159 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(95, 0, 31, 48), entData[0], entData[1], 0, 16, 159));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 160 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(126, 0, 31, 48), entData[0], entData[1], 0, 16, 160));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 161 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[37], IntRect(0, 0, 32, 32), entData[0], entData[1], 0, 0, 161));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 162 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(0, 0, 32, 32), entData[0], entData[1], 0, 0, 162));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 163 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 32, 32), entData[0], entData[1], 0, 0, 163));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 164 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[38], IntRect(0, 0, 54, 68), entData[0], entData[1], 10, 4, 164));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) + 1, 3);
-
-                        break;
-                    case 165 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[38], IntRect(0, 0, 54, 68), entData[0], entData[1], 44, 36, 165, 1, 180));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrix->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 166 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[39], IntRect(0, 0, 64, 72), entData[0], entData[1], 16, 40, 166));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 167 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 0, 2, 167));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 168 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 180, 32, 34, 168));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 169 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 270, 32, 2, 169));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 170 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 90, 0, 34, 170));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 171 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(832, 96, 32, 32), entData[0], entData[1], 0, 0, 171));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 172 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Podoboo_Entity(hazardsTxt[1], editorTxt[1], editorMoveable, entData[0], entData[1], -3, 0));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 173 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new PodobooD_Entity(hazardsTxt[1], editorTxt[1], editorMoveable, entData[0], entData[1], 30, 32));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 174 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new PodobooL_Entity(hazardsTxt[1], editorTxt[1], editorMoveable, entData[0], entData[1], 30, 0));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 175 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new PodobooR_Entity(hazardsTxt[1], editorTxt[1], editorMoveable, entData[0], entData[1], -3, 32));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 176 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(hazardsTxt[1], editorTxt[0], entData[0], entData[1], -3, 0, 176, 0, true));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 177 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(hazardsTxt[1], editorTxt[0], entData[0], entData[1], 30, 32, 177, 180, true));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 178 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(hazardsTxt[1], editorTxt[0], entData[0], entData[1], 30, 0, 178, 270, true));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 179 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entityj(hazardsTxt[1], editorTxt[0], entData[0], entData[1], -3, 32, 179, 90, true));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 180 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 96, 32, 32), entData[0], entData[1], 0, 0, 180));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 181 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 192, 32, 32), entData[0], entData[1], 0, 0, 181));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 182 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 128, 32, 32), entData[0], entData[1], 0, 0, 182));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 183 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 160, 32, 32), entData[0], entData[1], 0, 0, 183));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 184 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity(hazardsTxt[2], entData[0], entData[1], 0, -1, 184));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 185 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_Rotation(hazardsTxt[2], entData[0], entData[1], 180, 32, 31, 185));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 186 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_Rotation(hazardsTxt[2], entData[0], entData[1], 270, 32, -1, 186));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 187 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_Rotation(hazardsTxt[2], entData[0], entData[1], 90, 0, 31, 187));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 188 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 0, -1, 188));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 189 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 32, 31, 189, 1, 180));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 190 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 32, -1, 190, 1, 270));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 191 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 0, 31, 191, 1, 90));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 192 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 224, 32, 32), entData[0], entData[1], 0, 0, 192));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 193 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 224, 32, 32), entData[0], entData[1], 0, 0, 193));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 194 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 224, 32, 32), entData[0], entData[1], 0, 0, 194));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 195 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 224, 32, 32), entData[0], entData[1], 0, 0, 195));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 196 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 224, 32, 32), entData[0], entData[1], 0, 0, 196));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 197 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 224, 32, 32), entData[0], entData[1], 0, 0, 197));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 198 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 224, 32, 32), entData[0], entData[1], 0, 0, 198));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 199 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 224, 32, 32), entData[0], entData[1], 0, 0, 199));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 200 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 224, 32, 32), entData[0], entData[1], 0, 0, 200));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 201 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 224, 32, 32), entData[0], entData[1], 0, 0, 201));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 202 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, NULL, entData[0], entData[1], -1, -1, 202, true));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 203 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, editorTxt[3], entData[0], entData[1], -1, -1, 203, true));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 204 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, NULL, entData[0], entData[1], -1, -1, 204, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 205 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, editorTxt[3], entData[0], entData[1], -1, -1, 205, false));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 206 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity(hazardsTxt[5], entData[0], entData[1], 0, 0, 206));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) + 1, entData[1] / 32, 2);
-
-                        break;
-                    case 207 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(32, 0, 64, 32), entData[0], entData[1], 32, 0, 207));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) - 1, entData[1] / 32, 2);
-
-                        break;
-                    case 208 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity(hazardsTxt[6], entData[0], entData[1], 2, 37, 208));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 209 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(96, 0, 56, 69), entData[0], entData[1], 23, 37, 209));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 210 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity(hazardsTxt[8], entData[0], entData[1], 12, 8, 210));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 211 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntities.emplace_back(new Entity_Rotation(hazardsTxt[8], entData[0], entData[1], 180, 45, 40, 211));
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 212 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        for (register unsigned int i = 0; i < entData[2]; i++)
-                        {
-                            levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                            entData.emplace_back(currentData);
-
-                            levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                            entData.emplace_back(currentData);
-                        }
-
-                        listEntities.emplace_back(new Centipede_Entity(editorTxt[3], editorMoveable, nodesTex, entData[0], entData[1], 0, 0));
-                        listEntities.back()->load(entData);
-
-                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrix->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) + 1, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) + 2, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) + 3, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) + 4, entData[1] / 32, 2);
-                        layer2TileMatrix->setValue((entData[0] / 32) + 5, entData[1] / 32, 2);
-
-                        break;
-                }
-            }
-        }
-    }
-
-    {
-        unsigned short listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 2);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                Vector2f entPos;
-                unsigned char entType;
-
-                levelFile.read(reinterpret_cast<char*>(&entType), 1);
-
-                levelFile.read(reinterpret_cast<char*>(&entPos.x), 4);
-                levelFile.read(reinterpret_cast<char*>(&entPos.y), 4);
-
-                switch (entType)
-                {
-                    case 26 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 26));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 27 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 27));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 28 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 28));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 29 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(128, 0, 32, 32), entPos.x, entPos.y, 0, 0, 29));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 30 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(160, 0, 32, 32), entPos.x, entPos.y, 0, 0, 30));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 31 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(192, 0, 32, 32), entPos.x, entPos.y, 0, 0, 31));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 32 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), entPos.x, entPos.y, 0, 0, 32));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 33 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), entPos.x, entPos.y, 0, 0, 33));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 34 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), entPos.x, entPos.y, 0, 0, 34));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 35 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), entPos.x, entPos.y, 0, 0, 35));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 36 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), entPos.x, entPos.y, 0, 0, 36));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 37 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), entPos.x, entPos.y, 0, 0, 37));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 38 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), entPos.x, entPos.y, 0, 0, 38));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 39 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(480, 0, 32, 32), entPos.x, entPos.y, 0, 0, 39));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 40 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(512, 0, 32, 32), entPos.x, entPos.y, 0, 0, 40));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 41 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(544, 0, 32, 32), entPos.x, entPos.y, 0, 0, 41));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 42 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(576, 0, 32, 32), entPos.x, entPos.y, 0, 0, 42));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 43 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(608, 0, 32, 32), entPos.x, entPos.y, 0, 0, 43));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 44 :
-                        listBonus.emplace_back(new Entity(itemsTxt[3], entPos.x, entPos.y, 0, 0, 44));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 45 :
-                        listBonus.emplace_back(new Entity_MultiText(itemsTxt[4], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 45));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 46 :
-                        listBonus.emplace_back(new Entity_MultiText(itemsTxt[5], IntRect(0, 0, 27, 34), entPos.x, entPos.y, -3, 2, 46));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 47 :
-                        listBonus.emplace_back(new Entity_MultiText(itemsTxt[6], IntRect(0, 0, 30, 31), entPos.x, entPos.y, -1, -1, 47));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 48 :
-                        listBonus.emplace_back(new Entity_MultiText(itemsTxt[7], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 48));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 49 :
-                        listBonus.emplace_back(new Entity(itemsTxt[8], entPos.x, entPos.y, 0, 0, 49));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 50 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 50));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 51 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), entPos.x, entPos.y, 0, 0, 51));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 52 :
-                        listBonus.emplace_back(new Entity_MultiText(itemsTxt[2], IntRect(0, 0, 19, 28), entPos.x, entPos.y, -7, -2, 52));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        break;
-                    case 53 :
-                        listBonus.emplace_back(new Entity_MultiText(itemsTxt[1], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 53));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 54 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(640, 0, 32, 32), entPos.x, entPos.y, 0, 0, 54));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 55 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(672, 0, 32, 32), entPos.x, entPos.y, 0, 0, 55));
-
-                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                }
-            }
-        }
-    }
-
-    {
-        unsigned short listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 2);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                Vector2f entPos;
-                unsigned char entType;
-
-                levelFile.read(reinterpret_cast<char*>(&entType), 1);
-
-                levelFile.read(reinterpret_cast<char*>(&entPos.x), 4);
-                levelFile.read(reinterpret_cast<char*>(&entPos.y), 4);
-
-                switch (entType)
-                {
-                    case 92 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 352, 32, 64), entPos.x, entPos.y, -1, 32, 92)); break;
-                    case 93 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 320, 32, 96), entPos.x, entPos.y, 0, 64, 93)); break;
-                    case 94 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[0], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 94)); break;
-                    case 95 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 352, 32, 64), entPos.x, entPos.y, -1, 32, 95)); break;
-                    case 96 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 320, 32, 96), entPos.x, entPos.y, 0, 64, 96)); break;
-                    case 97 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[1], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 97)); break;
-                    case 98 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 352, 32, 64), entPos.x, entPos.y, -1, 32, 98)); break;
-                    case 99 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 320, 32, 96), entPos.x, entPos.y, 0, 64, 99)); break;
-                    case 100 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[2], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 100)); break;
-                    case 101 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 352, 32, 64), entPos.x, entPos.y, -1, 32, 101)); break;
-                    case 102 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 320, 32, 96), entPos.x, entPos.y, 0, 64, 102)); break;
-                    case 103 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[3], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 103)); break;
-                    case 104 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 352, 32, 64), entPos.x, entPos.y, -1, 32, 104)); break;
-                    case 105 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 320, 32, 96), entPos.x, entPos.y, 0, 64, 105)); break;
-                    case 106 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[4], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 106)); break;
-                    case 107 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 288, 160, 32), entPos.x, entPos.y, 64, 0, 107)); break;
-                    case 108 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 288, 160, 32), entPos.x, entPos.y, 64, 0, 108)); break;
-                    case 109 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[5], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 109)); break;
-                    case 110 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[6], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 110)); break;
-                    case 111 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[7], entPos.x, entPos.y, 47, 128, 111)); break;
-                    case 112 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[8], entPos.x, entPos.y, 77, 128, 112)); break;
-                    case 113 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[9], entPos.x, entPos.y, 141, 160, 113)); break;
-                }
-
-                entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-            }
-        }
-    }
-
-    {
-        unsigned short listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 2);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                vector<float> entData;
-                unsigned char entType;
-                float currentData;
-
-                levelFile.read(reinterpret_cast<char*>(&entType), 1);
-
-                switch (entType)
-                {
-                    case 0 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-                        startPosition.x = currentData;
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-                        startPosition.y = currentData;
-
-                        sectionb = true;
-
-                        camPos = static_cast<Vector2i>(startPosition) + Vector2i(16, 16);
-
-                        if (camPos.x < 320)
-                            camPos.x = 320;
-
-                        if (camPos.y < 240)
-                            camPos.y = 240;
-
-                        if (camPos.x > roomScale.x * 640 - 320)
-                            camPos.x = roomScale.x * 640 - 320;
-
-                        if (camPos.y > roomScale.y * 480 - 240)
-                            camPos.y = roomScale.y * 480 - 240;
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(marioTxt[1], IntRect(48, 8, 31, 56), entData[0], entData[1], 0, 24, 0));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1]/32) - 1, 3);
-
-                        break;
-                    case 1 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(marksTxt[7], IntRect(107, 0, 107, 111), entData[0], entData[1], 28, 79, 1));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1]/32) - 1, 3);
-
-                        break;
-                    case 2 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new LevelEnd_Entity(marksTxt[8], marksTxt[9], editorMoveable, entData[0], entData[1]));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 3 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 32, 0, 32, 3, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 4 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 32, 0, 32, 4, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 5 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 32, 0, 32, 5, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 6 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[0], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 32, 0, 32, 6, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 7 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new FallPlatform_Entity(marksTxt[0], editorTxt[0], entData[0], entData[1], 32, 0, 32, 7, false));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 8 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 0, 0, 0, 8, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 9 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 0, 0, 0, 9, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 10 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 0, 0, 0, 10, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 11 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[1], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 0, 0, 0, 11, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 12 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new FallPlatform_Entity(marksTxt[1], editorTxt[0], entData[0], entData[1], 0, 0, 0, 12, false));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 13 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 45, 0, 45, 13, true));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 14 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 45, 0, 45, 14, true));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 15 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 45, 0, 45, 15, true));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 16 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[2], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 45, 0, 45, 16, true));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 17 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new FallPlatform_Entity(marksTxt[2], editorTxt[0], entData[0], entData[1], 45, 0, 45, 17, true));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 18 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 43, 0, 43, 18, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 19 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 43, 0, 43, 19, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 20 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(0, 0, 138, 16), entData[0], entData[1], 43, 0, 43, 20, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 21 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalPlatform_Entity(marksTxt[3], speedRegTex, sliderTex, editorTxt[1], editorMoveable, editorTxt[0], IntRect(138, 0, 73, 16), entData[0], entData[1], 43, 0, 43, 21, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 22 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new FallPlatform_Entity(marksTxt[3], editorTxt[0], entData[0], entData[1], 43, 0, 43, 22, false));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 23 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(marksTxt[4], IntRect(0, 0, 32, 64), entData[0], entData[1], 0, 32, 23));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1]/32) - 1, 2);
-
-                        break;
-                    case 24 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(marksTxt[5], IntRect(0, 0, 32, 64), entData[0], entData[1], 0, 32, 24));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1]/32) - 1, 2);
-
-                        break;
-                    case 25 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(marksTxt[6], IntRect(0, 0, 32, 64), entData[0], entData[1], 0, 32, 25));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1]/32) - 1, 2);
-
-                        break;
-                    case 114 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[0], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 114));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 115 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[1], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 115));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 116 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[2], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 116));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 117 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[3], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 117));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 118 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[4], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 118));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 119 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[5], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 119));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 120 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[6], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 120));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 121 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[7], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 121));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 122 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[8], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 15, 122));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 123 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[14], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 123));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 124 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[15], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 124));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 125 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[16], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 125));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 126 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[17], IntRect(0, 0, 33, 32), entData[0], entData[1], 0, 0, 126));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 127 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalEnemy_Entity(enemiesTxt[9], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 127));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 128 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalEnemy_Entity(enemiesTxt[10], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 128));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 129 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new HorizontalEnemy_Entity(enemiesTxt[11], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 129));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 130 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalEnemy_Entity(enemiesTxt[9], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 130));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 131 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalEnemy_Entity(enemiesTxt[10], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 131));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 132 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new VerticalEnemy_Entity(enemiesTxt[11], editorTxt[1], editorMoveable, entData[0], entData[1], 0, 14, 132));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 133 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(enemiesTxt[9], editorTxt[0], entData[0], entData[1], 0, 14, 133));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 134 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(enemiesTxt[10], editorTxt[0], entData[0], entData[1], 0, 14, 134));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 135 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(enemiesTxt[11], editorTxt[0], entData[0], entData[1], 0, 14, 135));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 136 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[12], IntRect(0, 0, 32, 47), entData[0], entData[1], 0, 14, 136));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 137 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], -17, 15, 137));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 138 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], 16, 15, 138, 1, 270));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 139 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], 15, 47, 139, 1, 90));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 140 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[18], IntRect(31, 0, 31, 47), entData[0], entData[1], 48, 47, 140, 1, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 141 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], -17, 15, 141));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 142 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], 16, 15, 142, 1, 270));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 143 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], 15, 47, 143, 1, 90));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 144 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[19], IntRect(31, 0, 31, 47), entData[0], entData[1], 48, 47, 144, 1, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 145 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], -17, 15, 145));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 146 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], 16, 15, 146, 1, 270));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 147 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], 15, 47, 147, 1, 90));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 148 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[20], IntRect(31, 0, 31, 47), entData[0], entData[1], 48, 47, 148, 1, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 149 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[21], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 149));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 150 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[22], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 150));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 151 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[23], IntRect(0, 0, 31, 32), entData[0], entData[1], 0, 0, 151));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 152 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[24], IntRect(0, 0, 31, 37), entData[0], entData[1], 0, 5, 152));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 153 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[25], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 153));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 154 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[26], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 154));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 155 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[27], IntRect(66, 0, 33, 48), entData[0], entData[1], 0, 16, 155));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 156 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[28], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 156));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 157 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[29], IntRect(76, 0, 38, 48), entData[0], entData[1], 5, 16, 157));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 158 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(64, 0, 31, 48), entData[0], entData[1], 0, 16, 158));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 159 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(95, 0, 31, 48), entData[0], entData[1], 0, 16, 159));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 160 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(126, 0, 31, 48), entData[0], entData[1], 0, 16, 160));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 161 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[37], IntRect(0, 0, 32, 32), entData[0], entData[1], 0, 0, 161));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 162 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(0, 0, 32, 32), entData[0], entData[1], 0, 0, 162));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 163 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 32, 32), entData[0], entData[1], 0, 0, 163));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-
-                        break;
-                    case 164 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[38], IntRect(0, 0, 54, 68), entData[0], entData[1], 10, 4, 164));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) + 1, 3);
-
-                        break;
-                    case 165 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[38], IntRect(0, 0, 54, 68), entData[0], entData[1], 44, 36, 165, 1, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 3);
-                        layer2TileMatrixb->setValue(entData[0] / 32, (entData[1] / 32) - 1, 3);
-
-                        break;
-                    case 166 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[39], IntRect(0, 0, 64, 72), entData[0], entData[1], 16, 40, 166));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 167 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 0, 2, 167));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 168 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 32, 34, 168, 1, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 169 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 32, 2, 169, 1, 270));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 170 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 0, 34, 170, 1, 90));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 171 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(832, 96, 32, 32), entData[0], entData[1], 0, 0, 171));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 172 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Podoboo_Entity(hazardsTxt[2], editorTxt[1], editorMoveable, entData[0], entData[1], -3, 0));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 173 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new PodobooD_Entity(hazardsTxt[2], editorTxt[1], editorMoveable, entData[0], entData[1], 30, 32));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 174 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new PodobooL_Entity(hazardsTxt[2], editorTxt[1], editorMoveable, entData[0], entData[1], 30, 0));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 175 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new PodobooR_Entity(hazardsTxt[2], editorTxt[1], editorMoveable, entData[0], entData[1], -3, 32));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 176 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(hazardsTxt[2], editorTxt[0], entData[0], entData[1], -3, 0, 176, 0, true));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 177 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(hazardsTxt[2], editorTxt[0], entData[0], entData[1], 30, 32, 177, 180, true));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 178 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(hazardsTxt[2], editorTxt[0], entData[0], entData[1], 30, 0, 178, 270, true));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 179 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entityj(hazardsTxt[2], editorTxt[0], entData[0], entData[1], -3, 32, 179, 90, true));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 180 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 96, 32, 32), entData[0], entData[1], 0, 0, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 181 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 192, 32, 32), entData[0], entData[1], 0, 0, 181));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 182 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 128, 32, 32), entData[0], entData[1], 0, 0, 182));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 183 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 160, 32, 32), entData[0], entData[1], 0, 0, 183));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 184 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity(hazardsTxt[2], entData[0], entData[1], 0, -1, 184));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 185 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_Rotation(hazardsTxt[2], entData[0], entData[1], 180, 32, 31, 185));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 186 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_Rotation(hazardsTxt[2], entData[0], entData[1], 270, 32, -1, 186));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 187 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_Rotation(hazardsTxt[2], entData[0], entData[1], 90, 0, 31, 187));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 188 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 0, -1, 188));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 189 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 32, 31, 189, 1, 180));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 190 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 32, -1, 190, 1, 270));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 191 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(0, 0, 32, 31), entData[0], entData[1], 0, 31, 191, 1, 90));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 192 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 224, 32, 32), entData[0], entData[1], 0, 0, 192));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 193 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 224, 32, 32), entData[0], entData[1], 0, 0, 193));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 194 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 224, 32, 32), entData[0], entData[1], 0, 0, 194));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 195 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 224, 32, 32), entData[0], entData[1], 0, 0, 195));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 196 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 224, 32, 32), entData[0], entData[1], 0, 0, 196));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 197 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 224, 32, 32), entData[0], entData[1], 0, 0, 197));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 198 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 224, 32, 32), entData[0], entData[1], 0, 0, 198));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 199 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 224, 32, 32), entData[0], entData[1], 0, 0, 199));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 200 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 224, 32, 32), entData[0], entData[1], 0, 0, 200));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 201 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 224, 32, 32), entData[0], entData[1], 0, 0, 201));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 202 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, NULL, entData[0], entData[1], -1, -1, 202, true));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 203 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, editorTxt[3], entData[0], entData[1], -1, -1, 203, true));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 204 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, NULL, entData[0], entData[1], -1, -1, 204, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 205 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Rotodisc_Entity(mainTileset, hazardsTxt[4], editorMoveable, speedRegTex, sliderTex, editorTxt[3], entData[0], entData[1], -1, -1, 205, false));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 206 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity(hazardsTxt[5], entData[0], entData[1], 0, 0, 206));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) + 1, entData[1] / 32, 2);
-
-                        break;
-                    case 207 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(32, 0, 64, 32), entData[0], entData[1], 32, 0, 207));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) - 1, entData[1] / 32, 2);
-
-                        break;
-                    case 208 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity(hazardsTxt[6], entData[0], entData[1], 2, 37, 208));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 209 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[3], IntRect(96, 0, 56, 69), entData[0], entData[1], 23, 37, 209));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        break;
-                    case 210 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity(hazardsTxt[8], entData[0], entData[1], 12, 8, 210));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 211 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        listEntitiesb.emplace_back(new Entity_Rotation(hazardsTxt[8], entData[0], entData[1], 180, 45, 40, 211));
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-
-                        break;
-                    case 212 :
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                        entData.emplace_back(currentData);
-
-                        for (register unsigned int i = 0; i < entData[2]; i++)
-                        {
-                            levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                            entData.emplace_back(currentData);
-
-                            levelFile.read(reinterpret_cast<char*>(&currentData), 4);
-                            entData.emplace_back(currentData);
-                        }
-
-                        listEntitiesb.emplace_back(new Centipede_Entity(editorTxt[3], editorMoveable, nodesTex, entData[0], entData[1], 0, 0));
-                        listEntitiesb.back()->load(entData);
-
-                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
-
-                        layer2TileMatrixb->setValue(entData[0] / 32, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) + 1, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) + 2, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) + 3, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) + 4, entData[1] / 32, 2);
-                        layer2TileMatrixb->setValue((entData[0] / 32) + 5, entData[1] / 32, 2);
-
-                        break;
-                }
-            }
-        }
-    }
-
-    {
-        unsigned short listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 2);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                Vector2f entPos;
-                unsigned char entType;
-
-                levelFile.read(reinterpret_cast<char*>(&entType), 1);
-
-                levelFile.read(reinterpret_cast<char*>(&entPos.x), 4);
-                levelFile.read(reinterpret_cast<char*>(&entPos.y), 4);
-
-                switch (entType)
-                {
-                    case 26 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 26));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 27 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 27));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 28 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 28));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 29 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(128, 0, 32, 32), entPos.x, entPos.y, 0, 0, 29));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 30 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(160, 0, 32, 32), entPos.x, entPos.y, 0, 0, 30));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 31 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(192, 0, 32, 32), entPos.x, entPos.y, 0, 0, 31));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 32 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), entPos.x, entPos.y, 0, 0, 32));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 33 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), entPos.x, entPos.y, 0, 0, 33));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 34 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), entPos.x, entPos.y, 0, 0, 34));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 35 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), entPos.x, entPos.y, 0, 0, 35));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 36 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), entPos.x, entPos.y, 0, 0, 36));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 37 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), entPos.x, entPos.y, 0, 0, 37));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 38 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), entPos.x, entPos.y, 0, 0, 38));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 39 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(480, 0, 32, 32), entPos.x, entPos.y, 0, 0, 39));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 40 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(512, 0, 32, 32), entPos.x, entPos.y, 0, 0, 40));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 41 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(544, 0, 32, 32), entPos.x, entPos.y, 0, 0, 41));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 42 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(576, 0, 32, 32), entPos.x, entPos.y, 0, 0, 42));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 43 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(608, 0, 32, 32), entPos.x, entPos.y, 0, 0, 43));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 44 :
-                        listBonusb.emplace_back(new Entity(itemsTxt[3], entPos.x, entPos.y, 0, 0, 44));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 45 :
-                        listBonusb.emplace_back(new Entity_MultiText(itemsTxt[4], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 45));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 46 :
-                        listBonusb.emplace_back(new Entity_MultiText(itemsTxt[5], IntRect(0, 0, 27, 34), entPos.x, entPos.y, -3, 2, 46));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 47 :
-                        listBonusb.emplace_back(new Entity_MultiText(itemsTxt[6], IntRect(0, 0, 30, 31), entPos.x, entPos.y, -1, -1, 47));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 48 :
-                        listBonusb.emplace_back(new Entity_MultiText(itemsTxt[7], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 48));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 49 :
-                        listBonusb.emplace_back(new Entity(itemsTxt[8], entPos.x, entPos.y, 0, 0, 49));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 50 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 50));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 51 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), entPos.x, entPos.y, 0, 0, 51));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 52 :
-                        listBonusb.emplace_back(new Entity_MultiText(itemsTxt[2], IntRect(0, 0, 19, 28), entPos.x, entPos.y, -7, -2, 52));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        break;
-                    case 53 :
-                        listBonusb.emplace_back(new Entity_MultiText(itemsTxt[1], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 53));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 54 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(640, 0, 32, 32), entPos.x, entPos.y, 0, 0, 54));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                    case 55 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(672, 0, 32, 32), entPos.x, entPos.y, 0, 0, 55));
-
-                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
-
-                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
-
-                        break;
-                }
-            }
-        }
-    }
-
-    {
-        unsigned char listSize;
-
-        levelFile.read(reinterpret_cast<char*>(&listSize), 1);
-
-        if (listSize != 0)
-        {
-            for (register unsigned short i = 0; i < listSize; i++)
-            {
-                WarpsData currentData;
-
-                EntWarps* entrance;
-                EntWarps* exit;
-
-                levelFile.read(reinterpret_cast<char*>(&currentData), sizeof(WarpsData));
-
-                listWarps.emplace_back(EntWarps(warpsTex, editorMoveable, notesTex, currentData.entrancex, currentData.entrancey, i, currentData.entrancesection, true));
-                entrance = &listWarps.back();
-
-                entrance->setDirection(currentData.entrancedir);
-
-                if (currentData.exitx == -1)
-                    lastWarp = entrance;
-                else
-                {
-                    listWarps.emplace_back(EntWarps(warpsTex, editorMoveable, notesTex, currentData.exitx, currentData.exity, i, currentData.exitsection, false));
-                    exit = &listWarps.back();
-
-                    entrance->m_companionWarps = exit;
-
-                    exit->setDirection(currentData.exitdir);
-                    exit->m_companionWarps = entrance;
-
-                    warpsCount++;
-
-                    lastWarp = NULL;
-                }
-            }
-        }
-    }
-
-    if (sectionb)
-    {
-        background[0]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[1]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[2]->setPosition(0, (roomScaleb.y * 480) - 156);
-        background[3]->setPosition(0, (roomScaleb.y * 480) - 178);
-        background[4]->setPosition(0, (roomScaleb.y * 480) - 165);
-        background[5]->setPosition(0, (roomScaleb.y * 480) - 101);
-        background[6]->setPosition(0, (roomScaleb.y * 480) - 320);
-        background[7]->setPosition(0, (roomScaleb.y * 480) - 320);
-
-        background[0]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScaleb.x * 640, 156));
-        background[3]->setSize(Vector2f(roomScaleb.x * 640, 178));
-        background[4]->setSize(Vector2f(roomScaleb.x * 640, 165));
-        background[5]->setSize(Vector2f(roomScaleb.x * 640, 101));
-        background[6]->setSize(Vector2f(roomScaleb.x * 640, 320));
-        background[7]->setSize(Vector2f(roomScaleb.x * 640, 320));
-        background[8]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
-        background[9]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
-        background[10]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
-        background[11]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
-
-        if (background[13] != NULL)
-            background[13]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
-
-        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 156));
-        background[3]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 178));
-        background[4]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 165));
-        background[5]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 101));
-        background[6]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 320));
-        background[7]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 320));
-        background[8]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
-        background[9]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
-        background[10]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
-        background[11]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
-
-        if (background[13] != NULL)
-            background[13]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
-
-        backGradient[0].color = topColorb;
-        backGradient[1].color = topColorb;
-
-        backGradient[2].color = bottomColorb;
-        backGradient[3].color = bottomColorb;
-
-        switch (levelbGradient)
-        {
-            case 0 :
-                backGradient[0].position = Vector2f(0, 0);
-                backGradient[1].position = Vector2f(roomScaleb.x * 640, 0);
-                backGradient[2].position = Vector2f(roomScaleb.x * 640, roomScaleb.y * 480);
-                backGradient[3].position = Vector2f(0, roomScaleb.y * 480);
-                break;
-            case 1 :
-                backGradient[0].position = Vector2f(0, 0);
-                backGradient[1].position = Vector2f(roomScaleb.x * 640, 0);
-                backGradient[2].position = Vector2f(roomScaleb.x * 640, 480);
-                backGradient[3].position = Vector2f(0, 480);
-
-                backColor = Color(bottomColor);
-                backColorb = Color(bottomColorb);
-
-                break;
-            case 2 :
-                backGradient[0].position = Vector2f(0, (roomScaleb.y-1) * 480);
-                backGradient[1].position = Vector2f(roomScaleb.x * 640, (roomScaleb.y-1) * 480);
-                backGradient[2].position = Vector2f(roomScaleb.x * 640, roomScaleb.y * 480);
-                backGradient[3].position = Vector2f(0, roomScaleb.y * 480);
-
-                backColor = Color(topColor);
-                backColorb = Color(topColorb);
-
-                break;
-        }
-
-        effectClouds->setSize(Vector2f(roomScaleb.x * 640, 63));
-        effectClouds->setTexture(effectTex[levelbEffectb-1]);
-        effectClouds->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
-    }
-    else
-    {
-        background[0]->setPosition(0, (roomScale.y * 480) - 160);
-        background[1]->setPosition(0, (roomScale.y * 480) - 160);
-        background[2]->setPosition(0, (roomScale.y * 480) - 156);
-        background[3]->setPosition(0, (roomScale.y * 480) - 178);
-        background[4]->setPosition(0, (roomScale.y * 480) - 165);
-        background[5]->setPosition(0, (roomScale.y * 480) - 101);
-        background[6]->setPosition(0, (roomScale.y * 480) - 320);
-        background[7]->setPosition(0, (roomScale.y * 480) - 320);
-
-        background[0]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScale.x * 640, 156));
-        background[3]->setSize(Vector2f(roomScale.x * 640, 178));
-        background[4]->setSize(Vector2f(roomScale.x * 640, 165));
-        background[5]->setSize(Vector2f(roomScale.x * 640, 101));
-        background[6]->setSize(Vector2f(roomScale.x * 640, 320));
-        background[7]->setSize(Vector2f(roomScale.x * 640, 320));
-        background[8]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
-        background[9]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
-        background[10]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
-        background[11]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
-
-        if (background[12] != NULL)
-            background[12]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
-
-        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 156));
-        background[3]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 178));
-        background[4]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 165));
-        background[5]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 101));
-        background[6]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 320));
-        background[7]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 320));
-        background[8]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
-        background[9]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
-        background[10]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
-        background[11]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
-
-        if (background[12] != NULL)
-            background[12]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
-
-        backGradient[0].color = topColor;
-        backGradient[1].color = topColor;
-
-        backGradient[2].color = bottomColor;
-        backGradient[3].color = bottomColor;
-
-        switch (levelGradient)
-        {
-            case 0 :
-                backGradient[0].position = Vector2f(0, 0);
-                backGradient[1].position = Vector2f(roomScale.x * 640, 0);
-                backGradient[2].position = Vector2f(roomScale.x * 640, roomScale.y * 480);
-                backGradient[3].position = Vector2f(0, roomScale.y * 480);
-                break;
-            case 1 :
-                backGradient[0].position = Vector2f(0, 0);
-                backGradient[1].position = Vector2f(roomScale.x * 640, 0);
-                backGradient[2].position = Vector2f(roomScale.x * 640, 480);
-                backGradient[3].position = Vector2f(0, 480);
-
-                backColor = Color(bottomColor);
-                backColorb = Color(bottomColorb);
-
-                break;
-            case 2 :
-                backGradient[0].position = Vector2f(0, (roomScale.y-1) * 480);
-                backGradient[1].position = Vector2f(roomScale.x * 640, (roomScale.y-1) * 480);
-                backGradient[2].position = Vector2f(roomScale.x * 640, roomScale.y * 480);
-                backGradient[3].position = Vector2f(0, roomScale.y * 480);
-
-                backColor = Color(topColor);
-                backColorb = Color(topColorb);
-
-                break;
-        }
-
-        effectClouds->setSize(Vector2f(roomScale.x * 640, 63));
-        effectClouds->setTexture(effectTex[levelEffectb-1]);
-        effectClouds->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
-    }
-
-    levelFile.close();
+    // Calling the subroutine :
+    Level_LoadObjects(levelFile);
 }
 
 static void Level_LoadEntry()
@@ -25070,6 +20189,12 @@ static void Level_LoadEntry()
 
     entityMatrixb->resize(roomScaleb.x * 20, roomScaleb.y * 15);
 
+    // Calling the subroutine :
+    Level_LoadObjects(levelFile);
+}
+
+static void Level_LoadObjects(ifstream& levelFile)
+{
     levelFile.read(reinterpret_cast<char*>(&levelMusic), 1);
     levelFile.read(reinterpret_cast<char*>(&levelbMusic), 1);
 
@@ -25299,7 +20424,7 @@ static void Level_LoadEntry()
 
                 listTile1.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
 
-                if (currentData.tilex < 15)
+                if (currentData.tilex < 18)
                     layer1TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 1);
                 else
                     layer1TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 2);
@@ -25322,7 +20447,7 @@ static void Level_LoadEntry()
 
                 listTile2.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
 
-                if (currentData.tilex < 15)
+                if (currentData.tilex < 18)
                     layer2TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 1);
                 else
                     layer2TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 2);
@@ -25345,7 +20470,7 @@ static void Level_LoadEntry()
 
                 listTile3.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
 
-                if (currentData.tilex < 15)
+                if (currentData.tilex < 18)
                     layer3TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 1);
                 else
                     layer3TileMatrix->setValue(currentData.x / 32, currentData.y / 32, 2);
@@ -25368,7 +20493,7 @@ static void Level_LoadEntry()
 
                 listTileb1.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
 
-                if (currentData.tilex < 15)
+                if (currentData.tilex < 18)
                     layer1TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 1);
                 else
                     layer1TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 2);
@@ -25391,7 +20516,7 @@ static void Level_LoadEntry()
 
                 listTileb2.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
 
-                if (currentData.tilex < 15)
+                if (currentData.tilex < 18)
                     layer2TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 1);
                 else
                     layer2TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 2);
@@ -25414,7 +20539,7 @@ static void Level_LoadEntry()
 
                 listTileb3.emplace_back(Tile(currentData.x, currentData.y, currentData.tilex, currentData.tiley));
 
-                if (currentData.tilex < 15)
+                if (currentData.tilex < 18)
                     layer3TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 1);
                 else
                     layer3TileMatrixb->setValue(currentData.x / 32, currentData.y / 32, 2);
@@ -25448,28 +20573,32 @@ static void Level_LoadEntry()
 
                 switch (entType)
                 {
-                    case 92 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 352, 32, 64), entPos.x, entPos.y, -1, 32, 92)); break;
-                    case 93 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 320, 32, 96), entPos.x, entPos.y, 0, 64, 93)); break;
+                    case 92 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GREEN_TREE, entPos.x, entPos.y, -1, 32, 92)); break;
+                    case 93 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GREEN_BIGTREE, entPos.x, entPos.y, 0, 64, 93)); break;
                     case 94 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[0], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 94)); break;
-                    case 95 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 352, 32, 64), entPos.x, entPos.y, -1, 32, 95)); break;
-                    case 96 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 320, 32, 96), entPos.x, entPos.y, 0, 64, 96)); break;
+                    case 95 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GRAY_TREE, entPos.x, entPos.y, -1, 32, 95)); break;
+                    case 96 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GRAY_BIGTREE, entPos.x, entPos.y, 0, 64, 96)); break;
                     case 97 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[1], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 97)); break;
-                    case 98 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 352, 32, 64), entPos.x, entPos.y, -1, 32, 98)); break;
-                    case 99 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 320, 32, 96), entPos.x, entPos.y, 0, 64, 99)); break;
+                    case 98 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_YELLOW_TREE, entPos.x, entPos.y, -1, 32, 98)); break;
+                    case 99 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_YELLOW_BIGTREE, entPos.x, entPos.y, 0, 64, 99)); break;
                     case 100 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[2], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 100)); break;
-                    case 101 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 352, 32, 64), entPos.x, entPos.y, -1, 32, 101)); break;
-                    case 102 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 320, 32, 96), entPos.x, entPos.y, 0, 64, 102)); break;
+                    case 101 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_RED_TREE, entPos.x, entPos.y, -1, 32, 101)); break;
+                    case 102 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_RED_BIGTREE, entPos.x, entPos.y, 0, 64, 102)); break;
                     case 103 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[3], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 103)); break;
-                    case 104 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 352, 32, 64), entPos.x, entPos.y, -1, 32, 104)); break;
-                    case 105 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 320, 32, 96), entPos.x, entPos.y, 0, 64, 105)); break;
+                    case 104 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_BLUE_TREE, entPos.x, entPos.y, -1, 32, 104)); break;
+                    case 105 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_BLUE_BIGTREE, entPos.x, entPos.y, 0, 64, 105)); break;
                     case 106 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[4], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 106)); break;
-                    case 107 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 288, 160, 32), entPos.x, entPos.y, 64, 0, 107)); break;
-                    case 108 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 288, 160, 32), entPos.x, entPos.y, 64, 0, 108)); break;
+                    case 107 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_FENCE, entPos.x, entPos.y, 64, 0, 107)); break;
+                    case 108 : listSceneries.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_SNOWFENCE, entPos.x, entPos.y, 64, 0, 108)); break;
                     case 109 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[5], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 109)); break;
                     case 110 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[6], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 110)); break;
                     case 111 : listSceneries.emplace_back(new Entity(sceneriesTxt[7], entPos.x, entPos.y, 47, 128, 111)); break;
                     case 112 : listSceneries.emplace_back(new Entity(sceneriesTxt[8], entPos.x, entPos.y, 77, 128, 112)); break;
                     case 113 : listSceneries.emplace_back(new Entity(sceneriesTxt[9], entPos.x, entPos.y, 141, 160, 113)); break;
+                    case 229 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[10], IntRect(0, 0, 95, 91), entPos.x, entPos.y, 31, -5, 229)); break;
+                    case 230 : listSceneries.emplace_back(new Entity(sceneriesTxt[11], entPos.x, entPos.y, 11, 0, 230)); break;
+                    case 231 : listSceneries.emplace_back(new Entity(sceneriesTxt[12], entPos.x, entPos.y, 77, 128, 231)); break;
+                    case 232 : listSceneries.emplace_back(new Entity(sceneriesTxt[13], entPos.x, entPos.y, 141, 160, 232)); break;
                 }
 
                 entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
@@ -26571,7 +21700,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(64, 0, 31, 48), entData[0], entData[1], 0, 16, 158));
+                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 31, 48), entData[0], entData[1], 0, 16, 158));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26583,7 +21712,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(95, 0, 31, 48), entData[0], entData[1], 0, 16, 159));
+                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(63, 0, 31, 48), entData[0], entData[1], 0, 16, 159));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26595,7 +21724,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(126, 0, 31, 48), entData[0], entData[1], 0, 16, 160));
+                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(94, 0, 31, 48), entData[0], entData[1], 0, 16, 160));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26635,7 +21764,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 32, 32), entData[0], entData[1], 0, 0, 163));
+                        listEntities.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(0, 0, 32, 32), entData[0], entData[1], 0, 0, 163, 1, 0, true));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26739,7 +21868,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(832, 96, 32, 32), entData[0], entData[1], 0, 0, 171));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_LAVABOTTOM, entData[0], entData[1], 0, 0, 171));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26865,7 +21994,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 96, 32, 32), entData[0], entData[1], 0, 0, 180));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKETOP, entData[0], entData[1], 0, 0, 180));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26879,7 +22008,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 192, 32, 32), entData[0], entData[1], 0, 0, 181));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKEBOTTOM, entData[0], entData[1], 0, 0, 181));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26893,7 +22022,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 128, 32, 32), entData[0], entData[1], 0, 0, 182));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKELEFT, entData[0], entData[1], 0, 0, 182));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -26907,7 +22036,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 160, 32, 32), entData[0], entData[1], 0, 0, 183));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKERIGHT, entData[0], entData[1], 0, 0, 183));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27033,7 +22162,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 224, 32, 32), entData[0], entData[1], 0, 0, 192));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLTOP, entData[0], entData[1], 0, 0, 192));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27047,7 +22176,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 224, 32, 32), entData[0], entData[1], 0, 0, 193));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLTOPB, entData[0], entData[1], 0, 0, 193));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27061,7 +22190,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 224, 32, 32), entData[0], entData[1], 0, 0, 194));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLMIDV, entData[0], entData[1], 0, 0, 194));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27075,7 +22204,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 224, 32, 32), entData[0], entData[1], 0, 0, 195));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLBOT, entData[0], entData[1], 0, 0, 195));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27089,7 +22218,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 224, 32, 32), entData[0], entData[1], 0, 0, 196));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLBOTB, entData[0], entData[1], 0, 0, 196));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27103,7 +22232,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 224, 32, 32), entData[0], entData[1], 0, 0, 197));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLLEF, entData[0], entData[1], 0, 0, 197));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27117,7 +22246,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 224, 32, 32), entData[0], entData[1], 0, 0, 198));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLLEFB, entData[0], entData[1], 0, 0, 198));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27131,7 +22260,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 224, 32, 32), entData[0], entData[1], 0, 0, 199));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLMIDH, entData[0], entData[1], 0, 0, 199));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27145,7 +22274,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 224, 32, 32), entData[0], entData[1], 0, 0, 200));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLRIG, entData[0], entData[1], 0, 0, 200));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27159,7 +22288,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 224, 32, 32), entData[0], entData[1], 0, 0, 201));
+                        listEntities.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLRIGB, entData[0], entData[1], 0, 0, 201));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -27368,6 +22497,54 @@ static void Level_LoadEntry()
                         layer2TileMatrix->setValue((entData[0] / 32) + 5, entData[1] / 32, 2);
 
                         break;
+                    case 225 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], -1, -1, 225));
+
+                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
+                    case 226 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], 32, -1, 226, 1, 270));
+
+                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
+                    case 227 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], -1, 31, 227, 1, 90));
+
+                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
+                    case 228 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntities.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], 32, 32, 228, 1, 180));
+
+                        entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
                 }
             }
         }
@@ -27441,7 +22618,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 32 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), entPos.x, entPos.y, 0, 0, 32));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 32, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27449,7 +22626,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 33 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), entPos.x, entPos.y, 0, 0, 33));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 33, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27457,7 +22634,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 34 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), entPos.x, entPos.y, 0, 0, 34));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 34, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27465,7 +22642,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 35 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), entPos.x, entPos.y, 0, 0, 35));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(128, 0, 32, 32), entPos.x, entPos.y, 0, 0, 35, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27473,7 +22650,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 36 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), entPos.x, entPos.y, 0, 0, 36));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(160, 0, 32, 32), entPos.x, entPos.y, 0, 0, 36, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27481,7 +22658,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 37 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), entPos.x, entPos.y, 0, 0, 37));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(192, 0, 32, 32), entPos.x, entPos.y, 0, 0, 37, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27489,7 +22666,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 38 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), entPos.x, entPos.y, 0, 0, 38));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), entPos.x, entPos.y, 0, 0, 38, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27497,7 +22674,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 39 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(480, 0, 32, 32), entPos.x, entPos.y, 0, 0, 39));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), entPos.x, entPos.y, 0, 0, 39, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27505,7 +22682,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 40 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(512, 0, 32, 32), entPos.x, entPos.y, 0, 0, 40));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), entPos.x, entPos.y, 0, 0, 40, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27513,7 +22690,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 41 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(544, 0, 32, 32), entPos.x, entPos.y, 0, 0, 41));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), entPos.x, entPos.y, 0, 0, 41, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27521,7 +22698,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 42 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(576, 0, 32, 32), entPos.x, entPos.y, 0, 0, 42));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), entPos.x, entPos.y, 0, 0, 42, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27529,7 +22706,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 43 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(608, 0, 32, 32), entPos.x, entPos.y, 0, 0, 43));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), entPos.x, entPos.y, 0, 0, 43, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27593,7 +22770,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 51 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), entPos.x, entPos.y, 0, 0, 51));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 51, 1, 0, true));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27615,7 +22792,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 54 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(640, 0, 32, 32), entPos.x, entPos.y, 0, 0, 54));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), entPos.x, entPos.y, 0, 0, 54));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27623,7 +22800,103 @@ static void Level_LoadEntry()
 
                         break;
                     case 55 :
-                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(672, 0, 32, 32), entPos.x, entPos.y, 0, 0, 55));
+                        listBonus.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), entPos.x, entPos.y, 0, 0, 55));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 213 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 213));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 214 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 214, 1, 0, true));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 215 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 215));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 216 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 216));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 217 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 217, 1, 0, true));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 218 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 218));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 219 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 219));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 220 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 220, 1, 0, true));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 221 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 221));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 222 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 222));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 223 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 223, 1, 0, true));
+
+                        entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrix->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 224 :
+                        listBonus.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 224));
 
                         entityMatrix->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -27654,28 +22927,32 @@ static void Level_LoadEntry()
 
                 switch (entType)
                 {
-                    case 92 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 352, 32, 64), entPos.x, entPos.y, -1, 32, 92)); break;
-                    case 93 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 320, 32, 96), entPos.x, entPos.y, 0, 64, 93)); break;
+                    case 92 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GREEN_TREE, entPos.x, entPos.y, -1, 32, 92)); break;
+                    case 93 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GREEN_BIGTREE, entPos.x, entPos.y, 0, 64, 93)); break;
                     case 94 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[0], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 94)); break;
-                    case 95 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 352, 32, 64), entPos.x, entPos.y, -1, 32, 95)); break;
-                    case 96 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 320, 32, 96), entPos.x, entPos.y, 0, 64, 96)); break;
+                    case 95 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GRAY_TREE, entPos.x, entPos.y, -1, 32, 95)); break;
+                    case 96 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_GRAY_BIGTREE, entPos.x, entPos.y, 0, 64, 96)); break;
                     case 97 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[1], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 97)); break;
-                    case 98 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 352, 32, 64), entPos.x, entPos.y, -1, 32, 98)); break;
-                    case 99 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 320, 32, 96), entPos.x, entPos.y, 0, 64, 99)); break;
+                    case 98 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_YELLOW_TREE, entPos.x, entPos.y, -1, 32, 98)); break;
+                    case 99 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_YELLOW_BIGTREE, entPos.x, entPos.y, 0, 64, 99)); break;
                     case 100 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[2], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 100)); break;
-                    case 101 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 352, 32, 64), entPos.x, entPos.y, -1, 32, 101)); break;
-                    case 102 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 320, 32, 96), entPos.x, entPos.y, 0, 64, 102)); break;
+                    case 101 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_RED_TREE, entPos.x, entPos.y, -1, 32, 101)); break;
+                    case 102 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_RED_BIGTREE, entPos.x, entPos.y, 0, 64, 102)); break;
                     case 103 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[3], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 103)); break;
-                    case 104 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 352, 32, 64), entPos.x, entPos.y, -1, 32, 104)); break;
-                    case 105 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 320, 32, 96), entPos.x, entPos.y, 0, 64, 105)); break;
+                    case 104 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_BLUE_TREE, entPos.x, entPos.y, -1, 32, 104)); break;
+                    case 105 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_BLUE_BIGTREE, entPos.x, entPos.y, 0, 64, 105)); break;
                     case 106 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[4], IntRect(0, 0, 65, 30), entPos.x, entPos.y, 16, -2, 106)); break;
-                    case 107 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 288, 160, 32), entPos.x, entPos.y, 64, 0, 107)); break;
-                    case 108 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 288, 160, 32), entPos.x, entPos.y, 64, 0, 108)); break;
+                    case 107 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_FENCE, entPos.x, entPos.y, 64, 0, 107)); break;
+                    case 108 : listSceneriesb.emplace_back(new Entity_MultiText(mainTileset, TILE_SCENERY_SNOWFENCE, entPos.x, entPos.y, 64, 0, 108)); break;
                     case 109 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[5], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 109)); break;
                     case 110 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[6], IntRect(0, 0, 63, 48), entPos.x, entPos.y, 15, 8, 110)); break;
                     case 111 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[7], entPos.x, entPos.y, 47, 128, 111)); break;
                     case 112 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[8], entPos.x, entPos.y, 77, 128, 112)); break;
                     case 113 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[9], entPos.x, entPos.y, 141, 160, 113)); break;
+                    case 229 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[10], IntRect(0, 0, 95, 91), entPos.x, entPos.y, 31, -5, 229)); break;
+                    case 230 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[11], entPos.x, entPos.y, 11, 0, 230)); break;
+                    case 231 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[12], entPos.x, entPos.y, 77, 128, 231)); break;
+                    case 232 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[13], entPos.x, entPos.y, 141, 160, 232)); break;
                 }
 
                 entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
@@ -28777,7 +24054,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(64, 0, 31, 48), entData[0], entData[1], 0, 16, 158));
+                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 31, 48), entData[0], entData[1], 0, 16, 158));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -28789,7 +24066,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(95, 0, 31, 48), entData[0], entData[1], 0, 16, 159));
+                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(63, 0, 31, 48), entData[0], entData[1], 0, 16, 159));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -28801,7 +24078,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(126, 0, 31, 48), entData[0], entData[1], 0, 16, 160));
+                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(94, 0, 31, 48), entData[0], entData[1], 0, 16, 160));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -28841,7 +24118,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(32, 0, 32, 32), entData[0], entData[1], 0, 0, 163));
+                        listEntitiesb.emplace_back(new Entity_MultiText(editorTxt[4], IntRect(0, 0, 32, 32), entData[0], entData[1], 0, 0, 163, 1, 0, true));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -28945,7 +24222,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(832, 96, 32, 32), entData[0], entData[1], 0, 0, 171));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_LAVABOTTOM, entData[0], entData[1], 0, 0, 171));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29071,7 +24348,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 96, 32, 32), entData[0], entData[1], 0, 0, 180));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKETOP, entData[0], entData[1], 0, 0, 180));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29085,7 +24362,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 192, 32, 32), entData[0], entData[1], 0, 0, 181));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKEBOTTOM, entData[0], entData[1], 0, 0, 181));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29099,7 +24376,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 128, 32, 32), entData[0], entData[1], 0, 0, 182));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKELEFT, entData[0], entData[1], 0, 0, 182));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29113,7 +24390,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 160, 32, 32), entData[0], entData[1], 0, 0, 183));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_SPIKERIGHT, entData[0], entData[1], 0, 0, 183));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29239,7 +24516,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(512, 224, 32, 32), entData[0], entData[1], 0, 0, 192));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset,TILE_HAZARD_BBILLTOP, entData[0], entData[1], 0, 0, 192));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29253,7 +24530,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(480, 224, 32, 32), entData[0], entData[1], 0, 0, 193));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLTOPB, entData[0], entData[1], 0, 0, 193));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29267,7 +24544,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(544, 224, 32, 32), entData[0], entData[1], 0, 0, 194));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLMIDV, entData[0], entData[1], 0, 0, 194));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29281,7 +24558,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(608, 224, 32, 32), entData[0], entData[1], 0, 0, 195));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLBOT, entData[0], entData[1], 0, 0, 195));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29295,7 +24572,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(576, 224, 32, 32), entData[0], entData[1], 0, 0, 196));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLBOTB, entData[0], entData[1], 0, 0, 196));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29309,7 +24586,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(672, 224, 32, 32), entData[0], entData[1], 0, 0, 197));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLLEF, entData[0], entData[1], 0, 0, 197));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29323,7 +24600,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(640, 224, 32, 32), entData[0], entData[1], 0, 0, 198));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLLEFB, entData[0], entData[1], 0, 0, 198));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29337,7 +24614,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(704, 224, 32, 32), entData[0], entData[1], 0, 0, 199));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLMIDH, entData[0], entData[1], 0, 0, 199));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29351,7 +24628,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(768, 224, 32, 32), entData[0], entData[1], 0, 0, 200));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLRIG, entData[0], entData[1], 0, 0, 200));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29365,7 +24642,7 @@ static void Level_LoadEntry()
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, IntRect(736, 224, 32, 32), entData[0], entData[1], 0, 0, 201));
+                        listEntitiesb.emplace_back(new Entity_MultiText(mainTileset, TILE_HAZARD_BBILLRIGB, entData[0], entData[1], 0, 0, 201));
 
                         entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -29574,6 +24851,54 @@ static void Level_LoadEntry()
                         layer2TileMatrixb->setValue((entData[0] / 32) + 5, entData[1] / 32, 2);
 
                         break;
+                    case 225 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], -1, -1, 225));
+
+                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
+                    case 226 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], 32, -1, 226, 1, 270));
+
+                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
+                    case 227 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], -1, 31, 227, 1, 90));
+
+                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
+                    case 228 :
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        levelFile.read(reinterpret_cast<char*>(&currentData), 4);
+                        entData.emplace_back(currentData);
+
+                        listEntitiesb.emplace_back(new Entity_MultiText(enemiesTxt[41], IntRect(62, 0, 31, 31), entData[0], entData[1], 32, 32, 228, 1, 180));
+
+                        entityMatrixb->setValue(entData[0] / 32, entData[1] / 32, 1);
+
+                        break;
                 }
             }
         }
@@ -29647,7 +24972,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 32 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), entPos.x, entPos.y, 0, 0, 32));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 32, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29655,7 +24980,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 33 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), entPos.x, entPos.y, 0, 0, 33));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 33, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29663,7 +24988,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 34 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), entPos.x, entPos.y, 0, 0, 34));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 34, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29671,7 +24996,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 35 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), entPos.x, entPos.y, 0, 0, 35));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(128, 0, 32, 32), entPos.x, entPos.y, 0, 0, 35, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29679,7 +25004,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 36 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), entPos.x, entPos.y, 0, 0, 36));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(160, 0, 32, 32), entPos.x, entPos.y, 0, 0, 36, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29687,7 +25012,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 37 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), entPos.x, entPos.y, 0, 0, 37));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(192, 0, 32, 32), entPos.x, entPos.y, 0, 0, 37, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29695,7 +25020,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 38 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), entPos.x, entPos.y, 0, 0, 38));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), entPos.x, entPos.y, 0, 0, 38, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29703,7 +25028,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 39 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(480, 0, 32, 32), entPos.x, entPos.y, 0, 0, 39));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(256, 0, 32, 32), entPos.x, entPos.y, 0, 0, 39, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29711,7 +25036,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 40 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(512, 0, 32, 32), entPos.x, entPos.y, 0, 0, 40));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(288, 0, 32, 32), entPos.x, entPos.y, 0, 0, 40, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29719,7 +25044,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 41 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(544, 0, 32, 32), entPos.x, entPos.y, 0, 0, 41));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(320, 0, 32, 32), entPos.x, entPos.y, 0, 0, 41, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29727,7 +25052,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 42 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(576, 0, 32, 32), entPos.x, entPos.y, 0, 0, 42));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(352, 0, 32, 32), entPos.x, entPos.y, 0, 0, 42, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29735,7 +25060,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 43 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(608, 0, 32, 32), entPos.x, entPos.y, 0, 0, 43));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(384, 0, 32, 32), entPos.x, entPos.y, 0, 0, 43, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29799,7 +25124,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 51 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(224, 0, 32, 32), entPos.x, entPos.y, 0, 0, 51));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 51, 1, 0, true));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29821,7 +25146,7 @@ static void Level_LoadEntry()
 
                         break;
                     case 54 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(640, 0, 32, 32), entPos.x, entPos.y, 0, 0, 54));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(416, 0, 32, 32), entPos.x, entPos.y, 0, 0, 54));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29829,7 +25154,103 @@ static void Level_LoadEntry()
 
                         break;
                     case 55 :
-                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(672, 0, 32, 32), entPos.x, entPos.y, 0, 0, 55));
+                        listBonusb.emplace_back(new Entity_MultiText(editorTxt[2], IntRect(448, 0, 32, 32), entPos.x, entPos.y, 0, 0, 55));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 213 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 213));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 214 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 214, 1, 0, true));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 215 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(0, 0, 32, 32), entPos.x, entPos.y, 0, 0, 215));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 216 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 216));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 217 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 217, 1, 0, true));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 218 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(32, 0, 32, 32), entPos.x, entPos.y, 0, 0, 218));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 219 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 219));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 220 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 220, 1, 0, true));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 221 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(64, 0, 32, 32), entPos.x, entPos.y, 0, 0, 221));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 222 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 222));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 223 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[11], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 223, 1, 0, true));
+
+                        entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
+
+                        layer2TileMatrixb->setValue(entPos.x / 32, entPos.y / 32, 2);
+
+                        break;
+                    case 224 :
+                        listBonusb.emplace_back(new Entity_MultiText(marksTxt[10], IntRect(96, 0, 32, 32), entPos.x, entPos.y, 0, 0, 224));
 
                         entityMatrixb->setValue(entPos.x / 32, entPos.y / 32, 1);
 
@@ -29884,18 +25305,20 @@ static void Level_LoadEntry()
 
     if (sectionb)
     {
-        background[0]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[1]->setPosition(0, (roomScaleb.y * 480) - 160);
-        background[2]->setPosition(0, (roomScaleb.y * 480) - 156);
+        background[0]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[1]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[2]->setPosition(0, (roomScaleb.y * 480) - 274);
         background[3]->setPosition(0, (roomScaleb.y * 480) - 178);
         background[4]->setPosition(0, (roomScaleb.y * 480) - 165);
         background[5]->setPosition(0, (roomScaleb.y * 480) - 101);
         background[6]->setPosition(0, (roomScaleb.y * 480) - 320);
         background[7]->setPosition(0, (roomScaleb.y * 480) - 320);
+        background[14]->setPosition(0, (roomScaleb.y * 480) - 274);
+        background[15]->setPosition(0, (roomScaleb.y * 480) - 274);
 
-        background[0]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScaleb.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScaleb.x * 640, 156));
+        background[0]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[1]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[2]->setSize(Vector2f(roomScaleb.x * 640, 274));
         background[3]->setSize(Vector2f(roomScaleb.x * 640, 178));
         background[4]->setSize(Vector2f(roomScaleb.x * 640, 165));
         background[5]->setSize(Vector2f(roomScaleb.x * 640, 101));
@@ -29905,13 +25328,15 @@ static void Level_LoadEntry()
         background[9]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
         background[10]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
         background[11]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
+        background[14]->setSize(Vector2f(roomScaleb.x * 640, 274));
+        background[15]->setSize(Vector2f(roomScaleb.x * 640, 274));
 
         if (background[13] != NULL)
             background[13]->setSize(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
 
-        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 156));
+        background[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[2]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
         background[3]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 178));
         background[4]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 165));
         background[5]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 101));
@@ -29921,6 +25346,8 @@ static void Level_LoadEntry()
         background[9]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
         background[10]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
         background[11]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
+        background[14]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+        background[15]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
 
         if (background[13] != NULL)
             background[13]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
@@ -29961,24 +25388,30 @@ static void Level_LoadEntry()
                 break;
         }
 
-        effectClouds->setSize(Vector2f(roomScaleb.x * 640, 63));
-        effectClouds->setTexture(effectTex[levelbEffectb-1]);
-        effectClouds->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+        effectClouds[0]->setSize(Vector2f(roomScaleb.x * 640, 63));
+        effectClouds[0]->setTexture(effectTex[levelbEffectb-1]);
+        effectClouds[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+
+        effectClouds[1]->setSize(Vector2f(roomScaleb.x * 640, 63));
+        effectClouds[1]->setTexture(effectTex[levelbEffectb-1]);
+        effectClouds[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
     }
     else
     {
-        background[0]->setPosition(0, (roomScale.y * 480) - 160);
-        background[1]->setPosition(0, (roomScale.y * 480) - 160);
-        background[2]->setPosition(0, (roomScale.y * 480) - 156);
+        background[0]->setPosition(0, (roomScale.y * 480) - 274);
+        background[1]->setPosition(0, (roomScale.y * 480) - 274);
+        background[2]->setPosition(0, (roomScale.y * 480) - 274);
         background[3]->setPosition(0, (roomScale.y * 480) - 178);
         background[4]->setPosition(0, (roomScale.y * 480) - 165);
         background[5]->setPosition(0, (roomScale.y * 480) - 101);
         background[6]->setPosition(0, (roomScale.y * 480) - 320);
         background[7]->setPosition(0, (roomScale.y * 480) - 320);
+        background[14]->setPosition(0, (roomScale.y * 480) - 274);
+        background[15]->setPosition(0, (roomScale.y * 480) - 274);
 
-        background[0]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[1]->setSize(Vector2f(roomScale.x * 640, 160));
-        background[2]->setSize(Vector2f(roomScale.x * 640, 156));
+        background[0]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[1]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[2]->setSize(Vector2f(roomScale.x * 640, 274));
         background[3]->setSize(Vector2f(roomScale.x * 640, 178));
         background[4]->setSize(Vector2f(roomScale.x * 640, 165));
         background[5]->setSize(Vector2f(roomScale.x * 640, 101));
@@ -29988,13 +25421,15 @@ static void Level_LoadEntry()
         background[9]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
         background[10]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
         background[11]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
+        background[14]->setSize(Vector2f(roomScale.x * 640, 274));
+        background[15]->setSize(Vector2f(roomScale.x * 640, 274));
 
         if (background[12] != NULL)
             background[12]->setSize(Vector2f(roomScale.x * 640, roomScale.y * 480));
 
-        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
-        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 156));
+        background[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[2]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
         background[3]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 178));
         background[4]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 165));
         background[5]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 101));
@@ -30004,6 +25439,8 @@ static void Level_LoadEntry()
         background[9]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
         background[10]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
         background[11]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
+        background[14]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+        background[15]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
 
         if (background[12] != NULL)
             background[12]->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
@@ -30044,9 +25481,13 @@ static void Level_LoadEntry()
                 break;
         }
 
-        effectClouds->setSize(Vector2f(roomScale.x * 640, 63));
-        effectClouds->setTexture(effectTex[levelEffectb-1]);
-        effectClouds->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+        effectClouds[0]->setSize(Vector2f(roomScale.x * 640, 63));
+        effectClouds[0]->setTexture(effectTex[levelEffectb-1]);
+        effectClouds[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+
+        effectClouds[1]->setSize(Vector2f(roomScale.x * 640, 63));
+        effectClouds[1]->setTexture(effectTex[levelEffectb-1]);
+        effectClouds[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
     }
 
     levelFile.close();
@@ -30302,18 +25743,20 @@ static void Level_New()
 
     levelDir.clear();
 
-    background[0]->setPosition(0, 320);
-    background[1]->setPosition(0, 320);
-    background[2]->setPosition(0, 320);
+    background[0]->setPosition(0, 206);
+    background[1]->setPosition(0, 206);
+    background[2]->setPosition(0, 206);
     background[3]->setPosition(0, 302);
     background[4]->setPosition(0, 315);
     background[5]->setPosition(0, 379);
     background[6]->setPosition(0, 160);
     background[7]->setPosition(0, 160);
+    background[14]->setPosition(0, 206);
+    background[15]->setPosition(0, 206);
 
-    background[0]->setSize(Vector2f(1280, 160));
-    background[1]->setSize(Vector2f(1280, 160));
-    background[2]->setSize(Vector2f(1280, 160));
+    background[0]->setSize(Vector2f(1280, 274));
+    background[1]->setSize(Vector2f(1280, 274));
+    background[2]->setSize(Vector2f(1280, 274));
     background[3]->setSize(Vector2f(1280, 178));
     background[4]->setSize(Vector2f(1280, 165));
     background[5]->setSize(Vector2f(1280, 101));
@@ -30323,10 +25766,12 @@ static void Level_New()
     background[9]->setSize(Vector2f(1280, 480));
     background[10]->setSize(Vector2f(1280, 480));
     background[11]->setSize(Vector2f(1280, 480));
+    background[14]->setSize(Vector2f(1280, 274));
+    background[15]->setSize(Vector2f(1280, 274));
 
-    background[0]->setTextureRect(IntRect(0, 0, 1280, 160));
-    background[1]->setTextureRect(IntRect(0, 0, 1280, 160));
-    background[2]->setTextureRect(IntRect(0, 0, 1280, 160));
+    background[0]->setTextureRect(IntRect(0, 0, 1280, 274));
+    background[1]->setTextureRect(IntRect(0, 0, 1280, 274));
+    background[2]->setTextureRect(IntRect(0, 0, 1280, 274));
     background[3]->setTextureRect(IntRect(0, 0, 1280, 178));
     background[4]->setTextureRect(IntRect(0, 0, 1280, 165));
     background[5]->setTextureRect(IntRect(0, 0, 1280, 101));
@@ -30336,9 +25781,14 @@ static void Level_New()
     background[9]->setTextureRect(IntRect(0, 0, 1280, 480));
     background[10]->setTextureRect(IntRect(0, 0, 1280, 480));
     background[11]->setTextureRect(IntRect(0, 0, 1280, 480));
+    background[14]->setTextureRect(IntRect(0, 0, 1280, 274));
+    background[15]->setTextureRect(IntRect(0, 0, 1280, 274));
 
-    effectClouds->setSize(Vector2f(1280, 63));
-    effectClouds->setTextureRect(IntRect(0, 0, 1280, 63));
+    effectClouds[0]->setSize(Vector2f(1280, 63));
+    effectClouds[0]->setTextureRect(IntRect(0, 0, 1280, 63));
+
+    effectClouds[1]->setSize(Vector2f(1280, 63));
+    effectClouds[1]->setTextureRect(IntRect(0, 0, 1280, 63));
 }
 
 static void Level_Test()
@@ -30354,7 +25804,9 @@ static void Level_Test()
     levelCamera = new View(Vector2f(320, 240), Vector2f(640, 480));
     levelCamera_shake = 0;
 
-    effectCloudPos = 0;
+    effectCloudPos[0] = 0;
+    effectCloudPos[1] = 0;
+    effectLavafallPos = 0;
     effectWeatherPos = 0;
 
     autoscroll_node = 0;
@@ -30376,14 +25828,26 @@ static void Level_Test()
     game_lives = 255;
     game_score = 0;
 
+    game_toggleSolidity[0] = 0;
+    game_toggleSolidity[1] = 0;
+    game_toggleSolidity[2] = 0;
+    game_toggleSolidity[3] = 0;
+
+    game_toggleSoliditySave[0] = 0;
+    game_toggleSoliditySave[1] = 0;
+    game_toggleSoliditySave[2] = 0;
+    game_toggleSoliditySave[3] = 0;
+
     player = NULL;
 
     backgroundSpr = NULL;
-    effectCloudsSpr = NULL;
+    effectCloudsSpr[0] = NULL;
+    effectCloudsSpr[1] = NULL;
     effectWeatherSpr = NULL;
 
     backgroundSprb = NULL;
-    effectCloudsSprb = NULL;
+    effectCloudsSprb[0] = NULL;
+    effectCloudsSprb[1] = NULL;
     effectWeatherSprb = NULL;
 
     watera = NULL;
@@ -30449,7 +25913,9 @@ static void Level_Test()
 
     levelCamera_shake = 0;
 
-    effectCloudPos = 0;
+    effectCloudPos[0] = 0;
+    effectCloudPos[1] = 0;
+    effectLavafallPos = 0;
     effectWeatherPos = 0;
     effectLightning = (rand() % 350) + 100;
 
@@ -30499,22 +25965,22 @@ static void Level_Test()
     {
         case 0 : break;
         case 1 :
-            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 160));
-            backgroundSpr->setPosition(0, (roomScale.y * 480) - 160);
+            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 274));
+            backgroundSpr->setPosition(0, (roomScale.y * 480) - 274);
             backgroundSpr->setTexture(backgroundTxt[0]);
-            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
+            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
             break;
         case 2 :
-            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 160));
-            backgroundSpr->setPosition(0, (roomScale.y * 480) - 160);
+            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 274));
+            backgroundSpr->setPosition(0, (roomScale.y * 480) - 274);
             backgroundSpr->setTexture(backgroundTxt[1]);
-            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 160));
+            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
             break;
         case 3 :
-            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 156));
-            backgroundSpr->setPosition(0, (roomScale.y * 480) - 156);
+            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 274));
+            backgroundSpr->setPosition(0, (roomScale.y * 480) - 274);
             backgroundSpr->setTexture(backgroundTxt[2]);
-            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 156));
+            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
             break;
         case 4 :
             backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 178));
@@ -30571,28 +26037,40 @@ static void Level_Test()
             backgroundSpr->setTexture(backgroundTxt[12]);
             backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, roomScale.y * 480));
             break;
+        case 14 :
+            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 274));
+            backgroundSpr->setPosition(0, (roomScale.y * 480) - 274);
+            backgroundSpr->setTexture(backgroundTxt[14]);
+            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+            break;
+        case 15 :
+            backgroundSpr = new RectangleShape(Vector2f(roomScale.x * 640, 274));
+            backgroundSpr->setPosition(0, (roomScale.y * 480) - 274);
+            backgroundSpr->setTexture(backgroundTxt[15]);
+            backgroundSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 274));
+            break;
     }
 
     switch (levelbBackground)
     {
         case 0 : break;
         case 1 :
-            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 160));
-            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 160);
+            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 274));
+            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 274);
             backgroundSprb->setTexture(backgroundTxt[0]);
-            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
+            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
             break;
         case 2 :
-            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 160));
-            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 160);
+            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 274));
+            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 274);
             backgroundSprb->setTexture(backgroundTxt[1]);
-            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 160));
+            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
             break;
         case 3 :
-            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 156));
-            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 156);
+            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 274));
+            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 274);
             backgroundSprb->setTexture(backgroundTxt[2]);
-            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 156));
+            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
             break;
         case 4 :
             backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 178));
@@ -30648,6 +26126,18 @@ static void Level_Test()
             backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, roomScaleb.y * 480));
             backgroundSprb->setTexture(backgroundTxt[13]);
             backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, roomScaleb.y * 480));
+            break;
+        case 14 :
+            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 274));
+            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 274);
+            backgroundSprb->setTexture(backgroundTxt[14]);
+            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
+            break;
+        case 15 :
+            backgroundSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 274));
+            backgroundSprb->setPosition(0, (roomScaleb.y * 480) - 274);
+            backgroundSprb->setTexture(backgroundTxt[15]);
+            backgroundSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 274));
             break;
     }
 
@@ -30741,19 +26231,46 @@ static void Level_Test()
     {
         case 0 : break;
         case 1 :
-            effectCloudsSpr = new RectangleShape(Vector2f(roomScale.x * 640, 63));
-            effectCloudsSpr->setTexture(effectTxt[0]);
-            effectCloudsSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            effectCloudsSpr[0] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[0]->setTexture(effectTxt[0]);
+            effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
             break;
         case 2 :
-            effectCloudsSpr = new RectangleShape(Vector2f(roomScale.x * 640, 63));
-            effectCloudsSpr->setTexture(effectTxt[2]);
-            effectCloudsSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            effectCloudsSpr[0] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[0]->setTexture(effectTxt[2]);
+            effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
             break;
         case 3 :
-            effectCloudsSpr = new RectangleShape(Vector2f(roomScale.x * 640, 63));
-            effectCloudsSpr->setTexture(effectTxt[1]);
-            effectCloudsSpr->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            effectCloudsSpr[0] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[0]->setTexture(effectTxt[1]);
+            effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            break;
+        case 4 :
+            effectCloudsSpr[0] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[0]->setTexture(effectTxt[0]);
+            effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            effectCloudsSpr[1] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[1]->setPosition(0, 24);
+            effectCloudsSpr[1]->setTexture(effectTxt[0]);
+            effectCloudsSpr[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            break;
+        case 5 :
+            effectCloudsSpr[0] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[0]->setTexture(effectTxt[2]);
+            effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            effectCloudsSpr[1] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[1]->setPosition(0, 24);
+            effectCloudsSpr[1]->setTexture(effectTxt[2]);
+            effectCloudsSpr[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            break;
+        case 6 :
+            effectCloudsSpr[0] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[0]->setTexture(effectTxt[1]);
+            effectCloudsSpr[0]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
+            effectCloudsSpr[1] = new RectangleShape(Vector2f(roomScale.x * 640, 63));
+            effectCloudsSpr[1]->setPosition(0, 24);
+            effectCloudsSpr[1]->setTexture(effectTxt[1]);
+            effectCloudsSpr[1]->setTextureRect(IntRect(0, 0, roomScale.x * 640, 63));
             break;
     }
 
@@ -30783,19 +26300,46 @@ static void Level_Test()
     {
         case 0 : break;
         case 1 :
-            effectCloudsSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
-            effectCloudsSprb->setTexture(effectTxt[0]);
-            effectCloudsSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            effectCloudsSprb[0] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[0]->setTexture(effectTxt[0]);
+            effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
             break;
         case 2 :
-            effectCloudsSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
-            effectCloudsSprb->setTexture(effectTxt[2]);
-            effectCloudsSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            effectCloudsSprb[0] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[0]->setTexture(effectTxt[2]);
+            effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
             break;
         case 3 :
-            effectCloudsSprb = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
-            effectCloudsSprb->setTexture(effectTxt[1]);
-            effectCloudsSprb->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            effectCloudsSprb[0] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[0]->setTexture(effectTxt[1]);
+            effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            break;
+        case 4 :
+            effectCloudsSprb[0] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[0]->setTexture(effectTxt[0]);
+            effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            effectCloudsSprb[1] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[1]->setPosition(0, 24);
+            effectCloudsSprb[1]->setTexture(effectTxt[0]);
+            effectCloudsSprb[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            break;
+        case 5 :
+            effectCloudsSprb[0] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[0]->setTexture(effectTxt[2]);
+            effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            effectCloudsSprb[1] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[1]->setPosition(0, 24);
+            effectCloudsSprb[1]->setTexture(effectTxt[2]);
+            effectCloudsSprb[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            break;
+        case 6 :
+            effectCloudsSprb[0] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[0]->setTexture(effectTxt[1]);
+            effectCloudsSprb[0]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
+            effectCloudsSprb[1] = new RectangleShape(Vector2f(roomScaleb.x * 640, 63));
+            effectCloudsSprb[1]->setPosition(0, 24);
+            effectCloudsSprb[1]->setTexture(effectTxt[1]);
+            effectCloudsSprb[1]->setTextureRect(IntRect(0, 0, roomScaleb.x * 640, 63));
             break;
     }
 
@@ -30979,28 +26523,32 @@ static void Level_Test()
 
             switch ((*it)->getType())
             {
-                case 92 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 93 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(512, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 92 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_TREE)); originPos = Vector2f(-1, 32); break;
+                case 93 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 94 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[0])); originPos = Vector2f(16, -2); break;
-                case 95 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(544, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 96 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(576, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 95 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_TREE)); originPos = Vector2f(-1, 32); break;
+                case 96 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 97 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[1])); originPos = Vector2f(16, -2); break;
-                case 98 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(608, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 99 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 98 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_TREE)); originPos = Vector2f(-1, 32); break;
+                case 99 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 100 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[2])); originPos = Vector2f(16, -2); break;
-                case 101 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(672, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 102 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(704, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 101 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_TREE)); originPos = Vector2f(-1, 32); break;
+                case 102 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 103 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[3])); originPos = Vector2f(16, -2); break;
-                case 104 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(736, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 105 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(768, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 104 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_TREE)); originPos = Vector2f(-1, 32); break;
+                case 105 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 106 : listPlaceables.emplace_back(new Scenery_Bush(*sceneriesTxt[4])); originPos = Vector2f(16, -2); break;
-                case 107 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 288, 160, 32))); originPos = Vector2f(64, 0); break;
-                case 108 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 288, 160, 32))); originPos = Vector2f(64, 0); break;
+                case 107 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_FENCE)); originPos = Vector2f(64, 0); break;
+                case 108 : listPlaceables.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_SNOWFENCE)); originPos = Vector2f(64, 0); break;
                 case 109 : listPlaceables.emplace_back(new Scenery_Cloud(*sceneriesTxt[5])); originPos = Vector2f(15, 8); break;
                 case 110 : listPlaceables.emplace_back(new Scenery_Cloud(*sceneriesTxt[6])); originPos = Vector2f(15, 8); break;
                 case 111 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[7], IntRect(0, 0, 127, 160))); originPos = Vector2f(47, 128); break;
                 case 112 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[8], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
                 case 113 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[9], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
+                case 229 : listPlaceables.emplace_back(new Scenery_Waterfall(*sceneriesTxt[10])); originPos = Vector2f(31, -5); break;
+                case 230 : listPlaceables.emplace_back(new Scenery_Scroll(*sceneriesTxt[11])); originPos = Vector2f(11, 0); break;
+                case 231 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[12], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
+                case 232 : listPlaceables.emplace_back(new Scenery_Static(*sceneriesTxt[13], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
             }
 
             listPlaceables.back()->setPosition(Vector2f(data[0] - originPos.x, data[1] - originPos.y));
@@ -31217,22 +26765,22 @@ static void Level_Test()
                     break;
                 case 123 :
                     listCollider.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddle.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddle.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listCollider.back()->object = listMiddle.back();
                     break;
                 case 124 :
                     listCollider.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddle.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddle.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listCollider.back()->object = listMiddle.back();
                     break;
                 case 125 :
                     listCollider.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddle.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddle.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listCollider.back()->object = listMiddle.back();
                     break;
                 case 126 :
                     listCollider.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddle.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listCollider.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddle.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listCollider.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listCollider.back()->object = listMiddle.back();
                     break;
                 case 127 :
@@ -31401,10 +26949,10 @@ static void Level_Test()
                 case 169 : listPlaceables.emplace_back(new Hazard_LavaL(*hazardsTxt[0])); originPos = Vector2f(2, 0); create = 1; break;
                 case 170 : listPlaceables.emplace_back(new Hazard_LavaR(*hazardsTxt[0])); originPos = Vector2f(-34, 0); create = 1; break;
                 case 171 :
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(832, 96)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(864, 96)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(864, 128)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(832, 128)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(928, 96)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(960, 96)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(960, 128)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(928, 128)));
                     create = 0;
                     break;
                 case 172 : listMiddle.emplace_back(new Hazard_PodobooT(*hazardsTxt[1], data[2])); originPos = Vector2f(-2, 0); create = 2; break;
@@ -31415,10 +26963,10 @@ static void Level_Test()
                 case 177 : listMiddle.emplace_back(new Hazard_PodobooFountainB); originPos = Vector2f(0, 0); create = 2; break;
                 case 178 : listMiddle.emplace_back(new Hazard_PodobooFountainL); originPos = Vector2f(0, 0); create = 2; break;
                 case 179 : listMiddle.emplace_back(new Hazard_PodobooFountainR); originPos = Vector2f(0, 0); create = 2; break;
-                case 180 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 96))); originPos = Vector2f(0, 0); create = 1; break;
-                case 181 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 192))); originPos = Vector2f(0, 0); create = 1; break;
-                case 182 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 128))); originPos = Vector2f(0, 0); create = 1; break;
-                case 183 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 160))); originPos = Vector2f(0, 0); create = 1; break;
+                case 180 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 96))); originPos = Vector2f(0, 0); create = 1; break;
+                case 181 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 192))); originPos = Vector2f(0, 0); create = 1; break;
+                case 182 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 128))); originPos = Vector2f(0, 0); create = 1; break;
+                case 183 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 160))); originPos = Vector2f(0, 0); create = 1; break;
                 case 184 :
                     listMiddle.emplace_back(new Hazard_CannonHT(*hazardsTxt[2])); originPos = Vector2f(0, -1); create = 2;
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
@@ -31452,30 +27000,6 @@ static void Level_Test()
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     break;
                 case 192 :
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(512, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(544, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(544, 256)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(512, 256)));
-                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 193 :
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(480, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(512, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(512, 256)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(480, 256)));
-                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 194 :
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(544, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(576, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(576, 256)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(544, 256)));
-                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 195 :
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(608, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(640, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(640, 256)));
@@ -31483,7 +27007,7 @@ static void Level_Test()
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 196 :
+                case 193 :
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(576, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(608, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(608, 256)));
@@ -31491,15 +27015,7 @@ static void Level_Test()
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 197 :
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(672, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(704, 224)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(704, 256)));
-                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(672, 256)));
-                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 198 :
+                case 194 :
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(640, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(672, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(672, 256)));
@@ -31507,7 +27023,7 @@ static void Level_Test()
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 199 :
+                case 195 :
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(704, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(736, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(736, 256)));
@@ -31515,7 +27031,15 @@ static void Level_Test()
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 200 :
+                case 196 :
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(672, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(704, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(704, 256)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(672, 256)));
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 197 :
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(768, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(800, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(800, 256)));
@@ -31523,11 +27047,35 @@ static void Level_Test()
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 201 :
+                case 198 :
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(736, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(768, 224)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(768, 256)));
                     tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(736, 256)));
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 199 :
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(800, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(832, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(832, 256)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(800, 256)));
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 200 :
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(864, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(896, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(896, 256)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(864, 256)));
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 201 :
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(832, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(864, 224)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(864, 256)));
+                    tilemapLayer2.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(832, 256)));
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
@@ -31582,6 +27130,10 @@ static void Level_Test()
                     originPos = Vector2f(0, 0);
                     create = 3;
                     break;
+                case 225 : listPlaceables.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 0)); originPos = Vector2f(-1, -1); create = 1; break;
+                case 226 : listPlaceables.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 270)); originPos = Vector2f(-1, -32); create = 1; break;
+                case 227 : listPlaceables.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 90)); originPos = Vector2f(-31, -1); create = 1; break;
+                case 228 : listPlaceables.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 180)); originPos = Vector2f(-31, -31); create = 1; break;
             }
 
             if (create == 1)
@@ -31705,6 +27257,122 @@ static void Level_Test()
                     listPlaceables.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 15)); originPos = Vector2f(0, 0);
                     collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
                     break;
+                case 213 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, false);
+                    unsigned char* c = collisionMatrix->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 214 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, true);
+
+                    toggle->attributeSolid(collisionMatrix->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 215 :
+                    listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 0)); originPos = Vector2f(0, 0);
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 216 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, false);
+                    unsigned char* c = collisionMatrix->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 217 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, true);
+
+                    toggle->attributeSolid(collisionMatrix->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 218 :
+                    listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 1)); originPos = Vector2f(0, 0);
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 219 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, false);
+                    unsigned char* c = collisionMatrix->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 220 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, true);
+
+                    toggle->attributeSolid(collisionMatrix->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 221 :
+                    listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 2)); originPos = Vector2f(0, 0);
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 222 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, false);
+                    unsigned char* c = collisionMatrix->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 223 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, true);
+
+                    toggle->attributeSolid(collisionMatrix->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceables.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 224 :
+                    listPlaceables.emplace_back(new Bonus_Switch(marksTxt[10], 3)); originPos = Vector2f(0, 0);
+                    collisionMatrix->setValue(data[0]/32, data[1]/32, 1);
+                    break;
             }
 
             if (toMiddle)
@@ -31725,28 +27393,32 @@ static void Level_Test()
 
             switch ((*it)->getType())
             {
-                case 92 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 93 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(512, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 92 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_TREE)); originPos = Vector2f(-1, 32); break;
+                case 93 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GREEN_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 94 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[0])); originPos = Vector2f(16, -2); break;
-                case 95 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(544, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 96 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(576, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 95 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_TREE)); originPos = Vector2f(-1, 32); break;
+                case 96 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_GRAY_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 97 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[1])); originPos = Vector2f(16, -2); break;
-                case 98 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(608, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 99 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 98 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_TREE)); originPos = Vector2f(-1, 32); break;
+                case 99 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_YELLOW_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 100 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[2])); originPos = Vector2f(16, -2); break;
-                case 101 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(672, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 102 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(704, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 101 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_TREE)); originPos = Vector2f(-1, 32); break;
+                case 102 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_RED_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 103 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[3])); originPos = Vector2f(16, -2); break;
-                case 104 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(736, 352, 32, 64))); originPos = Vector2f(-1, 32); break;
-                case 105 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(768, 320, 32, 96))); originPos = Vector2f(0, 64); break;
+                case 104 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_TREE)); originPos = Vector2f(-1, 32); break;
+                case 105 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_BLUE_BIGTREE)); originPos = Vector2f(0, 64); break;
                 case 106 : listPlaceablesb.emplace_back(new Scenery_Bush(*sceneriesTxt[4])); originPos = Vector2f(16, -2); break;
-                case 107 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(480, 288, 160, 32))); originPos = Vector2f(64, 0); break;
-                case 108 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, IntRect(640, 288, 160, 32))); originPos = Vector2f(64, 0); break;
+                case 107 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_FENCE)); originPos = Vector2f(64, 0); break;
+                case 108 : listPlaceablesb.emplace_back(new Scenery_Static(*mainTileset, TILE_SCENERY_SNOWFENCE)); originPos = Vector2f(64, 0); break;
                 case 109 : listPlaceablesb.emplace_back(new Scenery_Cloud(*sceneriesTxt[5])); originPos = Vector2f(15, 8); break;
                 case 110 : listPlaceablesb.emplace_back(new Scenery_Cloud(*sceneriesTxt[6])); originPos = Vector2f(15, 8); break;
                 case 111 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[7], IntRect(0, 0, 127, 160))); originPos = Vector2f(47, 128); break;
                 case 112 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[8], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
                 case 113 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[9], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
+                case 229 : listPlaceablesb.emplace_back(new Scenery_Waterfall(*sceneriesTxt[10])); originPos = Vector2f(31, -5); break;
+                case 230 : listPlaceablesb.emplace_back(new Scenery_Scroll(*sceneriesTxt[11])); originPos = Vector2f(11, 0); break;
+                case 231 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[12], IntRect(0, 0, 187, 160))); originPos = Vector2f(77, 128); break;
+                case 232 : listPlaceablesb.emplace_back(new Scenery_Static(*sceneriesTxt[13], IntRect(0, 0, 315, 192))); originPos = Vector2f(141, 160); break;
             }
 
             listPlaceablesb.back()->setPosition(Vector2f(data[0] - originPos.x, data[1] - originPos.y));
@@ -31963,22 +27635,22 @@ static void Level_Test()
                     break;
                 case 123 :
                     listColliderb.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddleb.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddleb.emplace_back(new Sprite_KoopaGreen(*enemiesTxt[5], enemiesTxt[14], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listColliderb.back()->object = listMiddleb.back();
                     break;
                 case 124 :
                     listColliderb.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddleb.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddleb.emplace_back(new Sprite_KoopaRed(*enemiesTxt[6], enemiesTxt[15], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listColliderb.back()->object = listMiddleb.back();
                     break;
                 case 125 :
                     listColliderb.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddleb.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddleb.emplace_back(new Sprite_KoopaBlue(*enemiesTxt[7], enemiesTxt[16], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listColliderb.back()->object = listMiddleb.back();
                     break;
                 case 126 :
                     listColliderb.emplace_back(new Collider{FloatRect(Vector2f(data[0], data[1]), Vector2f(32, 32)), Vector2f(0, 0), 0, C_STOMPABLE, false});
-                    listMiddleb.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listColliderb.back(), true)); originPos = Vector2f(-16, -2); create = 2;
+                    listMiddleb.emplace_back(new Sprite_KoopaYellow(*enemiesTxt[8], enemiesTxt[17], listColliderb.back(), true)); originPos = Vector2f(-16, 0); create = 2;
                     listColliderb.back()->object = listMiddleb.back();
                     break;
                 case 127 :
@@ -32147,10 +27819,10 @@ static void Level_Test()
                 case 169 : listPlaceablesb.emplace_back(new Hazard_LavaL(*hazardsTxt[0])); originPos = Vector2f(2, 0); create = 1; break;
                 case 170 : listPlaceablesb.emplace_back(new Hazard_LavaR(*hazardsTxt[0])); originPos = Vector2f(-34, 0); create = 1; break;
                 case 171 :
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(832, 96)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(864, 96)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(864, 128)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(832, 128)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(928, 96)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(960, 96)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(960, 128)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(928, 128)));
                     create = 0;
                     break;
                 case 172 : listMiddleb.emplace_back(new Hazard_PodobooT(*hazardsTxt[1], data[2])); originPos = Vector2f(-2, 0); create = 2; break;
@@ -32161,10 +27833,10 @@ static void Level_Test()
                 case 177 : listMiddleb.emplace_back(new Hazard_PodobooFountainB); originPos = Vector2f(0, 0); create = 2; break;
                 case 178 : listMiddleb.emplace_back(new Hazard_PodobooFountainL); originPos = Vector2f(0, 0); create = 2; break;
                 case 179 : listMiddleb.emplace_back(new Hazard_PodobooFountainR); originPos = Vector2f(0, 0); create = 2; break;
-                case 180 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 96))); originPos = Vector2f(0, 0); create = 1; break;
-                case 181 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 192))); originPos = Vector2f(0, 0); create = 1; break;
-                case 182 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 128))); originPos = Vector2f(0, 0); create = 1; break;
-                case 183 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 160))); originPos = Vector2f(0, 0); create = 1; break;
+                case 180 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 96))); originPos = Vector2f(0, 0); create = 1; break;
+                case 181 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 192))); originPos = Vector2f(0, 0); create = 1; break;
+                case 182 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 128))); originPos = Vector2f(0, 0); create = 1; break;
+                case 183 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 160))); originPos = Vector2f(0, 0); create = 1; break;
                 case 184 :
                     listMiddleb.emplace_back(new Hazard_CannonHT(*hazardsTxt[2])); originPos = Vector2f(0, -1); create = 2;
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
@@ -32198,30 +27870,6 @@ static void Level_Test()
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     break;
                 case 192 :
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(512, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(544, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(544, 256)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(512, 256)));
-                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 193 :
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(480, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(512, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(512, 256)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(480, 256)));
-                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 194 :
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(544, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(576, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(576, 256)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(544, 256)));
-                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 195 :
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(608, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(640, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(640, 256)));
@@ -32229,7 +27877,7 @@ static void Level_Test()
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 196 :
+                case 193 :
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(576, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(608, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(608, 256)));
@@ -32237,15 +27885,7 @@ static void Level_Test()
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 197 :
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(672, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(704, 224)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(704, 256)));
-                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(672, 256)));
-                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
-                    create = 0;
-                    break;
-                case 198 :
+                case 194 :
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(640, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(672, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(672, 256)));
@@ -32253,7 +27893,7 @@ static void Level_Test()
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 199 :
+                case 195 :
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(704, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(736, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(736, 256)));
@@ -32261,7 +27901,15 @@ static void Level_Test()
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 200 :
+                case 196 :
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(672, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(704, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(704, 256)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(672, 256)));
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 197 :
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(768, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(800, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(800, 256)));
@@ -32269,11 +27917,35 @@ static void Level_Test()
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
-                case 201 :
+                case 198 :
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(736, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(768, 224)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(768, 256)));
                     tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(736, 256)));
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 199 :
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(800, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(832, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(832, 256)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(800, 256)));
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 200 :
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(864, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(896, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(896, 256)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(864, 256)));
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    create = 0;
+                    break;
+                case 201 :
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1]), Color::White, Vector2f(832, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1]), Color::White, Vector2f(864, 224)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0] + 32, data[1] + 32), Color::White, Vector2f(864, 256)));
+                    tilemapLayer2b.emplace_back(Vertex(Vector2f(data[0], data[1] + 32), Color::White, Vector2f(832, 256)));
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     create = 0;
                     break;
@@ -32328,6 +28000,10 @@ static void Level_Test()
                     originPos = Vector2f(0, 0);
                     create = 3;
                     break;
+                case 225 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 0)); originPos = Vector2f(-1, -1); create = 1; break;
+                case 226 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 270)); originPos = Vector2f(-1, -32); create = 1; break;
+                case 227 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 90)); originPos = Vector2f(-31, -1); create = 1; break;
+                case 228 : listPlaceablesb.emplace_back(new Sprite_StaticPlant(Vector2f(data[0], data[1]), 180)); originPos = Vector2f(-31, -31); create = 1; break;
             }
 
             if (create == 1)
@@ -32449,6 +28125,122 @@ static void Level_Test()
                     break;
                 case 55 :
                     listPlaceablesb.emplace_back(new Bonus_CoinBrick(itemsTxt[1], 15)); originPos = Vector2f(0, 0);
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 213 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, false);
+                    unsigned char* c = collisionMatrixb->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 214 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 0, true);
+
+                    toggle->attributeSolid(collisionMatrixb->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 215 :
+                    listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 0)); originPos = Vector2f(0, 0);
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 216 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, false);
+                    unsigned char* c = collisionMatrixb->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 217 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 1, true);
+
+                    toggle->attributeSolid(collisionMatrixb->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 218 :
+                    listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 1)); originPos = Vector2f(0, 0);
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 219 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, false);
+                    unsigned char* c = collisionMatrixb->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 220 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 2, true);
+
+                    toggle->attributeSolid(collisionMatrixb->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 221 :
+                    listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 2)); originPos = Vector2f(0, 0);
+                    collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
+                    break;
+                case 222 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, false);
+                    unsigned char* c = collisionMatrixb->getReference(data[0]/32, data[1]/32);
+
+                    toggle->attributeSolid(c);
+
+                    (*c) = 1;
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 223 :
+                {
+                    Bonus_Toggle* toggle = new Bonus_Toggle(marksTxt[11], 3, true);
+
+                    toggle->attributeSolid(collisionMatrixb->getReference(data[0]/32, data[1]/32));
+
+                    listPlaceablesb.emplace_back(toggle);
+
+                    originPos = Vector2f(0, 0);
+                    break;
+                }
+                case 224 :
+                    listPlaceablesb.emplace_back(new Bonus_Switch(marksTxt[10], 3)); originPos = Vector2f(0, 0);
                     collisionMatrixb->setValue(data[0]/32, data[1]/32, 1);
                     break;
             }
@@ -32834,6 +28626,12 @@ static void Level_Test()
             if (backgroundSprb != NULL)
                 mainTexture.draw(*backgroundSprb);
 
+            if (effectCloudsSprb[1] != NULL)
+            {
+                effectCloudsSprb[1]->setTextureRect(IntRect(effectCloudPos[0], 0, levelScaleb.x * 640, 63));
+                mainTexture.draw(*effectCloudsSprb[1]);
+            }
+
             if (!tilemapLayer1b.empty())
                 mainTexture.draw(&tilemapLayer1b.front(), tilemapLayer1b.size(), Quads, mainTileset);
 
@@ -32995,10 +28793,10 @@ static void Level_Test()
                 mainTexture.draw(*effectWeatherSprb);
             }
 
-            if (effectCloudsSprb != NULL)
+            if (effectCloudsSprb[0] != NULL)
             {
-                effectCloudsSprb->setTextureRect(IntRect(effectCloudPos, 0, levelScaleb.x * 640, 63));
-                mainTexture.draw(*effectCloudsSprb);
+                effectCloudsSprb[0]->setTextureRect(IntRect(effectCloudPos[1], 0, levelScaleb.x * 640, 63));
+                mainTexture.draw(*effectCloudsSprb[0]);
             }
         }
         else
@@ -33010,6 +28808,12 @@ static void Level_Test()
 
             if (backgroundSpr != NULL)
                 mainTexture.draw(*backgroundSpr);
+
+            if (effectCloudsSpr[1] != NULL)
+            {
+                effectCloudsSpr[1]->setTextureRect(IntRect(effectCloudPos[0], 0, levelScale.x * 640, 63));
+                mainTexture.draw(*effectCloudsSpr[1]);
+            }
 
             if (!tilemapLayer1.empty())
                 mainTexture.draw(&tilemapLayer1.front(), tilemapLayer1.size(), Quads, mainTileset);
@@ -33172,11 +28976,20 @@ static void Level_Test()
                 mainTexture.draw(*effectWeatherSpr);
             }
 
-            if (effectCloudsSpr != NULL)
+            if (effectCloudsSpr[0] != NULL)
             {
-                effectCloudsSpr->setTextureRect(IntRect(effectCloudPos, 0, levelScale.x * 640, 63));
-                mainTexture.draw(*effectCloudsSpr);
+                effectCloudsSpr[0]->setTextureRect(IntRect(effectCloudPos[1], 0, levelScale.x * 640, 63));
+                mainTexture.draw(*effectCloudsSpr[0]);
             }
+        }
+
+        // Toggling the switch blocks :
+        for (register unsigned int i = 0; i < 4; i++)
+        {
+            if (game_toggleSolidity[i] == 1)
+                game_toggleSolidity[i] = 0;
+            else if (game_toggleSolidity[i] == 3)
+                game_toggleSolidity[i] = 2;
         }
 
         if (spritehitter.left > -64)
@@ -33198,10 +29011,20 @@ static void Level_Test()
         if (frame_Hud % 6 == 0)
             hudSpr[1]->setTextureRect(IntRect(0, (frame_Hud/6) * 16, 28, 16));
 
-        if (effectCloudPos < 63)
-            effectCloudPos++;
+        if (effectCloudPos[0] < 63)
+            effectCloudPos[0]++;
         else
-            effectCloudPos = 0;
+            effectCloudPos[0] = 0;
+
+        if (effectCloudPos[1] < 62)
+            effectCloudPos[1] += 2;
+        else
+            effectCloudPos[1] = 0;
+
+        if (effectLavafallPos < 28)
+            effectLavafallPos += 4;
+        else
+            effectLavafallPos = 0;
 
         if (zoneb)
         {
@@ -33301,6 +29124,9 @@ static void Level_Test()
 
             currentMenu = EDITION;
 
+            if (sectionb != zoneb)
+                Prefs_Section();
+
             camPos = static_cast<Vector2i>(cameraPos);
 
             fadeAlpha = 255;
@@ -33384,8 +29210,11 @@ static void Level_Test()
     if (backgroundSpr != NULL)
         delete backgroundSpr;
 
-    if (effectCloudsSpr != NULL)
-        delete effectCloudsSpr;
+    if (effectCloudsSpr[0] != NULL)
+        delete effectCloudsSpr[0];
+
+    if (effectCloudsSpr[1] != NULL)
+        delete effectCloudsSpr[1];
 
     if (effectWeatherSpr != NULL)
         delete effectWeatherSpr;
@@ -33393,8 +29222,11 @@ static void Level_Test()
     if (backgroundSprb != NULL)
         delete backgroundSprb;
 
-    if (effectCloudsSprb != NULL)
-        delete effectCloudsSprb;
+    if (effectCloudsSprb[0] != NULL)
+        delete effectCloudsSprb[0];
+
+    if (effectCloudsSprb[1] != NULL)
+        delete effectCloudsSprb[1];
 
     if (effectWeatherSprb != NULL)
         delete effectWeatherSprb;
@@ -33441,7 +29273,7 @@ static void Elements_Essential(unsigned int elementNumb)
                 elementsEsssential[i]->Unselected();
         }
 
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
             elementsPlatforms[i]->Unselected();
 
         for (register unsigned int i = 0; i < 30; i++)
@@ -33450,16 +29282,17 @@ static void Elements_Essential(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 36; i++)
             elementsPipes[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
             elementsSceneries[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
             elementsEnemies[i]->Unselected();
 
         for (register unsigned int i = 0; i < 46; i++)
             elementsHazards[i]->Unselected();
 
         itemHandled->setRotation(0);
+        itemHandled->setColor(Color(255, 255, 255, 128));
 
         switch (elementNumb)
         {
@@ -33492,7 +29325,7 @@ static void Elements_Platforms(unsigned int elementNumb)
     }
     else
     {
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
         {
             if (elementsPlatforms[i]->m_elementnumb != elementNumb)
                 elementsPlatforms[i]->Unselected();
@@ -33507,16 +29340,23 @@ static void Elements_Platforms(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 36; i++)
             elementsPipes[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
             elementsSceneries[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
             elementsEnemies[i]->Unselected();
 
         for (register unsigned int i = 0; i < 46; i++)
             elementsHazards[i]->Unselected();
 
+        itemHandled->setOrigin(0, 0);
         itemHandled->setRotation(0);
+        itemHandled->setColor(Color(255, 255, 255, 128));
+
+        if (elementNumb >= 213 && elementNumb <= 224)
+            currentSelection = BONUS;
+        else
+            currentSelection = PLATFORMS;
 
         if (elementNumb >= 3 and elementNumb <= 7)
         {
@@ -33524,10 +29364,7 @@ static void Elements_Platforms(unsigned int elementNumb)
             itemHandled->setOrigin(32, 0);
         }
         else if (elementNumb >= 8 and elementNumb <= 12)
-        {
             itemHandled->setTexture(*marksTxt[1], true);
-            itemHandled->setOrigin(0, 0);
-        }
         else if (elementNumb >= 13 and elementNumb <= 17)
         {
             itemHandled->setTexture(*marksTxt[2]);
@@ -33557,12 +29394,74 @@ static void Elements_Platforms(unsigned int elementNumb)
             itemHandled->setTextureRect(IntRect(0, 0, 32, 64));
             itemHandled->setOrigin(0, 32);
         }
+        else if (elementNumb == 213)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(0, 0, 32, 32));
+        }
+        else if (elementNumb == 214)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(0, 0, 32, 32));
+            itemHandled->setColor(Color(160, 160, 160, 128));
+        }
+        else if (elementNumb == 215)
+        {
+            itemHandled->setTexture(*marksTxt[10]);
+            itemHandled->setTextureRect(IntRect(0, 0, 32, 32));
+        }
+        else if (elementNumb == 216)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(32, 0, 32, 32));
+        }
+        else if (elementNumb == 217)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(32, 0, 32, 32));
+            itemHandled->setColor(Color(160, 160, 160, 128));
+        }
+        else if (elementNumb == 218)
+        {
+            itemHandled->setTexture(*marksTxt[10]);
+            itemHandled->setTextureRect(IntRect(32, 0, 32, 32));
+        }
+        else if (elementNumb == 219)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(64, 0, 32, 32));
+        }
+        else if (elementNumb == 220)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(64, 0, 32, 32));
+            itemHandled->setColor(Color(160, 160, 160, 128));
+        }
+        else if (elementNumb == 221)
+        {
+            itemHandled->setTexture(*marksTxt[10]);
+            itemHandled->setTextureRect(IntRect(64, 0, 32, 32));
+        }
+        else if (elementNumb == 222)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(96, 0, 32, 32));
+        }
+        else if (elementNumb == 223)
+        {
+            itemHandled->setTexture(*marksTxt[11]);
+            itemHandled->setTextureRect(IntRect(96, 0, 32, 32));
+            itemHandled->setColor(Color(160, 160, 160, 128));
+        }
+        else if (elementNumb == 224)
+        {
+            itemHandled->setTexture(*marksTxt[10]);
+            itemHandled->setTextureRect(IntRect(96, 0, 32, 32));
+        }
 
         layerButton[0]->setTextureRect(IntRect(0, 26, 26, 26));
         layerButton[1]->setTextureRect(IntRect(26, 26, 26, 26));
         layerButton[2]->setTextureRect(IntRect(52, 26, 26, 26));
-
-        currentSelection = PLATFORMS;
 
         ChangeLayerTo_Middle();
 
@@ -33591,16 +29490,16 @@ static void Elements_Bonus(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 3; i++)
             elementsEsssential[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
             elementsPlatforms[i]->Unselected();
 
         for (register unsigned int i = 0; i < 36; i++)
             elementsPipes[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
             elementsSceneries[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
             elementsEnemies[i]->Unselected();
 
         for (register unsigned int i = 0; i < 46; i++)
@@ -33608,6 +29507,7 @@ static void Elements_Bonus(unsigned int elementNumb)
 
         itemHandled->setOrigin(0, 0);
         itemHandled->setRotation(0);
+        itemHandled->setColor(Color(255, 255, 255, 128));
 
         if ((elementNumb >= 26 && elementNumb <= 43) || (elementNumb >= 50 && elementNumb <= 55))
         {
@@ -33619,24 +29519,24 @@ static void Elements_Bonus(unsigned int elementNumb)
                 case 29 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(128, 0, 32, 32)); break;
                 case 30 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(160, 0, 32, 32)); break;
                 case 31 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(192, 0, 32, 32)); break;
-                case 32 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(256, 0, 32, 32)); break;
-                case 33 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(288, 0, 32, 32)); break;
-                case 34 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(320, 0, 32, 32)); break;
-                case 35 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(352, 0, 32, 32)); break;
-                case 36 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(384, 0, 32, 32)); break;
-                case 37 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(416, 0, 32, 32)); break;
-                case 38 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(448, 0, 32, 32)); break;
-                case 39 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(480, 0, 32, 32)); break;
-                case 40 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(512, 0, 32, 32)); break;
-                case 41 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(544, 0, 32, 32)); break;
-                case 42 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(576, 0, 32, 32)); break;
-                case 43 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(608, 0, 32, 32)); break;
+                case 32 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(32, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 33 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(64, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 34 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(96, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 35 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(128, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 36 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(160, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 37 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(192, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 38 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(224, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 39 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(256, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 40 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(288, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 41 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(320, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 42 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(352, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
+                case 43 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(384, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
                 case 50 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(0, 0, 32, 32)); break;
-                case 51 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(224, 0, 32, 32)); break;
+                case 51 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(0, 0, 32, 32)); itemHandled->setColor(Color(160, 160, 160, 128)); break;
                 case 52 : itemHandled->setTexture(*itemsTxt[2]);    itemHandled->setTextureRect(IntRect(0, 0, 19, 28)); itemHandled->setOrigin(-7, -2); break;
                 case 53 : itemHandled->setTexture(*itemsTxt[1]);    itemHandled->setTextureRect(IntRect(0, 0, 32, 32)); break;
-                case 54 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(640, 0, 32, 32)); break;
-                case 55 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(672, 0, 32, 32)); break;
+                case 54 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(416, 0, 32, 32)); break;
+                case 55 : itemHandled->setTexture(*editorTxt[2]);   itemHandled->setTextureRect(IntRect(448, 0, 32, 32)); break;
             }
         }
         else if (elementNumb == 44)
@@ -33697,63 +29597,64 @@ static void Elements_Pipes(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 3; i++)
             elementsEsssential[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
             elementsPlatforms[i]->Unselected();
 
         for (register unsigned int i = 0; i < 30; i++)
             elementsBonus[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
             elementsSceneries[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
             elementsEnemies[i]->Unselected();
 
         for (register unsigned int i = 0; i < 46; i++)
             elementsHazards[i]->Unselected();
 
         itemHandled->setTexture(*mainTileset, true);
+        itemHandled->setColor(Color(255, 255, 255, 128));
         itemHandled->setRotation(0);
         itemHandled->setOrigin(0, 0);
 
         switch (elementNumb)
         {
-            case 56 : itemHandled->setTextureRect(IntRect(480, 0, 64, 32)); break;
-            case 57 : itemHandled->setTextureRect(IntRect(480, 32, 64, 32)); break;
-            case 58 : itemHandled->setTextureRect(IntRect(480, 64, 64, 32)); break;
-            case 59 : itemHandled->setTextureRect(IntRect(480, 96, 32, 64)); break;
-            case 60 : itemHandled->setTextureRect(IntRect(512, 96, 32, 64)); break;
-            case 61 : itemHandled->setTextureRect(IntRect(544, 96, 32, 64)); break;
-            case 62 : itemHandled->setTextureRect(IntRect(544, 0, 64, 32)); break;
-            case 63 : itemHandled->setTextureRect(IntRect(544, 32, 64, 32)); break;
-            case 64 : itemHandled->setTextureRect(IntRect(544, 64, 64, 32)); break;
-            case 65 : itemHandled->setTextureRect(IntRect(576, 96, 32, 64)); break;
-            case 66 : itemHandled->setTextureRect(IntRect(608, 96, 32, 64)); break;
-            case 67 : itemHandled->setTextureRect(IntRect(640, 96, 32, 64)); break;
-            case 68 : itemHandled->setTextureRect(IntRect(608, 0, 64, 32)); break;
-            case 69 : itemHandled->setTextureRect(IntRect(608, 32, 64, 32)); break;
-            case 70 : itemHandled->setTextureRect(IntRect(608, 64, 64, 32)); break;
-            case 71 : itemHandled->setTextureRect(IntRect(672, 96, 32, 64)); break;
-            case 72 : itemHandled->setTextureRect(IntRect(704, 96, 32, 64)); break;
-            case 73 : itemHandled->setTextureRect(IntRect(736, 96, 32, 64)); break;
-            case 74 : itemHandled->setTextureRect(IntRect(672, 0, 64, 32)); break;
-            case 75 : itemHandled->setTextureRect(IntRect(672, 32, 64, 32)); break;
-            case 76 : itemHandled->setTextureRect(IntRect(672, 64, 64, 32)); break;
-            case 77 : itemHandled->setTextureRect(IntRect(480, 160, 32, 64)); break;
-            case 78 : itemHandled->setTextureRect(IntRect(512, 160, 32, 64)); break;
-            case 79 : itemHandled->setTextureRect(IntRect(544, 160, 32, 64)); break;
-            case 80 : itemHandled->setTextureRect(IntRect(736, 0, 64, 32)); break;
-            case 81 : itemHandled->setTextureRect(IntRect(736, 32, 64, 32)); break;
-            case 82 : itemHandled->setTextureRect(IntRect(736, 64, 64, 32)); break;
-            case 83 : itemHandled->setTextureRect(IntRect(576, 160, 32, 64)); break;
-            case 84 : itemHandled->setTextureRect(IntRect(608, 160, 32, 64)); break;
-            case 85 : itemHandled->setTextureRect(IntRect(640, 160, 32, 64)); break;
-            case 86 : itemHandled->setTextureRect(IntRect(800, 0, 64, 32)); break;
-            case 87 : itemHandled->setTextureRect(IntRect(800, 32, 64, 32)); break;
-            case 88 : itemHandled->setTextureRect(IntRect(800, 64, 64, 32)); break;
-            case 89 : itemHandled->setTextureRect(IntRect(672, 160, 32, 64)); break;
-            case 90 : itemHandled->setTextureRect(IntRect(704, 160, 32, 64)); break;
-            case 91 : itemHandled->setTextureRect(IntRect(736, 160, 32, 64)); break;
+            case 56 : itemHandled->setTextureRect(TILE_PIPE_GREEN_VTOP); break;
+            case 57 : itemHandled->setTextureRect(TILE_PIPE_GREEN_VMID); break;
+            case 58 : itemHandled->setTextureRect(TILE_PIPE_GREEN_VBOT); break;
+            case 59 : itemHandled->setTextureRect(TILE_PIPE_GREEN_HLEF); break;
+            case 60 : itemHandled->setTextureRect(TILE_PIPE_GREEN_HMID); break;
+            case 61 : itemHandled->setTextureRect(TILE_PIPE_GREEN_HRIG); break;
+            case 62 : itemHandled->setTextureRect(TILE_PIPE_BLUE_VTOP); break;
+            case 63 : itemHandled->setTextureRect(TILE_PIPE_BLUE_VMID); break;
+            case 64 : itemHandled->setTextureRect(TILE_PIPE_BLUE_VBOT); break;
+            case 65 : itemHandled->setTextureRect(TILE_PIPE_BLUE_HLEF); break;
+            case 66 : itemHandled->setTextureRect(TILE_PIPE_BLUE_HMID); break;
+            case 67 : itemHandled->setTextureRect(TILE_PIPE_BLUE_HRIG); break;
+            case 68 : itemHandled->setTextureRect(TILE_PIPE_RED_VTOP); break;
+            case 69 : itemHandled->setTextureRect(TILE_PIPE_RED_VMID); break;
+            case 70 : itemHandled->setTextureRect(TILE_PIPE_RED_VBOT); break;
+            case 71 : itemHandled->setTextureRect(TILE_PIPE_RED_HLEF); break;
+            case 72 : itemHandled->setTextureRect(TILE_PIPE_RED_HMID); break;
+            case 73 : itemHandled->setTextureRect(TILE_PIPE_RED_HRIG); break;
+            case 74 : itemHandled->setTextureRect(TILE_PIPE_YELLOW_VTOP); break;
+            case 75 : itemHandled->setTextureRect(TILE_PIPE_YELLOW_VMID); break;
+            case 76 : itemHandled->setTextureRect(TILE_PIPE_YELLOW_VBOT); break;
+            case 77 : itemHandled->setTextureRect(TILE_PIPE_YELLOW_HLEF); break;
+            case 78 : itemHandled->setTextureRect(TILE_PIPE_YELLOW_HMID); break;
+            case 79 : itemHandled->setTextureRect(TILE_PIPE_YELLOW_HRIG); break;
+            case 80 : itemHandled->setTextureRect(TILE_PIPE_GRAY_VTOP); break;
+            case 81 : itemHandled->setTextureRect(TILE_PIPE_GRAY_VMID); break;
+            case 82 : itemHandled->setTextureRect(TILE_PIPE_GRAY_VBOT); break;
+            case 83 : itemHandled->setTextureRect(TILE_PIPE_GRAY_HLEF); break;
+            case 84 : itemHandled->setTextureRect(TILE_PIPE_GRAY_HMID); break;
+            case 85 : itemHandled->setTextureRect(TILE_PIPE_GRAY_HRIG); break;
+            case 86 : itemHandled->setTextureRect(TILE_PIPE_DARK_VTOP); break;
+            case 87 : itemHandled->setTextureRect(TILE_PIPE_DARK_VMID); break;
+            case 88 : itemHandled->setTextureRect(TILE_PIPE_DARK_VBOT); break;
+            case 89 : itemHandled->setTextureRect(TILE_PIPE_DARK_HLEF); break;
+            case 90 : itemHandled->setTextureRect(TILE_PIPE_DARK_HMID); break;
+            case 91 : itemHandled->setTextureRect(TILE_PIPE_DARK_HRIG); break;
         }
 
         currentSelection = PIPES;
@@ -33774,7 +29675,7 @@ static void Elements_Sceneries(unsigned int elementNumb)
     }
     else
     {
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
         {
             if (elementsSceneries[i]->m_elementnumb != elementNumb)
                 elementsSceneries[i]->Unselected();
@@ -33783,7 +29684,7 @@ static void Elements_Sceneries(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 3; i++)
             elementsEsssential[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
             elementsPlatforms[i]->Unselected();
 
         for (register unsigned int i = 0; i < 30; i++)
@@ -33792,24 +29693,25 @@ static void Elements_Sceneries(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 36; i++)
             elementsPipes[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
             elementsEnemies[i]->Unselected();
 
         for (register unsigned int i = 0; i < 46; i++)
             elementsHazards[i]->Unselected();
 
         itemHandled->setRotation(0);
+        itemHandled->setColor(Color(255, 255, 255, 128));
 
         switch (elementNumb)
         {
             case 92 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(480, 352, 32, 64));
+                itemHandled->setTextureRect(TILE_SCENERY_GREEN_TREE);
                 itemHandled->setOrigin(-1, 32);
                 break;
             case 93 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(512, 320, 32, 96));
+                itemHandled->setTextureRect(TILE_SCENERY_GREEN_BIGTREE);
                 itemHandled->setOrigin(0, 64);
                 break;
             case 94 :
@@ -33819,12 +29721,12 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 break;
             case 95 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(544, 352, 32, 64));
+                itemHandled->setTextureRect(TILE_SCENERY_GRAY_TREE);
                 itemHandled->setOrigin(-1, 32);
                 break;
             case 96 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(576, 320, 32, 96));
+                itemHandled->setTextureRect(TILE_SCENERY_GRAY_BIGTREE);
                 itemHandled->setOrigin(0, 64);
                 break;
             case 97 :
@@ -33834,12 +29736,12 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 break;
             case 98 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(608, 352, 32, 64));
+                itemHandled->setTextureRect(TILE_SCENERY_YELLOW_TREE);
                 itemHandled->setOrigin(-1, 32);
                 break;
             case 99 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(640, 320, 32, 96));
+                itemHandled->setTextureRect(TILE_SCENERY_YELLOW_BIGTREE);
                 itemHandled->setOrigin(0, 64);
                 break;
             case 100 :
@@ -33849,12 +29751,12 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 break;
             case 101 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(672, 352, 32, 64));
+                itemHandled->setTextureRect(TILE_SCENERY_RED_TREE);
                 itemHandled->setOrigin(-1, 32);
                 break;
             case 102 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(704, 320, 32, 96));
+                itemHandled->setTextureRect(TILE_SCENERY_RED_BIGTREE);
                 itemHandled->setOrigin(0, 64);
                 break;
             case 103 :
@@ -33864,12 +29766,12 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 break;
             case 104 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(736, 352, 32, 64));
+                itemHandled->setTextureRect(TILE_SCENERY_BLUE_TREE);
                 itemHandled->setOrigin(-1, 32);
                 break;
             case 105 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(768, 320, 32, 96));
+                itemHandled->setTextureRect(TILE_SCENERY_BLUE_BIGTREE);
                 itemHandled->setOrigin(0, 64);
                 break;
             case 106 :
@@ -33879,12 +29781,12 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 break;
             case 107 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(480, 288, 160, 32));
+                itemHandled->setTextureRect(TILE_SCENERY_FENCE);
                 itemHandled->setOrigin(64, 0);
                 break;
             case 108 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(640, 288, 160, 32));
+                itemHandled->setTextureRect(TILE_SCENERY_SNOWFENCE);
                 itemHandled->setOrigin(64, 0);
                 break;
             case 109 :
@@ -33907,6 +29809,23 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 break;
             case 113 :
                 itemHandled->setTexture(*sceneriesTxt[9], true);
+                itemHandled->setOrigin(141, 160);
+                break;
+            case 229 :
+                itemHandled->setTexture(*sceneriesTxt[10]);
+                itemHandled->setTextureRect(IntRect(0, 0, 95, 91));
+                itemHandled->setOrigin(31, -5);
+                break;
+            case 230 :
+                itemHandled->setTexture(*sceneriesTxt[11], true);
+                itemHandled->setOrigin(11, 0);
+                break;
+            case 231 :
+                itemHandled->setTexture(*sceneriesTxt[12], true);
+                itemHandled->setOrigin(77, 128);
+                break;
+            case 232 :
+                itemHandled->setTexture(*sceneriesTxt[13], true);
                 itemHandled->setOrigin(141, 160);
                 break;
         }
@@ -33935,7 +29854,7 @@ static void Elements_Enemies(unsigned int elementNumb)
     }
     else
     {
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
         {
             if (elementsEnemies[i]->m_elementnumb != elementNumb)
                 elementsEnemies[i]->Unselected();
@@ -33944,7 +29863,7 @@ static void Elements_Enemies(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 3; i++)
             elementsEsssential[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
             elementsPlatforms[i]->Unselected();
 
         for (register unsigned int i = 0; i < 30; i++)
@@ -33953,13 +29872,14 @@ static void Elements_Enemies(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 36; i++)
             elementsPipes[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
             elementsSceneries[i]->Unselected();
 
         for (register unsigned int i = 0; i < 46; i++)
             elementsHazards[i]->Unselected();
 
         itemHandled->setRotation(0);
+        itemHandled->setColor(Color(255, 255, 255, 128));
 
         switch (elementNumb)
         {
@@ -34194,17 +30114,17 @@ static void Elements_Enemies(unsigned int elementNumb)
                 break;
             case 158 :
                 itemHandled->setTexture(*editorTxt[4]);
-                itemHandled->setTextureRect(IntRect(64, 0, 31, 48));
+                itemHandled->setTextureRect(IntRect(32, 0, 31, 48));
                 itemHandled->setOrigin(0, 16);
                 break;
             case 159 :
                 itemHandled->setTexture(*editorTxt[4]);
-                itemHandled->setTextureRect(IntRect(95, 0, 31, 48));
+                itemHandled->setTextureRect(IntRect(63, 0, 31, 48));
                 itemHandled->setOrigin(0, 16);
                 break;
             case 160 :
                 itemHandled->setTexture(*editorTxt[4]);
-                itemHandled->setTextureRect(IntRect(126, 0, 31, 48));
+                itemHandled->setTextureRect(IntRect(94, 0, 31, 48));
                 itemHandled->setOrigin(0, 16);
                 break;
             case 161 :
@@ -34219,7 +30139,8 @@ static void Elements_Enemies(unsigned int elementNumb)
                 break;
             case 163 :
                 itemHandled->setTexture(*editorTxt[4]);
-                itemHandled->setTextureRect(IntRect(32, 0, 32, 32));
+                itemHandled->setTextureRect(IntRect(0, 0, 32, 32));
+                itemHandled->setColor(Color(160, 160, 160, 128));
                 itemHandled->setOrigin(0, 0);
                 break;
             case 164 :
@@ -34237,6 +30158,29 @@ static void Elements_Enemies(unsigned int elementNumb)
                 itemHandled->setTexture(*enemiesTxt[39]);
                 itemHandled->setTextureRect(IntRect(0, 0, 64, 72));
                 itemHandled->setOrigin(16, 40);
+                break;
+            case 225 :
+                itemHandled->setTexture(*enemiesTxt[41]);
+                itemHandled->setTextureRect(IntRect(62, 0, 31, 31));
+                itemHandled->setOrigin(-1, -1);
+                break;
+            case 226 :
+                itemHandled->setTexture(*enemiesTxt[41]);
+                itemHandled->setTextureRect(IntRect(62, 0, 31, 31));
+                itemHandled->setRotation(270);
+                itemHandled->setOrigin(32, -1);
+                break;
+            case 227 :
+                itemHandled->setTexture(*enemiesTxt[41]);
+                itemHandled->setTextureRect(IntRect(62, 0, 31, 31));
+                itemHandled->setRotation(90);
+                itemHandled->setOrigin(-1, 31);
+                break;
+            case 228 :
+                itemHandled->setTexture(*enemiesTxt[41]);
+                itemHandled->setTextureRect(IntRect(62, 0, 31, 31));
+                itemHandled->setRotation(180);
+                itemHandled->setOrigin(32, 32);
                 break;
         }
 
@@ -34273,7 +30217,7 @@ static void Elements_Hazards(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 3; i++)
             elementsEsssential[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 23; i++)
+        for (register unsigned int i = 0; i < 35; i++)
             elementsPlatforms[i]->Unselected();
 
         for (register unsigned int i = 0; i < 30; i++)
@@ -34282,11 +30226,13 @@ static void Elements_Hazards(unsigned int elementNumb)
         for (register unsigned int i = 0; i < 36; i++)
             elementsPipes[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 22; i++)
+        for (register unsigned int i = 0; i < 26; i++)
             elementsSceneries[i]->Unselected();
 
-        for (register unsigned int i = 0; i < 53; i++)
+        for (register unsigned int i = 0; i < 57; i++)
             elementsEnemies[i]->Unselected();
+
+        itemHandled->setColor(Color(255, 255, 255, 128));
 
         switch (elementNumb)
         {
@@ -34316,7 +30262,7 @@ static void Elements_Hazards(unsigned int elementNumb)
                 break;
             case 171 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(832, 96, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_LAVABOTTOM);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
@@ -34370,25 +30316,25 @@ static void Elements_Hazards(unsigned int elementNumb)
                 break;
             case 180 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(768, 96, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_SPIKETOP);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 181 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(768, 192, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_SPIKEBOTTOM);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 182 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(768, 128, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_SPIKELEFT);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 183 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(768, 160, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_SPIKERIGHT);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
@@ -34438,85 +30384,85 @@ static void Elements_Hazards(unsigned int elementNumb)
                 break;
             case 192 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(512, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLTOP);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 193 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(480, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLTOPB);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 194 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(544, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLMIDV);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 195 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(608, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLBOT);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 196 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(576, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLBOTB);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 197 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(672, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLLEF);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 198 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(640, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLLEFB);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 199 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(704, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLMIDH);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 200 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(768, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLRIG);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 201 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(736, 224, 32, 32));
+                itemHandled->setTextureRect(TILE_HAZARD_BBILLRIGB);
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(0, 0);
                 break;
             case 202 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(800, 96, 32, 32));
+                itemHandled->setTextureRect(IntRect(896, 96, 32, 32));
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(-1, -1);
                 break;
             case 203 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(800, 96, 32, 32));
+                itemHandled->setTextureRect(IntRect(896, 96, 32, 32));
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(-1, -1);
                 break;
             case 204 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(800, 96, 32, 32));
+                itemHandled->setTextureRect(IntRect(896, 96, 32, 32));
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(-1, -1);
                 break;
             case 205 :
                 itemHandled->setTexture(*mainTileset);
-                itemHandled->setTextureRect(IntRect(800, 96, 32, 32));
+                itemHandled->setTextureRect(IntRect(896, 96, 32, 32));
                 itemHandled->setRotation(0);
                 itemHandled->setOrigin(-1, -1);
                 break;

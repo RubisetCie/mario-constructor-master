@@ -32,7 +32,7 @@ Sprite_Spiny::Sprite_Spiny(const Texture& texture, Collider* collision) : Walkab
     m_killed = false;
 }
 
-void Sprite_Spiny::setPosition(Vector2f pos)
+void Sprite_Spiny::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

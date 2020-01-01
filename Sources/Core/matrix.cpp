@@ -95,3 +95,8 @@ unsigned char Matrix::getValue(unsigned int x, unsigned int y)
 {
     return (*m_matrix[x])[y];
 }
+
+unsigned char* Matrix::getReference(unsigned int x, unsigned int y)
+{
+    return &((*m_matrix[x])[y]);
+}

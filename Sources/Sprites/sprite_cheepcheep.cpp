@@ -39,7 +39,7 @@ Sprite_CheepCheep::Sprite_CheepCheep(const Texture& texture, Collider* collision
     m_killed = false;
 }
 
-void Sprite_CheepCheep::setPosition(Vector2f pos)
+void Sprite_CheepCheep::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 

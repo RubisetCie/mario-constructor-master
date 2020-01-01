@@ -15,7 +15,7 @@ Bonus_CoinBlockInv::Bonus_CoinBlockInv(Texture* blockTexture, Collider* collisio
 {
 }
 
-void Bonus_CoinBlockInv::setPosition(Vector2f pos)
+void Bonus_CoinBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 }
@@ -37,7 +37,7 @@ void Bonus_CoinBlockInv::hit()
 
     Vector2f pos(m_sprite.getPosition());
 
-    listEffect.emplace_back(new Effect_Coin(effectTxt[8], effectTxt[12], Vector2f(pos.x + 4, pos.y - 24)));
+    listEffect.emplace_back(new Effect_Coin(effectTxt[8], effectTxt[12], Vector2f(pos.x + 6, pos.y - 24)));
 
     FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(4), sfxSamples[1], 0, NULL);
 }

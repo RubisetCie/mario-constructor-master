@@ -17,7 +17,7 @@ Bonus_LifeBlock::Bonus_LifeBlock(Texture* blockTexture) : Bonus_Block(blockTextu
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_LifeBlock::setPosition(Vector2f pos)
+void Bonus_LifeBlock::setPosition(const Vector2f& pos)
 {
     Bonus_Block::setPosition(pos);
 

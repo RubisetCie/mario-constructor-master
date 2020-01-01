@@ -15,7 +15,7 @@ Scenery_Bush::Scenery_Bush(const Texture& texture) : Placeable()
     m_sprite.setTextureRect(IntRect(0, 0, 65, 30));
 }
 
-void Scenery_Bush::setPosition(Vector2f pos)
+void Scenery_Bush::setPosition(const Vector2f& pos)
 {
     m_sprite.setPosition(pos);
 }

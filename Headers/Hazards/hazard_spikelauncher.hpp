@@ -17,7 +17,7 @@ class Hazard_Spikelauncher : public Placeable
         Hazard_Spikelauncher(const sf::Texture& texture);
         virtual ~Hazard_Spikelauncher();
 
-        void setPosition(sf::Vector2f pos);
+        void setPosition(const sf::Vector2f& pos);
 
         void update();
         void secureUpdate();

@@ -17,7 +17,7 @@ Bonus_MushroomBlockInv::Bonus_MushroomBlockInv(Texture* blockTexture, Collider* 
     m_output.setPrimitiveType(Quads);
 }
 
-void Bonus_MushroomBlockInv::setPosition(Vector2f pos)
+void Bonus_MushroomBlockInv::setPosition(const Vector2f& pos)
 {
     Bonus_BlockInv::setPosition(pos);
 }

@@ -15,7 +15,7 @@ class Placeable : public sf::Drawable
 
         Placeable();
 
-        virtual void setPosition(sf::Vector2f pos) = 0;
+        virtual void setPosition(const sf::Vector2f& pos) = 0;
 
         virtual void update() = 0;
         virtual void secureUpdate() = 0;
