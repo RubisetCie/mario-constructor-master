@@ -81,6 +81,8 @@
 		<Unit filename="Headers/Bonuses/bonus_poisonblockinv.hpp" />
 		<Unit filename="Headers/Bonuses/bonus_starblock.hpp" />
 		<Unit filename="Headers/Bonuses/bonus_starblockinv.hpp" />
+		<Unit filename="Headers/Bonuses/bonus_switch.hpp" />
+		<Unit filename="Headers/Bonuses/bonus_toggle.hpp" />
 		<Unit filename="Headers/Core/collider.hpp" />
 		<Unit filename="Headers/Core/effect.hpp" />
 		<Unit filename="Headers/Core/gscene.hpp" />
@@ -184,7 +186,9 @@
 		<Unit filename="Headers/Miscs/projectile_spike.hpp" />
 		<Unit filename="Headers/Sceneries/scenery_bush.hpp" />
 		<Unit filename="Headers/Sceneries/scenery_cloud.hpp" />
+		<Unit filename="Headers/Sceneries/scenery_scroll.hpp" />
 		<Unit filename="Headers/Sceneries/scenery_static.hpp" />
+		<Unit filename="Headers/Sceneries/scenery_waterfall.hpp" />
 		<Unit filename="Headers/Sprites/fallable.hpp" />
 		<Unit filename="Headers/Sprites/gotcollision.hpp" />
 		<Unit filename="Headers/Sprites/gotspeed.hpp" />
@@ -279,6 +283,8 @@
 		<Unit filename="Sources/Bonuses/bonus_poisonblockinv.cpp" />
 		<Unit filename="Sources/Bonuses/bonus_starblock.cpp" />
 		<Unit filename="Sources/Bonuses/bonus_starblockinv.cpp" />
+		<Unit filename="Sources/Bonuses/bonus_switch.cpp" />
+		<Unit filename="Sources/Bonuses/bonus_toggle.cpp" />
 		<Unit filename="Sources/Core/effect.cpp" />
 		<Unit filename="Sources/Core/matrix.cpp" />
 		<Unit filename="Sources/Core/pawn.cpp" />
@@ -374,7 +380,9 @@
 		<Unit filename="Sources/Miscs/projectile_spike.cpp" />
 		<Unit filename="Sources/Sceneries/scenery_bush.cpp" />
 		<Unit filename="Sources/Sceneries/scenery_cloud.cpp" />
+		<Unit filename="Sources/Sceneries/scenery_scroll.cpp" />
 		<Unit filename="Sources/Sceneries/scenery_static.cpp" />
+		<Unit filename="Sources/Sceneries/scenery_waterfall.cpp" />
 		<Unit filename="Sources/Scenes/glogo.cpp" />
 		<Unit filename="Sources/Scenes/gtitle.cpp" />
 		<Unit filename="Sources/Scenes/ingame.cpp" />
@@ -441,6 +449,7 @@
 		<Unit filename="Sources/Sprites/sprite_spinygrey.cpp" />
 		<Unit filename="Sources/Sprites/sprite_spinygreyball.cpp" />
 		<Unit filename="Sources/Sprites/sprite_star.cpp" />
+		<Unit filename="Sources/Sprites/sprite_staticplant.cpp" />
 		<Unit filename="Sources/Sprites/sprite_throwedcoin.cpp" />
 		<Unit filename="Sources/Sprites/sprite_thwompb.cpp" />
 		<Unit filename="Sources/Sprites/sprite_thwompt.cpp" />
