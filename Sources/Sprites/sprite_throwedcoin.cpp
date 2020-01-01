@@ -61,6 +61,9 @@ void Sprite_ThrowedCoin::update()
 
         FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(4), sfxSamples[1], 0, NULL);
 
+        if (game_coins == 0)
+            FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(3), sfxSamples[7], 0, NULL);
+
         addPoints(200);
 
         m_parent->m_enemies++;

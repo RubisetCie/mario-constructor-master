@@ -141,7 +141,7 @@ bool Pawn::makeMoveVertical(float mov, const Vector2i& levelSize, Matrix* collis
             {
                 if (dir == 1)
                 {
-                    if ((*it)->speed.y >= 0)
+                    if ((*it)->speed.y > 0)
                     {
                         if (testPoint[0].y - mov >= (*it)->rect.top)
                             continue;

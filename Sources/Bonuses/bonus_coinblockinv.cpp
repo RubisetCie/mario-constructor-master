@@ -40,6 +40,9 @@ void Bonus_CoinBlockInv::hit()
     listEffect.emplace_back(new Effect_Coin(effectTxt[8], effectTxt[12], Vector2f(pos.x + 6, pos.y - 24)));
 
     FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(4), sfxSamples[1], 0, NULL);
+
+    if (game_coins == 0)
+        FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(3), sfxSamples[7], 0, NULL);
 }
 
 void Bonus_CoinBlockInv::draw(RenderTarget& target, RenderStates) const

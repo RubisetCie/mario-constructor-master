@@ -2078,6 +2078,9 @@ void Mark_Mario::bounce(unsigned int maxstrenght, bool spring)
             m_holdjump = true;
             m_bounce = true;
 
+            if (game_powerup == 4)
+                maxstrenght += 2;
+
             m_jumping = maxstrenght;
         }
     }

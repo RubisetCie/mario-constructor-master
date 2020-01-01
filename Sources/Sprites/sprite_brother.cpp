@@ -402,7 +402,7 @@ void Sprite_Brother::secureUpdate()
                         m_upper = false;
                         m_passthrough = false;
 
-                        m_movedistance.y = 0;
+                        //m_movedistance.y = 0;
 
                         m_aabb.top = m_jumppoints[0] - 32;
                     }

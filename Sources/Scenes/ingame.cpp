@@ -5584,10 +5584,10 @@ static bool Level_Load()
                     case 177 : listMiddle.emplace_back(new Hazard_PodobooFountainB); originPos = Vector2f(0, 0); create = 2; break;
                     case 178 : listMiddle.emplace_back(new Hazard_PodobooFountainL); originPos = Vector2f(0, 0); create = 2; break;
                     case 179 : listMiddle.emplace_back(new Hazard_PodobooFountainR); originPos = Vector2f(0, 0); create = 2; break;
-                    case 180 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 96))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 181 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 192))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 182 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 128))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 183 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 160))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 180 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 96))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 181 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 192))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 182 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 128))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 183 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 160))); originPos = Vector2f(0, 0); create = 1; break;
                     case 184 :
                         listMiddle.emplace_back(new Hazard_CannonHT(*hazardsTxt[2])); originPos = Vector2f(0, -1); create = 2;
                         collisionMatrix->setValue(entPos.x/32, entPos.y/32, 1);
@@ -6589,10 +6589,10 @@ static bool Level_Load()
                     case 177 : listMiddleb.emplace_back(new Hazard_PodobooFountainB); originPos = Vector2f(0, 0); create = 2; break;
                     case 178 : listMiddleb.emplace_back(new Hazard_PodobooFountainL); originPos = Vector2f(0, 0); create = 2; break;
                     case 179 : listMiddleb.emplace_back(new Hazard_PodobooFountainR); originPos = Vector2f(0, 0); create = 2; break;
-                    case 180 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 96))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 181 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 192))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 182 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 128))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 183 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 160))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 180 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 96))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 181 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 192))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 182 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 128))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 183 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 160))); originPos = Vector2f(0, 0); create = 1; break;
                     case 184 :
                         listMiddleb.emplace_back(new Hazard_CannonHT(*hazardsTxt[2])); originPos = Vector2f(0, -1); create = 2;
                         collisionMatrixb->setValue(entPos.x/32, entPos.y/32, 1);
@@ -7876,10 +7876,10 @@ static void Level_Reload()
                     case 177 : listMiddle.emplace_back(new Hazard_PodobooFountainB); originPos = Vector2f(0, 0); create = 2; break;
                     case 178 : listMiddle.emplace_back(new Hazard_PodobooFountainL); originPos = Vector2f(0, 0); create = 2; break;
                     case 179 : listMiddle.emplace_back(new Hazard_PodobooFountainR); originPos = Vector2f(0, 0); create = 2; break;
-                    case 180 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 96))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 181 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 192))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 182 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 128))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 183 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(768, 160))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 180 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 96))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 181 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 192))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 182 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 128))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 183 : listPlaceables.emplace_back(new Hazard_Spike(Vector2i(864, 160))); originPos = Vector2f(0, 0); create = 1; break;
                     case 184 : listMiddle.emplace_back(new Hazard_CannonHT(*hazardsTxt[2])); originPos = Vector2f(0, -1); create = 2; break;
                     case 185 : listMiddle.emplace_back(new Hazard_CannonHB(*hazardsTxt[2])); originPos = Vector2f(0, -31); create = 2; break;
                     case 186 : listMiddle.emplace_back(new Hazard_CannonVL(*hazardsTxt[2])); originPos = Vector2f(-1, 0); create = 2; break;
@@ -8857,10 +8857,10 @@ static void Level_Reload()
                     case 177 : listMiddleb.emplace_back(new Hazard_PodobooFountainB); originPos = Vector2f(0, 0); create = 2; break;
                     case 178 : listMiddleb.emplace_back(new Hazard_PodobooFountainL); originPos = Vector2f(0, 0); create = 2; break;
                     case 179 : listMiddleb.emplace_back(new Hazard_PodobooFountainR); originPos = Vector2f(0, 0); create = 2; break;
-                    case 180 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 96))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 181 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 192))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 182 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 128))); originPos = Vector2f(0, 0); create = 1; break;
-                    case 183 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(768, 160))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 180 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 96))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 181 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 192))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 182 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 128))); originPos = Vector2f(0, 0); create = 1; break;
+                    case 183 : listPlaceablesb.emplace_back(new Hazard_Spike(Vector2i(864, 160))); originPos = Vector2f(0, 0); create = 1; break;
                     case 184 : listMiddleb.emplace_back(new Hazard_CannonHT(*hazardsTxt[2])); originPos = Vector2f(0, -1); create = 2; break;
                     case 185 : listMiddleb.emplace_back(new Hazard_CannonHB(*hazardsTxt[2])); originPos = Vector2f(0, -31); create = 2; break;
                     case 186 : listMiddleb.emplace_back(new Hazard_CannonVL(*hazardsTxt[2])); originPos = Vector2f(-1, 0); create = 2; break;
@@ -9754,9 +9754,12 @@ static bool World_Load()
 
         if (listSize != 0)
         {
+            MarkerData* currentData;
+            float lastx, lasty;
+
             for (register unsigned int i = 0; i < listSize; i++)
             {
-                MarkerData* currentData = new MarkerData;
+                currentData = new MarkerData;
                 Vector2f pos;
 
                 scenario_file.read(reinterpret_cast<char*>(currentData), sizeof(MarkerData));
@@ -9783,6 +9786,18 @@ static bool World_Load()
 
                 listMark.emplace_back(currentData);
             }
+
+            // Append a last marker at the same position :
+            lastx = currentData->x;
+            lasty = currentData->y;
+
+            currentData = new MarkerData;
+
+            currentData->x = lastx;
+            currentData->x = lasty;
+            currentData->isLevel = false;
+
+            listMark.emplace_back(currentData);
         }
     }
 

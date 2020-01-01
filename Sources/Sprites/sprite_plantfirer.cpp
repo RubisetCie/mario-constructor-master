@@ -50,7 +50,7 @@ void Sprite_PlantFireR::secureUpdate()
         {
             m_timer++;
 
-            if (m_timer >= 40 && m_timer < 100)
+            if (m_timer < 60)
             {
                 m_array[1].position.x += 0.7833333;
                 m_array[2].position.x += 0.7833333;
@@ -63,7 +63,7 @@ void Sprite_PlantFireR::secureUpdate()
                 m_collider->rect.width += 0.7833333;
             }
 
-            if (m_timer >= 240 && m_timer < 300)
+            if (m_timer >= 200 && m_timer < 260)
             {
                 m_array[1].position.x -= 0.7833333;
                 m_array[2].position.x -= 0.7833333;
@@ -76,7 +76,7 @@ void Sprite_PlantFireR::secureUpdate()
                 m_collider->rect.width -= 0.7833333;
             }
 
-            if (m_timer == 100)
+            if (m_timer == 60)
             {
                 m_array[1].position.x = m_startwidth + 47;
                 m_array[2].position.x = m_startwidth + 47;
@@ -88,25 +88,25 @@ void Sprite_PlantFireR::secureUpdate()
 
                 m_collider->rect.width = 47;
             }
-            else if (m_timer == 130)
+            else if (m_timer == 90)
             {
                 m_fire[0].cast(Vector2f(m_aabb.left + 40, m_aabb.top + 15), Vector2f((rand() / static_cast<float>(RAND_MAX)) + 4.5f, (rand() / (RAND_MAX / 2.0f)) - 1.0f));
 
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), sfxSamples[8], 0, NULL);
             }
-            else if (m_timer == 140)
+            else if (m_timer == 100)
             {
                 m_fire[1].cast(Vector2f(m_aabb.left + 40, m_aabb.top + 15), Vector2f((rand() / static_cast<float>(RAND_MAX)) + 4.5f, (rand() / (RAND_MAX / 2.0f)) - 1.0f));
 
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), sfxSamples[8], 0, NULL);
             }
-            else if (m_timer == 150)
+            else if (m_timer == 110)
             {
                 m_fire[2].cast(Vector2f(m_aabb.left + 40, m_aabb.top + 15), Vector2f((rand() / static_cast<float>(RAND_MAX)) + 4.5f, (rand() / (RAND_MAX / 2.0f)) - 1.0f));
 
                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), sfxSamples[8], 0, NULL);
             }
-            else if (m_timer == 300)
+            else if (m_timer == 260)
             {
                 m_array[1].position.x = m_startwidth;
                 m_array[2].position.x = m_startwidth;

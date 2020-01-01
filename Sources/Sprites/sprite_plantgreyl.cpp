@@ -30,7 +30,7 @@ void Sprite_PlantGreyL::secureUpdate()
     {
         m_timer++;
 
-        if (m_timer >= 40 && m_timer < 100)
+        if (m_timer < 60)
         {
             m_array[0].position.x -= 0.7833333;
             m_array[3].position.x -= 0.7833333;
@@ -45,7 +45,7 @@ void Sprite_PlantGreyL::secureUpdate()
             m_collider->rect.width += 0.7833333;
         }
 
-        if (m_timer >= 240 && m_timer < 300)
+        if (m_timer >= 200 && m_timer < 260)
         {
             m_array[0].position.x += 0.7833333;
             m_array[3].position.x += 0.7833333;
@@ -60,7 +60,7 @@ void Sprite_PlantGreyL::secureUpdate()
             m_collider->rect.width -= 0.7833333;
         }
 
-        if (m_timer == 100)
+        if (m_timer == 60)
         {
             m_array[0].position.x = m_startwidth;
             m_array[3].position.x = m_startwidth;
@@ -74,7 +74,7 @@ void Sprite_PlantGreyL::secureUpdate()
             m_collider->rect.left = m_startwidth;
             m_collider->rect.width = 47;
         }
-        else if (m_timer == 300)
+        else if (m_timer == 260)
         {
             m_array[0].position.x = m_startwidth + 47;
             m_array[3].position.x = m_startwidth + 47;

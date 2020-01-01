@@ -19936,7 +19936,7 @@
 
 1460628213 source:d:\jeux\creation\c++\mfeditorproject\headers\core\scene.hpp
 
-1518956665 source:d:\jeux\creation\c++\mfeditorproject\resource\resources.rc
+1577832150 source:d:\jeux\creation\c++\mfeditorproject\resource\resources.rc
 
 1577200991 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_beetblock.cpp
 	<SFML/Graphics.hpp>
@@ -20099,7 +20099,7 @@
 	<SFML/Graphics.hpp>
 	"../Core/effect.hpp"
 
-1576508396 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coin.cpp
+1577875223 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coin.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Graphics/spritefont.hpp"
 	"../../Headers/Bonuses/bonus_coin.hpp"
@@ -20114,7 +20114,7 @@
 	<SFML/Graphics.hpp>
 	"../Core/effect.hpp"
 
-1577372970 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coinblock.cpp
+1577878249 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coinblock.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Bonuses/bonus_coinblock.hpp"
 	"../../Headers/Miscs/effect_coin.hpp"
@@ -20125,7 +20125,7 @@
 	<SFML/Graphics.hpp>
 	"bonus_block.hpp"
 
-1577373034 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coinblockinv.cpp
+1577878249 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coinblockinv.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Bonuses/bonus_coinblockinv.hpp"
 	"../../Headers/Miscs/effect_coin.hpp"
@@ -20136,7 +20136,7 @@
 	<SFML/Graphics.hpp>
 	"bonus_blockinv.hpp"
 
-1577373040 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coinbrick.cpp
+1577878244 source:d:\jeux\creation\c++\mfeditorproject\sources\bonuses\bonus_coinbrick.cpp
 	<SFML/Graphics.hpp>
 	<cmath>
 	"../../Headers/Bonuses/bonus_coinbrick.hpp"
@@ -20302,7 +20302,7 @@
 	<iostream>
 	<vector>
 
-1577618481 source:d:\jeux\creation\c++\mfeditorproject\sources\core\pawn.cpp
+1577894608 source:d:\jeux\creation\c++\mfeditorproject\sources\core\pawn.cpp
 	<SFML/Graphics.hpp>
 	<cmath>
 	"../../Headers/Core/pawn.hpp"
@@ -21135,7 +21135,7 @@
 	<SFML/Graphics.hpp>
 	"../Core/effect.hpp"
 
-1577383771 source:d:\jeux\creation\c++\mfeditorproject\sources\marks\mark_mario.cpp
+1577894439 source:d:\jeux\creation\c++\mfeditorproject\sources\marks\mark_mario.cpp
 	<SFML/Graphics.hpp>
 	<cmath>
 	<FMODEx/fmod.h>
@@ -21509,7 +21509,7 @@
 	<SFML/Graphics.hpp>
 	"../Core/placeable.hpp"
 
-1577803300 source:d:\jeux\creation\c++\mfeditorproject\sources\scenes\editor.cpp
+1577875540 source:d:\jeux\creation\c++\mfeditorproject\sources\scenes\editor.cpp
 	<SFML/Graphics.hpp>
 	<fstream>
 	<cmath>
@@ -21939,7 +21939,7 @@
 	"../Miscs/projectile_flame.hpp"
 	"../Miscs/projectile_bulletbill.hpp"
 
-1577794121 source:d:\jeux\creation\c++\mfeditorproject\sources\scenes\ingame.cpp
+1577893932 source:d:\jeux\creation\c++\mfeditorproject\sources\scenes\ingame.cpp
 	<SFML/Graphics.hpp>
 	<shlwapi.h>
 	<FMODEx/fmod.h>
@@ -22197,7 +22197,7 @@
 	"../../Headers/Miscs/effect_fire.hpp"
 	<iostream>
 
-1576508800 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_brother.cpp
+1577879881 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_brother.cpp
 	<SFML/Graphics.hpp>
 	<cmath>
 	"../../Headers/globals.hpp"
@@ -22493,84 +22493,84 @@
 	"../../Headers/Miscs/effect_fire.hpp"
 	<iostream>
 
-1515691285 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfireb.cpp
+1577878999 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfireb.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantfireb.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515691275 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfirel.cpp
+1577879031 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfirel.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantfirel.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515691281 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfirer.cpp
+1577879057 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfirer.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantfirer.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515691263 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfiret.cpp
+1577879083 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantfiret.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantfiret.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515583808 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreenb.cpp
+1577878772 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreenb.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreenb.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515583808 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreenl.cpp
+1577878795 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreenl.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreenl.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515583808 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreenr.cpp
+1577878831 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreenr.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreenr.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1515583808 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreent.cpp
+1577878859 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreent.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreent.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1517675670 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyb.cpp
+1577878884 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyb.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreyb.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1517675682 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyl.cpp
+1577878899 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyl.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreyl.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1517675704 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyr.cpp
+1577878937 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyr.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreyr.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
 	"../../Headers/globals.hpp"
 	<iostream>
 
-1517675704 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyt.cpp
+1577878954 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_plantgreyt.cpp
 	<SFML/Graphics.hpp>
 	"../../Headers/Sprites/sprite_plantgreyt.hpp"
 	"../../Headers/Miscs/effect_score.hpp"
@@ -22664,7 +22664,7 @@
 	"../../Headers/Sprites/sprite_star.hpp"
 	<iostream>
 
-1576508801 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_throwedcoin.cpp
+1577878247 source:d:\jeux\creation\c++\mfeditorproject\sources\sprites\sprite_throwedcoin.cpp
 	<SFML/Graphics.hpp>
 	<cmath>
 	"../../Headers/globals.hpp"

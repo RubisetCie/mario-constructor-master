@@ -45,6 +45,9 @@ void Bonus_Coin::update()
 
         FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(4), sfxSamples[1], 0, NULL);
 
+        if (game_coins == 0)
+            FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(3), sfxSamples[7], 0, NULL);
+
         m_destroyed = true;
     }
 
@@ -54,6 +57,9 @@ void Bonus_Coin::update()
         addPoints(200);
 
         FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(4), sfxSamples[1], 0, NULL);
+
+        if (game_coins == 0)
+            FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(3), sfxSamples[7], 0, NULL);
 
         m_destroyed = true;
     }
