@@ -15,11 +15,11 @@
             BEGIN
                 VALUE "CompanyName",      "Rubis et Compagnie"
                 VALUE "FileDescription",  "An executable for games created with Mario Constructor Master."
-                VALUE "FileVersion",      "1.0.0.0"
+                VALUE "FileVersion",      "2.0.0.0"
                 VALUE "InternalName",     "MFGameProject"
                 VALUE "OriginalFilename", "MFGameProject.exe"
                 VALUE "ProductName",      "Mario Constructor Master Publisher"
-                VALUE "ProductVersion",   "1.1.0.0"
+                VALUE "ProductVersion",   "2.0.0.0"
             END
         END
 

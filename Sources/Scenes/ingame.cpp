@@ -9794,7 +9794,7 @@ static bool World_Load()
             currentData = new MarkerData;
 
             currentData->x = lastx;
-            currentData->x = lasty;
+            currentData->y = lasty;
             currentData->isLevel = false;
 
             listMark.emplace_back(currentData);

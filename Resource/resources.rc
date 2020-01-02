@@ -15,11 +15,11 @@
             BEGIN
                 VALUE "CompanyName",      "Rubis et Compagnie"
                 VALUE "FileDescription",  "A Fangame Mario Game Editor made by RubisetCie and MarioVariable3410."
-                VALUE "FileVersion",      "1.1.0.0"
+                VALUE "FileVersion",      "2.0.0.0"
                 VALUE "InternalName",     "MFEditorProject"
                 VALUE "OriginalFilename", "MFEditorProject.exe"
                 VALUE "ProductName",      "Mario Constructor Master"
-                VALUE "ProductVersion",   "1.1.0.0"
+                VALUE "ProductVersion",   "2.0.0.0"
             END
         END
 

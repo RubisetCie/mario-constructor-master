@@ -2162,6 +2162,7 @@ void Mark_Mario::clearCourse()
     m_active = false;
     m_animspeed = MARIO_ANIMTIME_END;
     m_animpowerup = 0;
+    m_invincibility = 0;
 
     m_movedistance.x = 1;
 
