@@ -21,7 +21,7 @@ void Scenery_Scroll::setPosition(const Vector2f& pos)
 
 void Scenery_Scroll::update()
 {
-    m_sprite.setTextureRect(IntRect(0, -effectLavafallPos, 54, 32));
+    m_sprite.setTextureRect(IntRect(0, -effectLavafallPos, 54, 64));
 }
 
 void Scenery_Scroll::secureUpdate()

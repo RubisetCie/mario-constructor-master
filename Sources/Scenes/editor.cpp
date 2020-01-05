@@ -8942,15 +8942,9 @@ static void Selection_Pipes()
 
 static void Selection_Sceneries()
 {
-    if (mousePressed > 0 && (mpos_absolute.x > -16 && mpos_absolute.x < 656 && mpos_absolute.y > -16 && mpos_absolute.y < 496) && !blockMouse)
+    if (mousePressed == 1 && (mpos_absolute.x > -16 && mpos_absolute.x < 656 && mpos_absolute.y > -16 && mpos_absolute.y < 496) && !blockMouse)
     {
         bool placement(true);
-
-        if (elementSelected != 230)
-        {
-            if (mousePressed > 1)
-                placement = false;
-        }
 
         if (placement)
         {
@@ -9094,9 +9088,37 @@ static void Selection_Hazards()
 {
     if (mousePressed > 0 && (mpos_absolute.x > -16 && mpos_absolute.x < 656 && mpos_absolute.y > -16 && mpos_absolute.y < 496) && !blockMouse)
     {
-        if (toolbarVisible)
+        bool placement(true);
+
+        if ((elementSelected >= 172 && elementSelected <= 179) || elementSelected >= 202)
         {
-            if (!(mpos_absolute.y < 150 || (mpos_absolute.x < 133 && mpos_absolute.y > 448) || (mpos_absolute.x > 459 && mpos_absolute.y > 448)))
+            if (mousePressed > 1)
+                placement = false;
+        }
+
+        if (placement)
+        {
+            if (toolbarVisible)
+            {
+                if (!(mpos_absolute.y < 150 || (mpos_absolute.x < 133 && mpos_absolute.y > 448) || (mpos_absolute.x > 459 && mpos_absolute.y > 448)))
+                {
+                    if (sectionb)
+                    {
+                        if (listEntitiesb.size() == 800)
+                            MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                        else
+                            Placements_Hazards(entityMatrixb, layer2TileMatrixb, listEntitiesb);
+                    }
+                    else
+                    {
+                        if (listEntities.size() == 800)
+                            MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                        else
+                            Placements_Hazards(entityMatrix, layer2TileMatrix, listEntities);
+                    }
+                }
+            }
+            else
             {
                 if (sectionb)
                 {
@@ -9112,23 +9134,6 @@ static void Selection_Hazards()
                     else
                         Placements_Hazards(entityMatrix, layer2TileMatrix, listEntities);
                 }
-            }
-        }
-        else
-        {
-            if (sectionb)
-            {
-                if (listEntitiesb.size() == 800)
-                    MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
-                else
-                    Placements_Hazards(entityMatrixb, layer2TileMatrixb, listEntitiesb);
-            }
-            else
-            {
-                if (listEntities.size() == 800)
-                    MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
-                else
-                    Placements_Hazards(entityMatrix, layer2TileMatrix, listEntities);
             }
         }
     }
@@ -10854,7 +10859,7 @@ static void Placements_Sceneries(Matrix* currentMatrix, list<Entity*>& currentLi
         case 230 :
             if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) != 1)
             {
-                currentList.emplace_back(new Entity(sceneriesTxt[11], cursorPos.x, cursorPos.y, 11, 0, 230));
+                currentList.emplace_back(new Entity_MultiText(sceneriesTxt[11], IntRect(0, 0, 54, 64), cursorPos.x, cursorPos.y, 11, 0, 230));
 
                 currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
 
@@ -20596,7 +20601,7 @@ static void Level_LoadObjects(ifstream& levelFile)
                     case 112 : listSceneries.emplace_back(new Entity(sceneriesTxt[8], entPos.x, entPos.y, 77, 128, 112)); break;
                     case 113 : listSceneries.emplace_back(new Entity(sceneriesTxt[9], entPos.x, entPos.y, 141, 160, 113)); break;
                     case 229 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[10], IntRect(0, 0, 95, 91), entPos.x, entPos.y, 31, -5, 229)); break;
-                    case 230 : listSceneries.emplace_back(new Entity(sceneriesTxt[11], entPos.x, entPos.y, 11, 0, 230)); break;
+                    case 230 : listSceneries.emplace_back(new Entity_MultiText(sceneriesTxt[11], IntRect(0, 0, 54, 64), entPos.x, entPos.y, 11, 0, 230)); break;
                     case 231 : listSceneries.emplace_back(new Entity(sceneriesTxt[12], entPos.x, entPos.y, 77, 128, 231)); break;
                     case 232 : listSceneries.emplace_back(new Entity(sceneriesTxt[13], entPos.x, entPos.y, 141, 160, 232)); break;
                 }
@@ -21832,7 +21837,7 @@ static void Level_LoadObjects(ifstream& levelFile)
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 180, 32, 34, 168));
+                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 32, 34, 168, 1, 180));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -21844,7 +21849,7 @@ static void Level_LoadObjects(ifstream& levelFile)
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 270, 32, 2, 169));
+                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 32, 2, 169, 1, 270));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -21856,7 +21861,7 @@ static void Level_LoadObjects(ifstream& levelFile)
                         levelFile.read(reinterpret_cast<char*>(&currentData), 4);
                         entData.emplace_back(currentData);
 
-                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 90, 0, 34, 170));
+                        listEntities.emplace_back(new Entity_MultiText(hazardsTxt[0], IntRect(0, 0, 32, 34), entData[0], entData[1], 0, 34, 170, 1, 90));
 
                         entityMatrix->setValue(entData[0] / 32, entData[1] / 32, 1);
 
@@ -22950,7 +22955,7 @@ static void Level_LoadObjects(ifstream& levelFile)
                     case 112 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[8], entPos.x, entPos.y, 77, 128, 112)); break;
                     case 113 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[9], entPos.x, entPos.y, 141, 160, 113)); break;
                     case 229 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[10], IntRect(0, 0, 95, 91), entPos.x, entPos.y, 31, -5, 229)); break;
-                    case 230 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[11], entPos.x, entPos.y, 11, 0, 230)); break;
+                    case 230 : listSceneriesb.emplace_back(new Entity_MultiText(sceneriesTxt[11], IntRect(0, 0, 54, 64), entPos.x, entPos.y, 11, 0, 230)); break;
                     case 231 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[12], entPos.x, entPos.y, 77, 128, 231)); break;
                     case 232 : listSceneriesb.emplace_back(new Entity(sceneriesTxt[13], entPos.x, entPos.y, 141, 160, 232)); break;
                 }
@@ -29817,7 +29822,8 @@ static void Elements_Sceneries(unsigned int elementNumb)
                 itemHandled->setOrigin(31, -5);
                 break;
             case 230 :
-                itemHandled->setTexture(*sceneriesTxt[11], true);
+                itemHandled->setTexture(*sceneriesTxt[11]);
+                itemHandled->setTextureRect(IntRect(0, 0, 54, 64));
                 itemHandled->setOrigin(11, 0);
                 break;
             case 231 :

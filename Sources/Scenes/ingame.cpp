@@ -4064,6 +4064,10 @@ static bool Level_Load()
             level_file.seekg(1, ios::cur);
             level_file.read(&c, 1);
 
+            #ifdef DEBUGMODE
+            cout << "LoAd " << c << endl;
+            #endif // DEBUGMODE
+
             if (c != 'C')
                 return false;
 
@@ -4074,6 +4078,8 @@ static bool Level_Load()
             level_file.seekg(5, ios::beg);
 
             level_file.read(reinterpret_cast<char*>(&game_lives), 1);
+
+            level_file.seekg(4, ios::cur);
         }
     }
     else if (loadingType == 2)
@@ -4161,6 +4167,9 @@ static bool Level_Load()
 
             PathRemoveFileSpec(getString);
             SetCurrentDirectory(getString);
+
+            // Offset the cursor if needed :
+            level_file.seekg(4, ios::cur);
         }
 
         PathRemoveFileSpec(filePath);
@@ -4185,6 +4194,10 @@ static bool Level_Load()
                     if (getString[j] == '\0')
                         break;
                 }
+
+                #ifdef DEBUGMODE
+                cout << "Dir : " << getString << endl;
+                #endif // DEBUGMODE
 
                 switch (i)
                 {
@@ -9282,6 +9295,20 @@ static void Level_Reload()
                 else
                     listPlaceablesb.back()->setPosition(entPos - originPos);
             }
+        }
+    }
+
+    // Necessary to not perturbate the cursor position in the case of a compiled scenario :
+    if (loadingType == 1)
+    {
+        unsigned char listSize;
+
+        level_file.read(reinterpret_cast<char*>(&listSize), 1);
+
+        if (listSize != 0)
+        {
+            for (register unsigned short i = 0; i < listSize; i++)
+                level_file.seekg(sizeof(WarpsData), ios_base::cur);
         }
     }
 
