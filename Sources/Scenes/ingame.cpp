@@ -4078,8 +4078,6 @@ static bool Level_Load()
             level_file.seekg(5, ios::beg);
 
             level_file.read(reinterpret_cast<char*>(&game_lives), 1);
-
-            level_file.seekg(4, ios::cur);
         }
     }
     else if (loadingType == 2)
@@ -4167,9 +4165,6 @@ static bool Level_Load()
 
             PathRemoveFileSpec(getString);
             SetCurrentDirectory(getString);
-
-            // Offset the cursor if needed :
-            level_file.seekg(4, ios::cur);
         }
 
         PathRemoveFileSpec(filePath);
@@ -4194,10 +4189,6 @@ static bool Level_Load()
                     if (getString[j] == '\0')
                         break;
                 }
-
-                #ifdef DEBUGMODE
-                cout << "Dir : " << getString << endl;
-                #endif // DEBUGMODE
 
                 switch (i)
                 {
@@ -5791,6 +5782,7 @@ static bool Level_Load()
 
                             listAfter.emplace_back(new Hazard_Centipede(&path.front(), t, listCollider.end()));
                         }
+
                         originPos = Vector2f(0, 0);
                         create = 3;
 
@@ -7211,7 +7203,7 @@ static void Level_Reload()
         Mark_CheckPoint* checkPoint = player->m_checkpoint;
 
         startPos = Vector2f(checkPoint->m_collision.left-13, checkPoint->m_collision.top+79);
-        startZone = checkPoint->m_zone + 1;
+        startZone = checkPoint->m_zone;
     }
 
     for (list<Placeable*>::iterator it = listPlaceables.begin(); it != listPlaceables.end(); it++)
@@ -7419,9 +7411,10 @@ static void Level_Reload()
                 {
                     case 0 :
                         if (startPos.x <= -64)
+                        {
                             startPos = Vector2f(entPos.x, entPos.y);
-
-                        startZone = 0;
+                            startZone = 0;
+                        }
                         break;
                     case 1 :
                     {
@@ -8404,9 +8397,10 @@ static void Level_Reload()
                 {
                     case 0 :
                         if (startPos.x <= -64)
+                        {
                             startPos = Vector2f(entPos.x, entPos.y);
-
-                        startZone = 1;
+                            startZone = 1;
+                        }
                         break;
                     case 1 :
                         {
@@ -9308,7 +9302,11 @@ static void Level_Reload()
         if (listSize != 0)
         {
             for (register unsigned short i = 0; i < listSize; i++)
-                level_file.seekg(sizeof(WarpsData), ios_base::cur);
+            {
+                WarpsData currentData;
+
+                level_file.read(reinterpret_cast<char*>(&currentData), sizeof(WarpsData));
+            }
         }
     }
 

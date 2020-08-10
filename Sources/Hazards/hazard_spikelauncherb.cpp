@@ -23,7 +23,7 @@ void Hazard_SpikelauncherB::shot()
 {
     Vector2f position(m_sprite.getPosition());
 
-    m_spike.emplace_back(new Projectile_Spike(hazardsTxt[9], Vector2f(position.x + 29, position.y), Vector2f((rand() / (RAND_MAX / 6.0)) - 3.0f, (rand() / (RAND_MAX / 2.0)) + 4.0f)));
+    m_spike.emplace_back(new Projectile_Spike(hazardsTxt[9], Vector2f(position.x + 29, position.y), Vector2f((rand() / (RAND_MAX / 3.0)) - 1.5f, (rand() / (RAND_MAX / 2.0)) + 4.0f)));
     listEffect.emplace_back(new Effect_Fire(effectTxt[9], Vector2f(position.x + 14, position.y - 15)));
 }
 

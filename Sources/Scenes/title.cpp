@@ -2166,29 +2166,8 @@ static bool InitAssets()
                                   0,
                                   &musicChannel);
 
-            // If the music isn't already loaded :
             if (result != FMOD_OK)
-            {
-                result = FMOD_System_CreateStream(soundSystem,
-                                "Data/Sfx/Musics/TitleScreen.mp3",
-                                FMOD_LOOP_NORMAL |
-                                FMOD_SOFTWARE |
-                                FMOD_2D,
-                                NULL,
-                                &music);
-
-                if (result != FMOD_OK)
-                    return false;
-
-                result = FMOD_System_PlaySound(soundSystem,
-                                  static_cast<FMOD_CHANNELINDEX>(20),
-                                  music,
-                                  0,
-                                  &musicChannel);
-
-                if (result != FMOD_OK)
-                    return false;
-            }
+                allright = false;
         }
     }
 

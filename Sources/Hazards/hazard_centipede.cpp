@@ -23,7 +23,7 @@ Hazard_Centipede::Hazard_Centipede(Vector2f* nodes, short size, list<Collider*>:
 {
     m_array.setPrimitiveType(Quads);
 
-    for (register unsigned char i = 5; i >= 0; i--)
+    for (register char i = 5; i >= 0; i--)
     {
         collision--;
         m_collisions[i] = *collision;
