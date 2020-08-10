@@ -50,14 +50,14 @@
 			<Add option="-std=c++11" />
 			<Add option='-D_WIN32_IE=&quot;0x0510&quot;' />
 			<Add option="-D__CYGWIN32__" />
-			<Add directory="C:/Mingw32/Libraries/Graphics/SFML 2.5.1/include" />
-			<Add directory="C:/Mingw32/Libraries/Audio/FMOD/include" />
+			<Add directory="D:/Libraries/Graphics/SFML 2.5.1/include" />
+			<Add directory="D:/Libraries/Audio/FMOD/include" />
 		</Compiler>
 		<Linker>
 			<Add library="comdlg32" />
 			<Add library="shlwapi" />
-			<Add directory="C:/Mingw32/Libraries/Graphics/SFML 2.5.1/lib" />
-			<Add directory="C:/Mingw32/Libraries/Audio/FMOD/lib" />
+			<Add directory="D:/Libraries/Graphics/SFML 2.5.1/lib" />
+			<Add directory="D:/Libraries/Audio/FMOD/lib" />
 		</Linker>
 		<Unit filename="Headers/Bonuses/bonus_beetblock.hpp" />
 		<Unit filename="Headers/Bonuses/bonus_beetblockinv.hpp" />
@@ -511,9 +511,6 @@
 		<Unit filename="Sources/Sprites/walkable.cpp" />
 		<Unit filename="Sources/main.cpp" />
 		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
 			<lib_finder disable_auto="1" />
 		</Extensions>
 	</Project>
