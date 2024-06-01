@@ -7,7 +7,7 @@
 extern "C"
 {
     #include <shlwapi.h>
-    #include <FMODEx/fmod.h>
+    #include <fmod.h>
 }
 
 #include <string>

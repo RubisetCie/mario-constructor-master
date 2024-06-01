@@ -7,7 +7,7 @@
 
 extern "C"
 {
-    #include <FMODEx/fmod.h>
+    #include <fmod.h>
 }
 
 #ifdef DEBUGMODE

@@ -12,7 +12,7 @@
 
 extern "C"
 {
-    #include <FMODEx/fmod.h>
+    #include <fmod.h>
     #include <windows.h>
     #include <shlwapi.h>
     #include <shlobj.h>

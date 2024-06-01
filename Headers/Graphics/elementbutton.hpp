@@ -9,7 +9,7 @@
 
 extern "C"
 {
-    #include <FMODEx/fmod.h>
+    #include <fmod.h>
 }
 
 class ElementButton : public sf::Drawable

@@ -10,7 +10,7 @@
 
 extern "C"
 {
-    #include <FMODEx/fmod.h>
+    #include <fmod.h>
 }
 
 class Button : public sf::Drawable
