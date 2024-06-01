@@ -20,8 +20,8 @@ VerticalPlatform_Entity::VerticalPlatform_Entity(Texture* texture, Texture* spee
     {
         extern bool sectionb;
 
-        extern Vector2i roomScale;
-        extern Vector2i roomScaleb;
+        extern Vector2u roomScale;
+        extern Vector2u roomScaleb;
 
         Vector2f regulatorPos(m_sprites[0].getPosition());
 

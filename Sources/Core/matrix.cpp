@@ -7,6 +7,7 @@
 #ifdef DEBUGMODE
 #include <iostream>
 #endif
+#include <cstddef>
 #include <vector>
 
 using namespace std;

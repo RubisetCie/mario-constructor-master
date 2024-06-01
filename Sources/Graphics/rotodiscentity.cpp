@@ -34,8 +34,8 @@ Rotodisc_Entity::Rotodisc_Entity(Texture* texture, Texture* discText, Texture* e
     {
         extern bool sectionb;
 
-        extern Vector2i roomScale;
-        extern Vector2i roomScaleb;
+        extern Vector2u roomScale;
+        extern Vector2u roomScaleb;
 
         Vector2f regulatorPos(m_sprites[2].getPosition());
 
