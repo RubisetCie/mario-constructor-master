@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Option declaration
 option(BUILD_EDITOR "Whether to build the main level editor" ON)
 option(BUILD_PUBLISHER "Whether to build the game executable (to be shared without the editor)" ON)
+option(BUILD_TOOLS "Whether to build the tools (level converter & resources remover)" ON)
 
 # Check if the build type is defined
 if(NOT CMAKE_BUILD_TYPE)
@@ -24,10 +25,12 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUGMODE")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-exceptions -fdelete-null-pointer-checks -fomit-frame-pointer")
 
 # Find packages
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Packages")
+if(BUILD_EDITOR OR BUILD_PUBLISHER)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Packages")
 
-find_package(SFML 2.4 COMPONENTS graphics window system REQUIRED)
-find_package(FMODEx REQUIRED)
+    find_package(SFML 2.4 COMPONENTS graphics window system REQUIRED)
+    find_package(FMODEx REQUIRED)
+endif()
 
 # Add the executables
 if(BUILD_EDITOR)
@@ -264,6 +267,7 @@ if(BUILD_EDITOR)
         target_link_libraries(Editor comdlg32 shlwapi)
     else()
         add_executable(Editor ${EDITOR_SRC})
+        target_compile_definitions(Editor PRIVATE LINUX)
     endif()
 
     # Set target properties
@@ -477,15 +481,16 @@ if(BUILD_PUBLISHER)
     )
 
     if(WIN32)
-		list(APPEND EDITOR_SRC Resource/gresources.rc)
+		list(APPEND GAME_SRC Resource/gresources.rc)
         add_executable(Game WIN32 ${GAME_SRC})
-        target_compile_definitions(Game PUBLIC PUBLISHER)
         target_link_libraries(Game comdlg32 shlwapi)
     else()
         add_executable(Game ${GAME_SRC})
+        target_compile_definitions(Game PRIVATE LINUX)
     endif()
 
     # Link to packages
+    target_compile_definitions(Game PRIVATE PUBLISHER)
     target_include_directories(Game SYSTEM PRIVATE "${SFML_INCLUDE_DIR}" "${FMODEX_INCLUDE_DIR}")
     target_link_libraries(Game "${SFML_LIBRARIES}" "${FMODEX_LIBRARY}")
 
@@ -588,4 +593,17 @@ if(BUILD_PUBLISHER)
         "Data/Gfx/Worldmap"
         DESTINATION "Publisher/Data/Gfx")
     install(FILES "game.ini" "contextParams.ini" "inputParams.ini" DESTINATION "Publisher")
+endif()
+
+if(BUILD_TOOLS)
+    add_executable(ToolConverter "Sources/levelconverter.cpp")
+    add_executable(ToolRemover "Sources/resourcesremover.cpp")
+
+    # Set target properties
+    set_target_properties(ToolConverter PROPERTIES OUTPUT_NAME "LevelConverter")
+    set_target_properties(ToolRemover PROPERTIES OUTPUT_NAME "ResourcesRemover")
+
+    # Installation definitions
+    install(TARGETS ToolConverter DESTINATION "Tools")
+    install(TARGETS ToolRemover DESTINATION "Tools")
 endif()
