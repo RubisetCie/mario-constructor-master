@@ -12,6 +12,8 @@ main(int argc, char* argv[])
     {
         string filename(argv[1]);
 
+        atexit(closefiles);
+
         // File readance :
         oldfile.open(filename.c_str(), ios::binary);
 
