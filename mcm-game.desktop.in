@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Mario Constructor Game
+Comment=An executable for games created with Mario Constructor Master
+Exec=@CMAKE_INSTALL_PREFIX@/Publisher/MCM-Game %f
+Icon=@CMAKE_INSTALL_PREFIX@/Publisher/mcm-game.png
+Path=@CMAKE_INSTALL_PREFIX@/Publisher
+Type=Application
+StartupNotify=true
+Categories=Game

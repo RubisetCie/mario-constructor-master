@@ -8,7 +8,9 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
+    #endif
 }
 
 #ifdef DEBUGMODE
@@ -627,8 +629,8 @@ void Mark_Mario::secureUpdate()
                 {
                     m_movedistance.y = 0;
 
-                    if ((rand() % 2) == 0)
-                        m_movedistance.x = 0;
+                    /*if ((rand() % 2) == 0)
+                        m_movedistance.x = 0;*/
                 }
                 else
                     m_movedistance.y = 0.5;

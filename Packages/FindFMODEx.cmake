@@ -64,7 +64,6 @@ set(FMODEX_LIBRARY_DIR "${FMODEX_LIBRARY_DIR}" CACHE PATH "The path to FMOD Ex's
 
 mark_as_advanced(FMODEX_INCLUDE_DIR)
 mark_as_advanced(FMODEX_LIBRARY_DIR)
-mark_as_advanced(FMODEX_LIBRARY)
 mark_as_advanced(FMODEX_32_LIBRARY)
 mark_as_advanced(FMODEX_64_LIBRARY)
 

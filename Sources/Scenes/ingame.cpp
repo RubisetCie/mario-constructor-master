@@ -6,9 +6,17 @@
 
 extern "C"
 {
+    #ifndef LINUX
     #include <shlwapi.h>
+    #else
+    #include <unistd.h>
+    #endif
     #include <fmod.h>
 }
+
+#ifdef LINUX
+#include <QMessageBox>
+#endif
 
 #include <string>
 #include <fstream>
@@ -456,8 +464,12 @@ bool Scene::Ingame()
 
     if (!InitAssets())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to initialize the assets on the Game !", "Assets Error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Assets Error !"), QStringLiteral("Failed to initialize the assets on the Game !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         mainWindow->close();
 
         exitLoop = true;
@@ -490,11 +502,19 @@ bool Scene::Ingame()
                         switch (eventSystem.key.code)
                         {
                             case Keyboard::Escape :
-
+                            {
+                                extern bool showCursor;
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 if (MessageBox(NULL, "Do you want to back to the Title Screen ?", "Back to the Title ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                                QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Back to the Title ?"), QStringLiteral("Do you want to back to the Title Screen ?"), QMessageBox::Yes | QMessageBox::No);
+                                if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                     exitToTitle = true;
-
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 break;
+                            }
                             default :
                                 if (map_completed == 1)
                                 {
@@ -882,8 +902,12 @@ bool Scene::Ingame()
 
                     if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
                     {
-                        MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                        MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
                         mainWindow->close();
 
                         return false;
@@ -1083,14 +1107,15 @@ bool Scene::Ingame()
                         goto LBL_TOLEVEL;
                     else
                     {
-                        TCHAR temp[MAX_PATH];
+                        extern char procPath[MAX_PATH];
 
                         loadingType = 4;
-
                         // Reset the current directory :
-                        GetModuleFileName(NULL, temp, MAX_PATH);
-                        PathRemoveFileSpec(temp);
-                        SetCurrentDirectory(temp);
+#ifndef LINUX
+                        SetCurrentDirectory(procPath);
+#else
+                        chdir(procPath);
+#endif
                     }
                 }
             }
@@ -1133,12 +1158,19 @@ bool Scene::Ingame()
                         switch (eventSystem.key.code)
                         {
                             case Keyboard::Escape :
-
+                            {
+                                extern bool showCursor;
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 if (MessageBox(NULL, "Do you want to back to the Title Screen ?", "Back to the Title ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                                QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Back to the Title ?"), QStringLiteral("Do you want to back to the Title Screen ?"), QMessageBox::Yes | QMessageBox::No);
+                                if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                     exitToTitle = true;
-
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 break;
-
+                            }
                             #ifdef DEBUGMODE
                             case Keyboard::F3 : mainWindow->setFramerateLimit(4); break;
                             case Keyboard::F4 : mainWindow->setFramerateLimit(60); break;
@@ -3888,10 +3920,12 @@ static bool InitAssets()
         if (!useShaders)
         {
             #ifndef PUBLISHER
-            StrCpy(trayIcon.szInfoTitle, "Shaders unavailable");
-            StrCpy(trayIcon.szInfo, "Your current Graphics Driver doesn't support Shader Model 2.0 !");
+            #ifndef LINUX
+            strcpy(trayIcon.szInfoTitle, "Shaders unavailable");
+            strcpy(trayIcon.szInfo, "Your current Graphics Driver doesn't support Shader Model 2.0 !");
 
             Shell_NotifyIcon(NIM_MODIFY, &trayIcon);
+            #endif // LINUX
             #endif // PUBLISHER
 
             renderPasses[1] = NULL;
@@ -3954,6 +3988,8 @@ static bool InitAssets()
 
 static bool Level_Load()
 {
+    extern char procPath[MAX_PATH];
+
     vector <Placeable*> listMiddle;
     vector <Placeable*> listAfter;
 
@@ -4026,12 +4062,16 @@ static bool Level_Load()
 
         if (!scenario_file.good())
         {
+#ifndef LINUX
             MessageBox(NULL, "Failed to open the Scenario file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Scenario file !"), QMessageBox::Ok);
+            messageBox.exec();
+#endif
             return false;
         }
 
         scenario_file.seekg(5, ios::beg);
-
         scenario_file.read(reinterpret_cast<char*>(&game_lives), 1);
     }
 
@@ -4044,11 +4084,22 @@ static bool Level_Load()
 
         if (!level_file.good())
         {
+#ifndef LINUX
             if (loadingType != 1)
                 MessageBox(NULL, "Failed to open the Level file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
             else
                 MessageBox(NULL, "Failed to open the Scenario file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#else
+            QMessageBox messageBox;
+            messageBox.setIcon(QMessageBox::Critical);
+            messageBox.setStandardButtons(QMessageBox::Ok);
+            messageBox.setWindowTitle(QStringLiteral("Error !"));
+            if (loadingType != 1)
+                messageBox.setText(QStringLiteral("Failed to open the Level file !"));
+            else
+                messageBox.setText(QStringLiteral("Failed to open the Scenario file !"));
+            messageBox.exec();
+#endif
             return false;
         }
     }
@@ -4082,9 +4133,10 @@ static bool Level_Load()
     }
     else if (loadingType == 2)
     {
-        TCHAR path[MAX_PATH];
-        TCHAR temp[MAX_PATH];
-        TCHAR c;
+#ifndef LINUX
+        char path[MAX_PATH];
+        char temp[MAX_PATH];
+        char c;
         register short i = 0;
 
         do
@@ -4099,7 +4151,7 @@ static bool Level_Load()
         } while (c != '\0');
 
         // Set the current directory :
-        StrCpy(temp, scenarioToLoad.c_str());
+        strcpy(temp, scenarioToLoad.c_str());
 
         PathRemoveFileSpec(temp);
         SetCurrentDirectory(temp);
@@ -4115,16 +4167,49 @@ static bool Level_Load()
         fileToLoad = path;
 
         // Reset the current directory :
-        GetModuleFileName(NULL, temp, MAX_PATH);
-        PathRemoveFileSpec(temp);
-        SetCurrentDirectory(temp);
+        SetCurrentDirectory(procPath);
+#else
+        char path[MAX_PATH];
+        char c;
+        register short i = 0;
+
+        do
+        {
+            scenario_file.read(&c, 1);
+            path[i] = c;
+
+            if (scenario_file.eof())
+                return false;
+
+            i++;
+        } while (c != '\0');
+
+        // Set the current directory :
+        chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+
+        level_file.open(path, ios::binary);
+
+        if (!level_file.good())
+        {
+            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+            messageBox.exec();
+            chdir(procPath);
+            return false;
+        }
+
+        fileToLoad = path;
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
     else
     {
-        TCHAR temp[MAX_PATH];
+#ifndef LINUX
+        char temp[MAX_PATH];
 
         // Set the current directory :
-        StrCpy(temp, scenarioToLoad.c_str());
+        strcpy(temp, scenarioToLoad.c_str());
 
         PathRemoveFileSpec(temp);
         SetCurrentDirectory(temp);
@@ -4138,9 +4223,23 @@ static bool Level_Load()
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, temp, MAX_PATH);
-        PathRemoveFileSpec(temp);
-        SetCurrentDirectory(temp);
+        SetCurrentDirectory(procPath);
+#else
+        // Set the current directory :
+        chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+
+        level_file.open(fileToLoad, ios::binary);
+
+        if (!level_file.good())
+        {
+            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+            messageBox.exec();
+            return false;
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     {
@@ -4151,21 +4250,22 @@ static bool Level_Load()
     }
 
     {
-        TCHAR filePath[MAX_PATH];
-        TCHAR getString[MAX_PATH];
+#ifndef LINUX
+        char filePath[MAX_PATH];
+        char getString[MAX_PATH];
 
         if (loadingType == 1)
             strcpy(filePath, scenarioToLoad.c_str());
         else
             strcpy(filePath, fileToLoad.c_str());
 
-        if (loadingType >= 2)
+        /*if (loadingType >= 2)
         {
             strcpy(getString, scenarioToLoad.c_str());
 
             PathRemoveFileSpec(getString);
             SetCurrentDirectory(getString);
-        }
+        }*/
 
         PathRemoveFileSpec(filePath);
         SetCurrentDirectory(filePath);
@@ -4221,9 +4321,64 @@ static bool Level_Load()
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, filePath, MAX_PATH);
-        PathRemoveFileSpec(filePath);
-        SetCurrentDirectory(filePath);
+        SetCurrentDirectory(procPath);
+#else
+        char getString[MAX_PATH];
+
+        if (loadingType == 1)
+            chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+        else
+            chdir(fileToLoad.substr(0, fileToLoad.find_last_of('/')).c_str());
+
+        for (register unsigned int i = 0; i < 5; i++)
+        {
+            level_file.read(getString, 1);
+
+            if (getString[0] != '\0')
+            {
+                level_file.seekg(-1, ios::cur);
+
+                for (register unsigned int j = 0; true; j++)
+                {
+                    level_file.read(&getString[j], 1);
+
+                    if (getString[j] == '\0')
+                        break;
+                }
+
+                switch (i)
+                {
+                    case 0 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[22]);
+
+                        break;
+                    case 1 :
+                        backgroundTxt[12] = new Texture;
+                        backgroundTxt[12]->loadFromFile(getString);
+                        backgroundTxt[12]->setRepeated(true);
+
+                        break;
+                    case 2 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[23]);
+
+                        break;
+                    case 3 :
+                        backgroundTxt[13] = new Texture;
+                        backgroundTxt[13]->loadFromFile(getString);
+                        backgroundTxt[13]->setRepeated(true);
+
+                        break;
+                    case 4 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[24]);
+
+                        break;
+                }
+            }
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     level_file.read(reinterpret_cast<char*>(&levelScale.x), 4);
@@ -4865,7 +5020,7 @@ static bool Level_Load()
     #endif // DEBUGMODE
 
     {
-        TCHAR getString[MAX_PATH];
+        char getString[MAX_PATH];
 
         level_file.read(getString, 1);
 
@@ -4895,7 +5050,7 @@ static bool Level_Load()
     }
 
     {
-        TCHAR getString[MAX_PATH];
+        char getString[MAX_PATH];
 
         level_file.read(getString, 1);
 
@@ -9595,15 +9750,23 @@ static bool World_Load()
 
     if (!scenario_file.good())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to open the World file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Error !"), QStringLiteral("Failed to open the World file !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
     scenario_file.seekg(4, ios::beg);
 
     {
-        TCHAR filePath[MAX_PATH];
-        TCHAR getString[MAX_PATH];
+        extern char procPath[MAX_PATH];
+
+#ifndef LINUX
+        char filePath[MAX_PATH];
+        char getString[MAX_PATH];
 
         strcpy(filePath, scenarioToLoad.c_str());
 
@@ -9642,9 +9805,46 @@ static bool World_Load()
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, filePath, MAX_PATH);
-        PathRemoveFileSpec(filePath);
-        SetCurrentDirectory(filePath);
+        SetCurrentDirectory(procPath);
+#else
+        char getString[MAX_PATH];
+
+        chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+
+        for (register unsigned int i = 0; i < 2; i++)
+        {
+            scenario_file.read(getString, 1);
+
+            if (getString[0] != '\0')
+            {
+                scenario_file.seekg(-1, ios::cur);
+
+                for (register unsigned int j = 0; true; j++)
+                {
+                    scenario_file.read(&getString[j], 1);
+
+                    if (getString[j] == '\0')
+                        break;
+                }
+
+                switch (i)
+                {
+                    case 0 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[28]);
+                        break;
+
+                    case 1 :
+                        worldBackTex[1] = new Texture;
+                        worldBackTex[1]->loadFromFile(getString);
+                        worldBackTex[1]->setRepeated(true);
+                        break;
+                }
+            }
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     scenario_file.read(reinterpret_cast<char*>(&mpScale.x), 4);

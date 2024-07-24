@@ -12,10 +12,18 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
     #include <shlwapi.h>
     #include <shlobj.h>
+    #else
+    #include <unistd.h>
+    #endif
 }
+
+#ifdef LINUX
+#include <QMessageBox>
+#endif
 
 #include "../../Headers/gglobals.hpp"
 
@@ -63,10 +71,13 @@ bool Scene::Title()
 
     if (!InitAssets())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to initialize the assets on the Title !", "Assets Error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Assets Error !"), QStringLiteral("Failed to initialize the assets on the Title !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         mainWindow->close();
-
         exitLoop = true;
     }
 
@@ -93,13 +104,20 @@ bool Scene::Title()
                         if (fadeCircle)
                             break;
 
+                        extern bool showCursor;
+                        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                         if (MessageBox(NULL, "Do you want to quit ?", "Quit ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                        QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Quit ?"), QStringLiteral("Do you want to quit ?"), QMessageBox::Yes | QMessageBox::No);
+                        if (messageBox.exec() == QMessageBox::Yes)
+#endif
                         {
                             exitLoop = true;
 
                             mainWindow->close();
                         }
-
+                        mainWindow->setMouseCursorVisible(showCursor);
                         break;
                     }
 
@@ -172,7 +190,12 @@ bool Scene::Title()
 
                         if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
                         {
-                            MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
 
                             mainWindow->close();
 
@@ -194,13 +217,19 @@ bool Scene::Title()
                     }
                     else if (buttonSelect[1])
                     {
+                        extern bool showCursor;
+                        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                         int userAnswer;
-
+#endif
                         FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
+#ifndef LINUX
                         userAnswer = MessageBox(NULL, "Do you want to quit ?", "Quit ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL);
-
                         if (userAnswer == IDYES)
+#else
+                        QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Quit ?"), QStringLiteral("Do you want to quit ?"), QMessageBox::Yes | QMessageBox::No);
+                        if (messageBox.exec() == QMessageBox::Yes)
+#endif
                         {
                             exitLoop = true;
 
@@ -208,6 +237,7 @@ bool Scene::Title()
 
                             break;
                         }
+                        mainWindow->setMouseCursorVisible(showCursor);
                     }
 
                     break;
@@ -545,34 +575,45 @@ static void UpdateAssets()
     }
 }
 
-bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
+bool checkLoadResources(ifstream& levelFile, const char* filename)
 {
+    extern char procPath[MAX_PATH];
+    char filePath[MAX_PATH];
+    char getString[MAX_PATH];
+    char CMLid[4];
     ifstream checkFile;
 
-    TCHAR filePath[MAX_PATH];
-    TCHAR getString[MAX_PATH];
-    TCHAR messageText[512];
-
-    char CMLid[4];
-
     strcpy(filePath, filename);
+#ifndef LINUX
+    char messageText[512];
 
     PathRemoveFileSpec(filePath);
     SetCurrentDirectory(filePath);
-
+#else
+    basename(filePath);
+    chdir(filePath);
+#endif
     levelFile.read(CMLid, 4);
 
     if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'L')
     {
-        MessageBox(NULL, "Error ! This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+        MessageBox(NULL, "This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CML Level !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
     if (CMLid[3] > EDITOR_VERSION)
     {
-        MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+        MessageBox(NULL, "This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This Level was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
@@ -596,10 +637,13 @@ bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
 
             if (!checkFile.good())
             {
-                sprintf(messageText, "Error ! The resource is not found :\n%s !", getString);
-
-                MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONQUESTION | MB_OK);
-
+#ifndef LINUX
+                sprintf(messageText, "The resource is not found :\n%s !", getString);
+                MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Resource not found !"), QString("The resource is not found :\n%1 !").arg(getString), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 return false;
             }
             else
@@ -608,9 +652,10 @@ bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
     }
 
     // Reset the current directory :
-    GetModuleFileName(NULL, filePath, MAX_PATH);
-    PathRemoveFileSpec(filePath);
-    SetCurrentDirectory(filePath);
-
+#ifndef LINUX
+    SetCurrentDirectory(procPath);
+#else
+    chdir(procPath);
+#endif
     return true;
 }

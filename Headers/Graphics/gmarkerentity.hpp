@@ -8,9 +8,11 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
+#include "../gglobals.hpp"
+
 typedef struct MarkerData
 {
-    TCHAR levelURL[MAX_PATH];
+    char levelURL[MAX_PATH];
 
     float x;
     float y;

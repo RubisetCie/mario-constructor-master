@@ -10,7 +10,9 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
+    #endif
 }
 
 #include <string>
@@ -27,6 +29,10 @@ extern "C"
 #define lerp(a, b, t) fma(t, b, fma(-t, a, a))
 
 #define EDITOR_VERSION 2
+
+#ifdef LINUX
+#define MAX_PATH 1024
+#endif
 
 #define TILE_PIPE_GREEN_VTOP        IntRect(576, 0, 64, 32)
 #define TILE_PIPE_GREEN_VMID        IntRect(576, 32, 64, 32)
@@ -109,10 +115,12 @@ extern FMOD_SYSTEM* soundSystem;
 extern FMOD_SOUND* music;
 extern FMOD_CHANNEL* musicChannel;
 
+#ifndef LINUX
 extern HINSTANCE* mainInstance;
 extern NOTIFYICONDATA trayIcon;
 
 extern COLORREF colorArray[16];
+#endif
 
 extern Scenes targetScene;
 
@@ -316,6 +324,6 @@ void addPoints(unsigned int points);
 void addLife();
 void subLife();
 
-bool checkLoadResources(std::ifstream& levelFile, LPCSTR filename);
+bool checkLoadResources(std::ifstream& levelFile, const char* filename);
 
 #endif

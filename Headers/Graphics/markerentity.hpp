@@ -8,9 +8,11 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
+#include "../globals.hpp"
+
 typedef struct MarkerData
 {
-    TCHAR levelURL[MAX_PATH];
+    char levelURL[MAX_PATH];
 
     float x;
     float y;
@@ -35,7 +37,7 @@ class Marker_Entity : public sf::Drawable
         void save(MarkerData& markerData);
         void load(MarkerData& markerData);
 
-        TCHAR m_levelurl[MAX_PATH];
+        char m_levelurl[MAX_PATH];
 
         bool m_islevel;
 

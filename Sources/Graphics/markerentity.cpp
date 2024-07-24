@@ -8,16 +8,25 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <shlwapi.h>
     #include <shlobj.h>
+    #else
+    #include <unistd.h>
+    #endif
 }
+
+#ifdef LINUX
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QDir>
+#endif
 
 #ifdef DEBUGMODE
 #include <iostream>
 #endif
 
 #include "../../Headers/Graphics/markerentity.hpp"
-#include "../../Headers/globals.hpp"
 
 using namespace sf;
 using namespace std;
@@ -36,13 +45,18 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
 
     if (isLevel)
     {
+        extern char procPath[MAX_PATH];
+        extern bool showCursor;
+
+        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
         OPENFILENAME dialogParms;
         TCHAR personalPath[MAX_PATH];
         TCHAR filename[MAX_PATH] = "";
 
         SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-        StrCat(personalPath, "/Mario Constructor Master/Levels");
+        strcat(personalPath, "/Mario Constructor Master/Levels");
 
         ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -76,19 +90,15 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
 
                 if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'L')
                 {
-                    MessageBox(NULL, "Error ! This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+                    MessageBox(NULL, "This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
                     levelFile.close();
-
                     goto LBL_EXITCONDITION;
                 }
 
                 if (CMLid[3] != EDITOR_VERSION)
                 {
-                    MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+                    MessageBox(NULL, "This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
                     levelFile.close();
-
                     goto LBL_EXITCONDITION;
                 }
             }
@@ -126,12 +136,9 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
                         {
                             TCHAR messageText[512];
 
-                            sprintf(messageText, "Error ! The resource is not found :\n%s !", getString);
-
+                            sprintf(messageText, "The resource is not found :\n%s !", getString);
                             MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
-
                             levelFile.close();
-
                             goto LBL_EXITCONDITION;
                         }
                         else
@@ -140,9 +147,7 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
                 }
 
                 // Reset the current directory :
-                GetModuleFileName(NULL, filePath, MAX_PATH);
-                PathRemoveFileSpec(filePath);
-                SetCurrentDirectory(filePath);
+                SetCurrentDirectory(procPath);
             }
 
             levelFile.close();
@@ -160,13 +165,110 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
                     strcpy(m_levelurl, relativePath);
                 else
                 {
-                    MessageBox(NULL, "Error ! Failed to create Relative Path !\nYou must copy the file manually then re-link it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+                    MessageBox(NULL, "Failed to create Relative Path !\nYou must copy the file manually then re-link it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
                     strcpy(m_levelurl, filename);
                 }
             }
             else
                 strcpy(m_levelurl, filename);
+#else
+        const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Choose a level to link :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+
+        if (!filename.isEmpty())
+        {
+            ifstream levelFile;
+
+            levelFile.open(filename.toStdString(), ios::binary);
+
+            if (!levelFile.good())
+            {
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+                messageBox.exec();
+                goto LBL_EXITCONDITION;
+            }
+
+            {
+                char CMLid[4];
+
+                levelFile.read(CMLid, 4);
+
+                if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'L')
+                {
+                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CML Level !"), QMessageBox::Ok);
+                    messageBox.exec();
+                    levelFile.close();
+                    goto LBL_EXITCONDITION;
+                }
+
+                if (CMLid[3] != EDITOR_VERSION)
+                {
+                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This Level was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+                    messageBox.exec();
+                    levelFile.close();
+                    goto LBL_EXITCONDITION;
+                }
+            }
+
+            {
+                char getString[MAX_PATH];
+
+                chdir(filename.left(filename.lastIndexOf(QChar('/'))).toLocal8Bit().constData());
+
+                for (register unsigned int i = 0; i < 5; i++)
+                {
+                    ifstream checkFile;
+
+                    levelFile.read(getString, 1);
+
+                    if (getString[0] != '\0')
+                    {
+                        levelFile.seekg(-1, ios::cur);
+
+                        for (register unsigned int j = 0; true; j++)
+                        {
+                            levelFile.read(&getString[j], 1);
+
+                            if (getString[j] == '\0')
+                                break;
+                        }
+
+                        checkFile.open(getString);
+
+                        if (!checkFile.good())
+                        {
+                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QString("The resource is not found :\n%1 !").arg(getString), QMessageBox::Ok);
+                            messageBox.exec();
+                            chdir(procPath);
+                            levelFile.close();
+                            goto LBL_EXITCONDITION;
+                        }
+                        else
+                            checkFile.close();
+                    }
+                }
+
+                // Reset the current directory :
+                chdir(procPath);
+            }
+
+            levelFile.close();
+
+            if (!worldDir.empty())
+            {
+                QDir dirPath(worldDir.c_str());
+                QString relativePath(dirPath.relativeFilePath(filename));
+
+                if (relativePath.isEmpty())
+                {
+                    QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !\nYou must copy the file manually then re-link it !"), QMessageBox::Ok);
+                    messageBox.exec();
+                    strcpy(m_levelurl, filename.toLocal8Bit().constData());
+                }
+                strcpy(m_levelurl, relativePath.toLocal8Bit().constData());
+            }
+            else
+                strcpy(m_levelurl, filename.toLocal8Bit().constData());
+#endif
 
             m_sprite.setTextureRect(IntRect(0, 21, 25, 21));
 
@@ -176,6 +278,7 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
             cout << m_levelurl << endl;
             #endif
         }
+        mainWindow->setMouseCursorVisible(showCursor);
     }
 
     LBL_EXITCONDITION :
@@ -218,13 +321,18 @@ void Marker_Entity::setIsLevel(bool isLevel)
 
     if (isLevel)
     {
+        extern char procPath[MAX_PATH];
+        extern bool showCursor;
+
+        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
         OPENFILENAME dialogParms;
         TCHAR personalPath[MAX_PATH];
         TCHAR filename[MAX_PATH] = "";
 
         SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-        StrCat(personalPath, "/Mario Constructor Master/Levels");
+        strcat(personalPath, "/Mario Constructor Master/Levels");
 
         ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -258,19 +366,15 @@ void Marker_Entity::setIsLevel(bool isLevel)
 
                 if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'L')
                 {
-                    MessageBox(NULL, "Error ! This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+                    MessageBox(NULL, "This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
                     levelFile.close();
-
                     return;
                 }
 
                 if (CMLid[3] != EDITOR_VERSION)
                 {
-                    MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+                    MessageBox(NULL, "This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
                     levelFile.close();
-
                     return;
                 }
             }
@@ -308,12 +412,9 @@ void Marker_Entity::setIsLevel(bool isLevel)
                         {
                             TCHAR messageText[512];
 
-                            sprintf(messageText, "Error ! The resource is not found :\n%s !", getString);
-
+                            sprintf(messageText, "The resource is not found :\n%s !", getString);
                             MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
-
                             levelFile.close();
-
                             return;
                         }
                         else
@@ -322,9 +423,7 @@ void Marker_Entity::setIsLevel(bool isLevel)
                 }
 
                 // Reset the current directory :
-                GetModuleFileName(NULL, filePath, MAX_PATH);
-                PathRemoveFileSpec(filePath);
-                SetCurrentDirectory(filePath);
+                SetCurrentDirectory(procPath);
             }
 
             levelFile.close();
@@ -342,13 +441,110 @@ void Marker_Entity::setIsLevel(bool isLevel)
                     strcpy(m_levelurl, relativePath);
                 else
                 {
-                    MessageBox(NULL, "Error ! Failed to create Relative Path !\nYou must copy the file manually then re-link it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+                    MessageBox(NULL, "Failed to create Relative Path !\nYou must copy the file manually then re-link it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
                     strcpy(m_levelurl, filename);
                 }
             }
             else
                 strcpy(m_levelurl, filename);
+#else
+        const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Choose a level to link :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+
+        if (!filename.isEmpty())
+        {
+            ifstream levelFile;
+
+            levelFile.open(filename.toStdString(), ios::binary);
+
+            if (!levelFile.good())
+            {
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+                messageBox.exec();
+                return;
+            }
+
+            {
+                char CMLid[4];
+
+                levelFile.read(CMLid, 4);
+
+                if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'L')
+                {
+                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CML Level !"), QMessageBox::Ok);
+                    messageBox.exec();
+                    levelFile.close();
+                    return;
+                }
+
+                if (CMLid[3] != EDITOR_VERSION)
+                {
+                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This Level was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+                    messageBox.exec();
+                    levelFile.close();
+                    return;
+                }
+            }
+
+            {
+                char getString[MAX_PATH];
+
+                chdir(filename.left(filename.lastIndexOf(QChar('/'))).toLocal8Bit().constData());
+
+                for (register unsigned int i = 0; i < 5; i++)
+                {
+                    ifstream checkFile;
+
+                    levelFile.read(getString, 1);
+
+                    if (getString[0] != '\0')
+                    {
+                        levelFile.seekg(-1, ios::cur);
+
+                        for (register unsigned int j = 0; true; j++)
+                        {
+                            levelFile.read(&getString[j], 1);
+
+                            if (getString[j] == '\0')
+                                break;
+                        }
+
+                        checkFile.open(getString);
+
+                        if (!checkFile.good())
+                        {
+                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QString("The resource is not found :\n%1 !").arg(getString), QMessageBox::Ok);
+                            messageBox.exec();
+                            chdir(procPath);
+                            levelFile.close();
+                            return;
+                        }
+                        else
+                            checkFile.close();
+                    }
+                }
+
+                // Reset the current directory :
+                chdir(procPath);
+            }
+
+            levelFile.close();
+
+            if (!worldDir.empty())
+            {
+                QDir dirPath(worldDir.c_str());
+                QString relativePath(dirPath.relativeFilePath(filename));
+
+                if (relativePath.isEmpty())
+                {
+                    QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !\nYou must copy the file manually then re-link it !"), QMessageBox::Ok);
+                    messageBox.exec();
+                    strcpy(m_levelurl, filename.toLocal8Bit().constData());
+                }
+                strcpy(m_levelurl, relativePath.toLocal8Bit().constData());
+            }
+            else
+                strcpy(m_levelurl, filename.toLocal8Bit().constData());
+#endif
 
             m_sprite.setTextureRect(IntRect(0, 21, 25, 21));
 
@@ -358,6 +554,7 @@ void Marker_Entity::setIsLevel(bool isLevel)
             cout << m_levelurl << endl;
             #endif
         }
+        mainWindow->setMouseCursorVisible(showCursor);
     }
 }
 
@@ -412,6 +609,7 @@ void Marker_Entity::save(MarkerData& markerData)
 
     if (!worldDir.empty())
     {
+#ifndef LINUX
         TCHAR relativePath[MAX_PATH] = "";
         TCHAR dirPath[MAX_PATH];
 
@@ -421,12 +619,19 @@ void Marker_Entity::save(MarkerData& markerData)
 
         if (PathRelativePathTo(relativePath, dirPath, FILE_ATTRIBUTE_DIRECTORY, m_levelurl, FILE_ATTRIBUTE_NORMAL))
             strcpy(m_levelurl, relativePath);
+#else
+        QDir dirPath(worldDir.c_str());
+        QString relativePath(dirPath.relativeFilePath(m_levelurl));
+
+        if (!relativePath.isEmpty())
+            strcpy(m_levelurl, relativePath.toLocal8Bit().constData());
+#endif
     }
 
     if (m_islevel)
         strcpy(markerData.levelURL, m_levelurl);
     else
-        ZeroMemory(markerData.levelURL, MAX_PATH);
+        memset(markerData.levelURL, 0, MAX_PATH);
 
     markerData.x = position.x;
     markerData.y = position.y;

@@ -12,10 +12,20 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
     #include <shlwapi.h>
     #include <shlobj.h>
+    #else
+    #include <unistd.h>
+    #endif
 }
+
+#ifdef LINUX
+#include <QInputDialog>
+#include <QFileDialog>
+#include <QMessageBox>
+#endif
 
 #include "../../Headers/globals.hpp"
 #include "../../Headers/Graphics/emitter.hpp"
@@ -34,8 +44,10 @@ static inline void LoadTilemapSnow();
 static inline void LoadBackgrounds();
 static bool RewriteParameters();
 
+#ifndef LINUX
 LRESULT CALLBACK dialogNumLevels(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK dialogNumLifes(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+#endif
 
 VertexArray* tileMap;
 VertexArray* gradient[4];
@@ -110,10 +122,13 @@ bool Scene::Title()
 
     if (!InitAssets())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to initialize the assets on the Title !", "Assets Error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Assets Error !"), QStringLiteral("Failed to initialize the assets on the Title !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         mainWindow->close();
-
         exitLoop = true;
     }
 
@@ -141,13 +156,20 @@ bool Scene::Title()
                         if (fadeCircle)
                             break;
 
+                        extern bool showCursor;
+                        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                         if (MessageBox(NULL, "Do you want to quit ?", "Quit ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                        QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Quit ?"), QStringLiteral("Do you want to quit ?"), QMessageBox::Yes | QMessageBox::No);
+                        if (messageBox.exec() == QMessageBox::Yes)
+#endif
                         {
                             exitLoop = true;
 
                             mainWindow->close();
                         }
-
+                        mainWindow->setMouseCursorVisible(showCursor);
                         break;
                     }
 
@@ -493,13 +515,18 @@ bool Scene::Title()
                             }
                             else if (buttonSelect[3])
                             {
+                                char filename[MAX_PATH] = "";
+                                extern bool showCursor;
+
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
-                                TCHAR filename[MAX_PATH] = "";
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+                                strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -514,16 +541,27 @@ bool Scene::Title()
                                 dialogParms.lpstrFilter = "Constructor Master Levels (.cml)\0*.cml\0";
                                 dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
-                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
                                 if (GetOpenFileName(&dialogParms))
                                 {
+#else
+                                const QString fn(QFileDialog::getOpenFileName(NULL, QStringLiteral("Choose the Level to play :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+                                if (!fn.isEmpty())
+                                {
+                                    strcpy(filename, fn.toLocal8Bit().constData());
+#endif
                                     ifstream levelFile;
 
                                     levelFile.open(filename, ios::binary);
 
                                     if (!levelFile.good())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to open the Level file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                     else
                                     {
                                         if (checkLoadResources(levelFile, filename))
@@ -540,8 +578,12 @@ bool Scene::Title()
 
                                             if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
                                             {
-                                                MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                                                MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+                                                messageBox.exec();
+#endif
                                                 mainWindow->close();
 
                                                 return false;
@@ -562,7 +604,7 @@ bool Scene::Title()
                                         levelFile.close();
                                     }
                                 }
-
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 buttonSelect[3] = false;
                             }
                             else if (buttonSelect[4])
@@ -576,20 +618,21 @@ bool Scene::Title()
                             }
                             else if (buttonSelect[5])
                             {
-                                int userAnswer;
-
+                                extern bool showCursor;
                                 FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
-                                userAnswer = MessageBox(NULL, "Do you want to quit ?", "Quit ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL);
-
-                                if (userAnswer == IDYES)
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
+                                if (MessageBox(NULL, "Do you want to quit ?", "Quit ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                                QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Quit ?"), QStringLiteral("Do you want to quit ?"), QMessageBox::Yes | QMessageBox::No);
+                                if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                 {
                                     exitLoop = true;
-
                                     mainWindow->close();
-
                                     break;
                                 }
+                                mainWindow->setMouseCursorVisible(showCursor);
                             }
 
                             break;
@@ -609,13 +652,17 @@ bool Scene::Title()
                             }
                             else if (buttonSelect[1])
                             {
+                                char filename[MAX_PATH] = "";
+                                extern bool showCursor;
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
-                                TCHAR filename[MAX_PATH] = "";
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+                                strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -630,16 +677,27 @@ bool Scene::Title()
                                 dialogParms.lpstrFilter = "Constructor Master Levels (.cml)\0*.cml\0";
                                 dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
-                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
                                 if (GetOpenFileName(&dialogParms))
                                 {
+#else
+                                const QString fn(QFileDialog::getOpenFileName(NULL, QStringLiteral("Choose the Level to edit :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+                                if (!fn.isEmpty())
+                                {
+                                    strcpy(filename, fn.toLocal8Bit().constData());
+#endif
                                     ifstream levelFile;
 
                                     levelFile.open(filename, ios::binary);
 
                                     if (!levelFile.good())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to open the Level file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                     else
                                     {
                                         if (checkLoadResources(levelFile, filename))
@@ -653,7 +711,7 @@ bool Scene::Title()
                                         levelFile.close();
                                     }
                                 }
-
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 buttonSelect[1] = false;
                             }
                             else if (buttonSelect[7])
@@ -672,13 +730,17 @@ bool Scene::Title()
 
                             if (buttonSelect[0])
                             {
+                                extern bool showCursor;
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
                                 TCHAR filegrab[MAX_PATH] = "";
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                StrCat(personalPath, "\\Mario Constructor Master\\Scenarios");
+                                strcat(personalPath, "\\Mario Constructor Master\\Scenarios");
 
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -693,17 +755,21 @@ bool Scene::Title()
                                 dialogParms.lpstrFilter = "Constructor Master Scenarios (.cms)\0*.cms\0";
                                 dialogParms.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
 
-                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
                                 if (GetSaveFileName(&dialogParms))
+#else
+                                QString filegrab(QFileDialog::getSaveFileName(NULL, QStringLiteral("Choose the emplacement for the Scenario :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Scenarios"), QStringLiteral("Constructor Master Scenarios (.cms)")));
+                                if (!filegrab.isEmpty())
+#endif
                                 {
                                     levels = 255;
                                     lifes = 255;
 
+#ifndef LINUX
                                     PathRenameExtension(filegrab, ".cms");
-
                                     ofstream scenario(filegrab, ios::binary);
-
+#else
+                                    ofstream scenario(filegrab.toStdString(), ios::binary);
+#endif
                                     if (scenario.good())
                                     {
                                         char CMLid[5];
@@ -715,9 +781,8 @@ bool Scene::Title()
                                         CMLid[4] = 1;
 
                                         scenario.write(CMLid, 5);
-
+#ifndef LINUX
                                         DialogBox(*mainInstance, MAKEINTRESOURCE(35), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogNumLevels));
-
                                         if (levels != 255)
                                         {
                                             char num[32];
@@ -730,7 +795,7 @@ bool Scene::Title()
 
                                             SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                            StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+                                            strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
                                             ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -778,11 +843,62 @@ bool Scene::Title()
                                                                     scenario << relativePath;
                                                                 else
                                                                 {
-                                                                    MessageBox(NULL, "Error ! Failed to create Relative Path !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+                                                                    MessageBox(NULL, "Failed to create Relative Path !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
                                                                     level.close();
                                                                     break;
                                                                 }
+#else
+                                        bool ok;
+                                        int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Levels you want to include in your Scenario :"),
+                                            2, 2, 32, 1, &ok));
 
+                                        if (ok)
+                                        {
+                                            char dirPath[MAX_PATH];
+                                            ifstream level;
+
+                                            levels = max(min(value, 32), 2);
+
+                                            strcpy(dirPath, filegrab.left(filegrab.lastIndexOf(QChar('/'))).toLocal8Bit().constData());
+
+                                            value = QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Lives you want in your Scenario :"),
+                                                4, 0, 99, 1, &ok);
+
+                                            if (ok)
+                                            {
+                                                lifes = max(min(value, 99), 0);
+                                                scenario.write(reinterpret_cast<char*>(&lifes), 1);
+
+                                                for (register unsigned char i = 0; i < levels; i++)
+                                                {
+                                                    filegrab = QFileDialog::getOpenFileName(NULL, QString("Select the level num. %1 :").arg(i+1), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)"));
+                                                    if (!filegrab.isEmpty())
+                                                    {
+                                                        level.open(filegrab.toStdString(), ios::binary);
+
+                                                        if (!level.good())
+                                                        {
+                                                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+                                                            messageBox.exec();
+                                                            break;
+                                                        }
+                                                        else
+                                                        {
+                                                            if (checkLoadResources(level, filegrab.toLocal8Bit().constData()))
+                                                            {
+                                                                QDir dirPth(dirPath);
+                                                                QString relativePath(dirPth.relativeFilePath(filegrab));
+
+                                                                if (relativePath.isEmpty())
+                                                                    scenario << relativePath.toStdString();
+                                                                else
+                                                                {
+                                                                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !"), QMessageBox::Ok);
+                                                                    messageBox.exec();
+                                                                    level.close();
+                                                                    break;
+                                                                }
+#endif
                                                                 scenario.write("", 1);
                                                             }
                                                         }
@@ -800,18 +916,22 @@ bool Scene::Title()
 
                                     scenario.close();
                                 }
-
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 buttonSelect[0] = false;
                             }
                             else if (buttonSelect[1])
                             {
+                                extern bool showCursor;
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
                                 TCHAR filegrab[MAX_PATH] = "";
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                StrCat(personalPath, "\\Mario Constructor Master\\Scenarios");
+                                strcat(personalPath, "\\Mario Constructor Master\\Scenarios");
 
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -826,17 +946,21 @@ bool Scene::Title()
                                 dialogParms.lpstrFilter = "Constructor Master Scenarios (.cms)\0*.cms\0";
                                 dialogParms.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
 
-                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
                                 if (GetSaveFileName(&dialogParms))
+#else
+                                QString filegrab(QFileDialog::getSaveFileName(NULL, QStringLiteral("Choose the emplacement for the Scenario :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Scenarios"), QStringLiteral("Constructor Master Scenarios (.cms)")));
+                                if (!filegrab.isEmpty())
+#endif
                                 {
                                     levels = 255;
                                     lifes = 255;
 
+#ifndef LINUX
                                     PathRenameExtension(filegrab, ".cms");
-
                                     ofstream scenario(filegrab, ios::binary);
-
+#else
+                                    ofstream scenario(filegrab.toStdString(), ios::binary);
+#endif
                                     if (scenario.good())
                                     {
                                         char CMLid[5];
@@ -848,9 +972,8 @@ bool Scene::Title()
                                         CMLid[4] = 0;
 
                                         scenario.write(CMLid, 5);
-
+#ifndef LINUX
                                         DialogBox(*mainInstance, MAKEINTRESOURCE(35), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogNumLevels));
-
                                         if (levels != 255)
                                         {
                                             char num[32];
@@ -861,7 +984,7 @@ bool Scene::Title()
 
                                             SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                            StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+                                            strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
                                             ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -900,13 +1023,49 @@ bool Scene::Title()
                                                         else
                                                         {
                                                             if (checkLoadResources(level, filegrab))
+#else
+                                        bool ok;
+                                        int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Levels you want to include in your Scenario :"),
+                                            2, 2, 32, 1, &ok));
+
+                                        if (ok)
+                                        {
+                                            ifstream level;
+
+                                            levels = max(min(value, 32), 2);
+                                            value = QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Lives you want in your Scenario :"),
+                                                4, 0, 99, 1, &ok);
+
+                                            if (ok)
+                                            {
+                                                lifes = max(min(value, 99), 0);
+                                                scenario.write(reinterpret_cast<char*>(&lifes), 1);
+
+                                                for (register unsigned char i = 0; i < levels; i++)
+                                                {
+                                                    filegrab = QFileDialog::getOpenFileName(NULL, QString("Select the level num. %1 :").arg(i+1), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)"));
+                                                    if (!filegrab.isEmpty())
+                                                    {
+                                                        level.open(filegrab.toStdString(), ios::binary);
+
+                                                        if (!level.good())
+                                                        {
+                                                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+                                                            messageBox.exec();
+                                                            break;
+                                                        }
+                                                        else
+                                                        {
+                                                            if (checkLoadResources(level, filegrab.toLocal8Bit().constData()))
+#endif
                                                             {
                                                                 level.seekg(0, ios::beg);
+                                                                char num;
 
                                                                 while (!level.eof())
                                                                 {
-                                                                    level.read(num, 1);
-                                                                    scenario.write(num, 1);
+                                                                    level.read(&num, 1);
+                                                                    scenario.write(&num, 1);
                                                                 }
                                                             }
                                                         }
@@ -924,7 +1083,7 @@ bool Scene::Title()
 
                                     scenario.close();
                                 }
-
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 buttonSelect[1] = false;
                             }
                             else if (buttonSelect[2])
@@ -952,13 +1111,17 @@ bool Scene::Title()
 
                             if (buttonSelect[0])
                             {
+                                extern bool showCursor;
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
                                 TCHAR filename[MAX_PATH] = "";
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                StrCat(personalPath, "\\Mario Constructor Master\\Scenarios");
+                                strcat(personalPath, "\\Mario Constructor Master\\Scenarios");
 
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -973,16 +1136,26 @@ bool Scene::Title()
                                 dialogParms.lpstrFilter = "Constructor Master Scenarios (.cms)\0*.cms\0";
                                 dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
-                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
                                 if (GetOpenFileName(&dialogParms))
                                 {
                                     ifstream scenarioFile;
-
                                     scenarioFile.open(filename, ios::binary);
-
+#else
+                                const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Choose the Scenario to play :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Scenarios"), QStringLiteral("Constructor Master Scenarios (.cms)")));
+                                if (!filename.isEmpty())
+                                {
+                                    ifstream scenarioFile;
+                                    scenarioFile.open(filename.toStdString(), ios::binary);
+#endif
                                     if (!scenarioFile.good())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to open the Scenario file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Scenario file !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                     else
                                     {
                                         char CMSid[5];
@@ -992,21 +1165,33 @@ bool Scene::Title()
 
                                         if (CMSid[0] != 'C' || CMSid[1] != 'M' || CMSid[2] != 'S')
                                         {
-                                            MessageBox(NULL, "Error ! This file is not a valid CMS Scenario !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+                                            MessageBox(NULL, "This file is not a valid CMS Scenario !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CMS Scenario !"), QMessageBox::Ok);
+                                            messageBox.exec();
+#endif
                                             correct = false;
                                         }
 
                                         if (CMSid[3] != EDITOR_VERSION)
                                         {
-                                            MessageBox(NULL, "Error ! This Scenario was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+                                            MessageBox(NULL, "This Scenario was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This Scenario was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+                                            messageBox.exec();
+#endif
                                             correct = false;
                                         }
 
                                         if (correct)
                                         {
+#ifndef LINUX
                                             scenarioToLoad = filename;
+#else
+                                            scenarioToLoad = filename.toStdString();
+#endif
                                             loadingType = CMSid[4] + 1;
 
                                             #ifdef DEBUGMODE
@@ -1022,10 +1207,13 @@ bool Scene::Title()
 
                                             if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
                                             {
-                                                MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                                                MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+                                                messageBox.exec();
+#endif
                                                 mainWindow->close();
-
                                                 return false;
                                             }
 
@@ -1037,24 +1225,28 @@ bool Scene::Title()
                                             circleSpr->setOrigin(240, 240);
 
                                             FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), enterLevel, 0, NULL);
-
                                             FMOD_Channel_Stop(musicChannel);
                                         }
 
                                         scenarioFile.close();
                                     }
                                 }
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 buttonSelect[0] = false;
                             }
                             else if (buttonSelect[1])
                             {
+                                extern bool showCursor;
+                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
                                 TCHAR filename[MAX_PATH] = "";
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-                                StrCat(personalPath, "\\Mario Constructor Master\\Worlds");
+                                strcat(personalPath, "\\Mario Constructor Master\\Worlds");
 
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -1069,16 +1261,26 @@ bool Scene::Title()
                                 dialogParms.lpstrFilter = "Constructor Master Worlds (.cmw)\0*.cmw\0";
                                 dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
-                                FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), clickSound, 0, NULL);
-
                                 if (GetOpenFileName(&dialogParms))
                                 {
                                     ifstream scenarioFile;
-
                                     scenarioFile.open(filename, ios::binary);
-
+#else
+                                const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Choose the World to play :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Worlds"), QStringLiteral("Constructor Master Worlds (.cmw)")));
+                                if (!filename.isEmpty())
+                                {
+                                    ifstream scenarioFile;
+                                    scenarioFile.open(filename.toStdString(), ios::binary);
+#endif
                                     if (!scenarioFile.good())
-                                        MessageBox(NULL, "Failed to open the Scenario file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+                                    {
+#ifndef LINUX
+                                        MessageBox(NULL, "Failed to open the World file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the World file !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                     else
                                     {
                                         char CMWid[4];
@@ -1088,21 +1290,33 @@ bool Scene::Title()
 
                                         if (CMWid[0] != 'C' || CMWid[1] != 'M' || CMWid[2] != 'W')
                                         {
-                                            MessageBox(NULL, "Error ! This file is not a valid CMW World !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+                                            MessageBox(NULL, "This file is not a valid CMW World !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CMW World !"), QMessageBox::Ok);
+                                            messageBox.exec();
+#endif
                                             correct = false;
                                         }
 
                                         if (CMWid[3] != EDITOR_VERSION)
                                         {
-                                            MessageBox(NULL, "Error ! This World was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+                                            MessageBox(NULL, "This World was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+                                            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This World was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+                                            messageBox.exec();
+#endif
                                             correct = false;
                                         }
 
                                         if (correct)
                                         {
+#ifndef LINUX
                                             scenarioToLoad = filename;
+#else
+                                            scenarioToLoad = filename.toStdString();
+#endif
                                             loadingType = 4;
 
                                             menuBlock = true;
@@ -1114,10 +1328,13 @@ bool Scene::Title()
 
                                             if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
                                             {
-                                                MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                                                MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+                                                messageBox.exec();
+#endif
                                                 mainWindow->close();
-
                                                 return false;
                                             }
 
@@ -1136,6 +1353,7 @@ bool Scene::Title()
                                         scenarioFile.close();
                                     }
                                 }
+                                mainWindow->setMouseCursorVisible(showCursor);
                                 buttonSelect[1] = false;
                             }
                             else if (buttonSelect[7])
@@ -1166,7 +1384,14 @@ bool Scene::Title()
                                 wpos = Vector2f(0, 0);
 
                                 if (!RewriteParameters())
+                                {
+#ifndef LINUX
                                     MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                    QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                    messageBox.exec();
+#endif
+                                }
                             }
                             else if (buttonSelect[1])
                             {
@@ -1182,7 +1407,14 @@ bool Scene::Title()
                                 wpos = Vector2f(0, 0);
 
                                 if (!RewriteParameters())
+                                {
+#ifndef LINUX
                                     MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                    QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                    messageBox.exec();
+#endif
+                                }
                             }
                             else if (buttonSelect[2])
                             {
@@ -1198,7 +1430,14 @@ bool Scene::Title()
                                 wpos = Vector2f(0, 0);
 
                                 if (!RewriteParameters())
+                                {
+#ifndef LINUX
                                     MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                    QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                    messageBox.exec();
+#endif
+                                }
                             }
                             else if (buttonSelect[3])
                             {
@@ -1211,7 +1450,14 @@ bool Scene::Title()
                                     editorMusic = true;
 
                                     if (!RewriteParameters())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                 }
                             }
                             else if (buttonSelect[4])
@@ -1225,7 +1471,14 @@ bool Scene::Title()
                                     editorMusic = false;
 
                                     if (!RewriteParameters())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                 }
                             }
                             else if (buttonSelect[8])
@@ -1239,7 +1492,14 @@ bool Scene::Title()
                                     editorMouseScrolling = true;
 
                                     if (!RewriteParameters())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                 }
                             }
                             else if (buttonSelect[9])
@@ -1253,7 +1513,14 @@ bool Scene::Title()
                                     editorMouseScrolling = false;
 
                                     if (!RewriteParameters())
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "Failed to save the parameters into the file :\n\"Parms.dat\" !", "File error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("File error !"), QStringLiteral("Failed to save the parameters into the file :\n\"Parms.dat\" !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
                                 }
                             }
                             else if (buttonSelect[7])
@@ -2689,6 +2956,7 @@ static inline void LoadBackgrounds()
     (*gradient[3])[3].color = Color(211, 231, 213);
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogNumLevels(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -2760,6 +3028,7 @@ LRESULT CALLBACK dialogNumLifes(HWND windowHandle, UINT message, WPARAM wParam, 
 
     return FALSE;
 }
+#endif
 
 static bool RewriteParameters()
 {
@@ -2781,34 +3050,45 @@ static bool RewriteParameters()
     return true;
 }
 
-bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
+bool checkLoadResources(ifstream& levelFile, const char* filename)
 {
+    extern char procPath[MAX_PATH];
+    char filePath[MAX_PATH];
+    char getString[MAX_PATH];
+    char CMLid[4];
     ifstream checkFile;
 
-    TCHAR filePath[MAX_PATH];
-    TCHAR getString[MAX_PATH];
-    TCHAR messageText[512];
-
-    char CMLid[4];
-
     strcpy(filePath, filename);
+#ifndef LINUX
+    char messageText[512];
 
     PathRemoveFileSpec(filePath);
     SetCurrentDirectory(filePath);
-
+#else
+    basename(filePath);
+    chdir(filePath);
+#endif
     levelFile.read(CMLid, 4);
 
     if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'L')
     {
-        MessageBox(NULL, "Error ! This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+        MessageBox(NULL, "This file is not a valid CML Level !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CML Level !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
     if (CMLid[3] != EDITOR_VERSION)
     {
-        MessageBox(NULL, "Error ! This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+        MessageBox(NULL, "This Level was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This Level was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
@@ -2832,10 +3112,13 @@ bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
 
             if (!checkFile.good())
             {
-                sprintf(messageText, "Error ! The resource is not found :\n%s !", getString);
-
-                MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONQUESTION | MB_OK);
-
+#ifndef LINUX
+                sprintf(messageText, "The resource is not found :\n%s !", getString);
+                MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Resource not found !"), QString("The resource is not found :\n%1 !").arg(getString), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 return false;
             }
             else
@@ -2844,9 +3127,10 @@ bool checkLoadResources(ifstream& levelFile, LPCSTR filename)
     }
 
     // Reset the current directory :
-    GetModuleFileName(NULL, filePath, MAX_PATH);
-    PathRemoveFileSpec(filePath);
-    SetCurrentDirectory(filePath);
-
+#ifndef LINUX
+    SetCurrentDirectory(procPath);
+#else
+    chdir(procPath);
+#endif
     return true;
 }

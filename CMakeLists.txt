@@ -12,7 +12,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Option declaration
 option(BUILD_EDITOR "Whether to build the main level editor" ON)
 option(BUILD_PUBLISHER "Whether to build the game executable (to be shared without the editor)" ON)
-option(BUILD_TOOLS "Whether to build the tools (level converter & resources remover)" ON)
+option(BUILD_TOOLS "Whether to build the tools (level converter & resources remover)" OFF)
+
+if(NOT WIN32)
+    set(QT_MAIN_VERSION "5" CACHE STRING "Set the major Qt version to look to (5 or 6)")
+endif()
 
 # Check if the build type is defined
 if(NOT CMAKE_BUILD_TYPE)
@@ -30,6 +34,11 @@ if(BUILD_EDITOR OR BUILD_PUBLISHER)
 
     find_package(SFML 2.4 COMPONENTS graphics window system REQUIRED)
     find_package(FMODEx REQUIRED)
+
+    if(NOT WIN32)
+        find_package(Qt${QT_MAIN_VERSION} COMPONENTS Core Widgets REQUIRED)
+        add_definitions(-DQT_NO_KEYWORDS)  # Prevents 'emit' for being a keyword
+    endif()
 endif()
 
 # Add the executables
@@ -262,20 +271,31 @@ if(BUILD_EDITOR)
     )
 
     if(WIN32)
-		list(APPEND EDITOR_SRC Resource/resources.rc)
+        list(APPEND EDITOR_SRC Resource/resources.rc)
         add_executable(Editor WIN32 ${EDITOR_SRC})
         target_link_libraries(Editor comdlg32 shlwapi)
     else()
         add_executable(Editor ${EDITOR_SRC})
+        target_link_libraries(Editor Qt${QT_MAIN_VERSION}::Core Qt${QT_MAIN_VERSION}::Widgets)
         target_compile_definitions(Editor PRIVATE LINUX)
     endif()
 
     # Set target properties
-    set_target_properties(Editor PROPERTIES OUTPUT_NAME "Mario Constructor Master")
+    if(WIN32)
+        set_target_properties(Editor PROPERTIES OUTPUT_NAME "Mario Constructor Master")
+    else()
+        set_target_properties(Editor PROPERTIES OUTPUT_NAME "MCM-Editor")
+    endif()
 
     # Link to packages
     target_include_directories(Editor SYSTEM PRIVATE "${SFML_INCLUDE_DIR}" "${FMODEX_INCLUDE_DIR}")
     target_link_libraries(Editor "${SFML_LIBRARIES}" "${FMODEX_LIBRARY}")
+
+    # Configure the desktop file
+    if(NOT WIN32)
+        configure_file("mcm-editor.desktop.in" "mcm-editor.desktop" @ONLY)
+        install(FILES "${CMAKE_BINARY_DIR}/mcm-editor.desktop" "mcm-editor.png" DESTINATION "Editor")
+    endif()
 
     # Installation definitions
     install(TARGETS Editor DESTINATION "Editor")
@@ -481,18 +501,28 @@ if(BUILD_PUBLISHER)
     )
 
     if(WIN32)
-		list(APPEND GAME_SRC Resource/gresources.rc)
+        list(APPEND GAME_SRC Resource/gresources.rc)
         add_executable(Game WIN32 ${GAME_SRC})
         target_link_libraries(Game comdlg32 shlwapi)
     else()
         add_executable(Game ${GAME_SRC})
+        target_link_libraries(Game Qt${QT_MAIN_VERSION}::Core Qt${QT_MAIN_VERSION}::Widgets)
         target_compile_definitions(Game PRIVATE LINUX)
+
+        # Set target properties
+        set_target_properties(Game PROPERTIES OUTPUT_NAME "MCM-Game")
     endif()
 
     # Link to packages
     target_compile_definitions(Game PRIVATE PUBLISHER)
     target_include_directories(Game SYSTEM PRIVATE "${SFML_INCLUDE_DIR}" "${FMODEX_INCLUDE_DIR}")
     target_link_libraries(Game "${SFML_LIBRARIES}" "${FMODEX_LIBRARY}")
+
+    # Configure the desktop file
+    if(NOT WIN32)
+        configure_file("mcm-game.desktop.in" "mcm-game.desktop" @ONLY)
+        install(FILES "${CMAKE_BINARY_DIR}/mcm-game.desktop" "mcm-game.png" DESTINATION "Publisher")
+    endif()
 
     # Installation definitions
     install(TARGETS Game DESTINATION "Publisher")

@@ -8,8 +8,14 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
+    #endif
 }
+
+#ifdef LINUX
+#include <QMessageBox>
+#endif
 
 #include "../../Headers/Core/gscene.hpp"
 #include "../../Headers/gglobals.hpp"
@@ -39,10 +45,13 @@ bool Scene::Logo()
 
     if (!InitAssets())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to initialize the assets on the Logo !", "Assets Error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Assets Error !"), QStringLiteral("Failed to initialize the assets on the Logo !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         mainWindow->close();
-
         exitLoop = true;
     }
 

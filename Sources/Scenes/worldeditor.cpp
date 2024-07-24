@@ -14,10 +14,23 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
     #include <shlwapi.h>
     #include <shlobj.h>
+    #else
+    #include <unistd.h>
+    #include <libgen.h>
+    #endif
 }
+
+#ifdef LINUX
+#include <QDialogButtonBox>
+#include <QColorDialog>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QMessageBox>
+#endif
 
 #include "../../Headers/globals.hpp"
 #include "../../Headers/Core/matrix.hpp"
@@ -43,8 +56,8 @@ static void Erasement_Marker();
 
 static void mergeTextures();
 
-static void checkResources(LPCSTR worldURL, bool saveAs);
-bool checkwLoadResources(ifstream& worldFile, LPCSTR filename);
+static void checkResources(const char* worldURL, bool saveAs);
+bool checkwLoadResources(ifstream& worldFile, const char* filename);
 static void addNewResource(string filename, unsigned short id);
 static void removeResource(unsigned short id);
 
@@ -70,7 +83,7 @@ vector <Vertex> worldMarkerLink;
 string worldDir;
 string* wresourcesArray[2];
 
-TCHAR wfilegrab[MAX_PATH];
+char wfilegrab[MAX_PATH];
 
 void* selectedEntity;
 
@@ -221,10 +234,13 @@ bool Scene::WorldEditor()
 
     if (!InitAssets())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to initialize the assets on the World Editor !", "Assets Error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Assets Error !"), QStringLiteral("Failed to initialize the assets on the World Editor !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         mainWindow->close();
-
         exitLoop = true;
     }
 
@@ -238,9 +254,7 @@ bool Scene::WorldEditor()
             {
                 case Event::Closed      :
                     exitLoop = true;
-
                     mainWindow->close();
-
                     break;
 
                 case Event::KeyPressed :
@@ -251,17 +265,24 @@ bool Scene::WorldEditor()
                     switch (eventSystem.key.code)
                     {
                         case Keyboard::Escape :
-
+                        {
+                            extern bool showCursor;
+                            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                             if (MessageBox(NULL, "Do you want to back to the Title Screen ?\nAll unsaved work will be lost !", "Back to the Title ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                            QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Back to the Title ?"), QStringLiteral("Do you want to back to the Title Screen ?\nAll unsaved work will be lost !"), QMessageBox::Yes | QMessageBox::No);
+                            if (messageBox.exec() == QMessageBox::Yes)
+#endif
                             {
                                 gobackToTitle = true;
                                 blockWorldEditor = true;
 
                                 fadeRect->setPosition(worldcamPos.x-320, worldcamPos.y-240);
                             }
-
+                            mainWindow->setMouseCursorVisible(showCursor);
                             break;
-
+                        }
                         case Keyboard::Space :
 
                             if (currentScreen != EDITOR || blockWorldEditor)
@@ -330,8 +351,16 @@ bool Scene::WorldEditor()
 
                             if (eventSystem.key.control && worldtexturePos.x == -1)
                             {
+                                extern bool showCursor;
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 if (MessageBox(NULL, "You are going to reset the World.\nAll your placements will be deleted.\nAre you sure ?", "New World", MB_ICONQUESTION | MB_TASKMODAL | MB_YESNO) == IDYES)
+#else
+                                QMessageBox messageBox(QMessageBox::Question, QStringLiteral("New World"), QStringLiteral("You are going to reset the World.\nAll your placements will be deleted.\nAre you sure ?"), QMessageBox::Yes | QMessageBox::No);
+                                if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                     Info_New();
+                                mainWindow->setMouseCursorVisible(showCursor);
                             }
 
                             break;
@@ -381,7 +410,14 @@ bool Scene::WorldEditor()
                                         }
 
                                         if (listEyecandies.size() == 128)
+                                        {
+#ifndef LINUX
                                             MessageBox(NULL, "You cannot place more than 128 Eyecandies !", "Eyecandies Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Eyecandies Overflow !"), QStringLiteral("You cannot place more than 128 Eyecandies !"), QMessageBox::Ok);
+                                            messageBox.exec();
+#endif
+                                        }
                                         else
                                         {
                                             Vector2u eyecandySize(worldEyecandies[currentTexture]->getSize());
@@ -424,7 +460,14 @@ bool Scene::WorldEditor()
                                         }
 
                                         if (listLights.size() == 64)
+                                        {
+#ifndef LINUX
                                             MessageBox(NULL, "You cannot place more than 64 Lamps !", "Lights Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Lights Overflow !"), QStringLiteral("You cannot place more than 64 Lamps !"), QMessageBox::Ok);
+                                            messageBox.exec();
+#endif
+                                        }
                                         else
                                         {
                                             Vector2f currentPlacement(mpos_relative - Vector2f(16, 16));
@@ -464,7 +507,14 @@ bool Scene::WorldEditor()
                                         if (matrixMarker->getValue(cursorPosu.x / 16, cursorPosu.y / 16) == 0)
                                         {
                                             if (listMarkers.size() == 32)
+                                            {
+#ifndef LINUX
                                                 MessageBox(NULL, "You cannot place more than 32 Markers !", "Markers Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                                QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Markers Overflow !"), QStringLiteral("You cannot place more than 32 Markers !"), QMessageBox::Ok);
+                                                messageBox.exec();
+#endif
+                                            }
                                             else
                                             {
                                                 listMarkers.emplace_back(new Marker_Entity(entTex[1], cursorPosu - Vector2f(12, 10), currentMarker_IsLevel, currentMarker_Number));
@@ -945,8 +995,12 @@ bool Scene::WorldEditor()
                                 {
                                     if (listTextures.size() == 256)
                                     {
+#ifndef LINUX
                                         MessageBox(NULL, "You cannot place more than 256 Texture rectangles !", "Textures Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
-
+#else
+                                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Textures Overflow !"), QStringLiteral("You cannot place more than 256 Texture rectangles !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
                                         worldtexturePos.x = -1;
                                     }
                                     else
@@ -2320,10 +2374,12 @@ static bool InitAssets()
     {
         if (!useShaders)
         {
+#ifndef LINUX
             StrCpy(trayIcon.szInfoTitle, "Shaders unavailable");
             StrCpy(trayIcon.szInfo, "Your current Graphics Driver doesn't support Shader Model 2.0 !");
 
             Shell_NotifyIcon(NIM_MODIFY, &trayIcon);
+#endif
 
             renderPasses[1] = NULL;
             renderPasses[5] = NULL;
@@ -3131,6 +3187,9 @@ static void Eyecandy_Chosen(unsigned int id)
 
 static void Light_Color()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     CHOOSECOLOR colorChooser;
     COLORREF colorRef;
 
@@ -3139,7 +3198,6 @@ static void Light_Color()
     else
     {
         const Light_Entity* tempLight = reinterpret_cast<Light_Entity*>(selectedEntity);
-
         colorRef = RGB(tempLight->m_lightcolor.r, tempLight->m_lightcolor.g, tempLight->m_lightcolor.b);
     }
 
@@ -3166,10 +3224,31 @@ static void Light_Color()
     if (colorPrefs.good())
     {
         if(!colorPrefs.write(reinterpret_cast<char*>(&colorArray), sizeof(COLORREF) * 16))
-            MessageBox(NULL, "Error ! Failed to save the Preferences Colors !", "Failed to save colors !", MB_TASKMODAL | MB_OK | MB_ICONERROR);
+            MessageBox(NULL, "Failed to save the Preferences Colors !", "Failed to save colors !", MB_TASKMODAL | MB_OK | MB_ICONERROR);
 
         colorPrefs.close();
     }
+#else
+    QColor colorRef;
+
+    if (selectedEntity == NULL)
+        colorRef.setRgb(currentLightColor.r, currentLightColor.g, currentLightColor.b);
+    else
+    {
+        const Light_Entity* tempLight = reinterpret_cast<Light_Entity*>(selectedEntity);
+        colorRef.setRgb(tempLight->m_lightcolor.r, tempLight->m_lightcolor.g, tempLight->m_lightcolor.b);
+    }
+
+    QColorDialog colorChooser(colorRef);
+    if (colorChooser.exec())
+    {
+        currentLightColor = Color(colorChooser.currentColor().red(), colorChooser.currentColor().green(), colorChooser.currentColor().blue());
+
+        if (selectedEntity != NULL)
+            reinterpret_cast<Light_Entity*>(selectedEntity)->setColor(colorChooser.currentColor().red(), colorChooser.currentColor().green(), colorChooser.currentColor().blue());
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Light_TexIllumin()
@@ -3247,6 +3326,9 @@ static void Background_Default()
 
 static void Background_Import()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
@@ -3262,6 +3344,10 @@ static void Background_Import()
     dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
     if (GetOpenFileName(&dialogParms))
+#else
+    const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Import a valid background :"), QDir::homePath(), QStringLiteral("Supported Image Formats (*.bmp *.dds *.jpg *.png *.tga *.psd)")));
+    if (!filename.isEmpty())
+#endif
     {
         if (worldBackTex[1] != NULL)
             delete worldBackTex[1];
@@ -3270,8 +3356,12 @@ static void Background_Import()
 
         if (!worldBackTex[1]->loadFromFile(wfilegrab))
         {
-            MessageBox(NULL, "Error ! The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
-
+#ifndef LINUX
+            MessageBox(NULL, "The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unreadable !"), QStringLiteral("The file format is not supported !"), QMessageBox::Ok);
+            messageBox.exec();
+#endif
             delete worldBackTex[1];
 
             worldBackTex[1] = NULL;
@@ -3288,6 +3378,7 @@ static void Background_Import()
 
         worldInfoButton[3]->freeze();
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Music_Edit()
@@ -4251,6 +4342,9 @@ static void Music_Import()
     }
     else
     {
+        extern bool showCursor;
+        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
         OPENFILENAME dialogParms;
 
         ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
@@ -4264,13 +4358,18 @@ static void Music_Import()
         dialogParms.lpstrTitle = "Import a valid music :";
         dialogParms.lpstrFilter = "All Sound Formats\0*.aiff;*.asf;*.asx;*.dls;*.flac;*.fsb;*.it;*.m3u;*.mid;*.mod;*.mp2;*.mp3;*.ogg;*.pls;*.s3m;*.vag;*.wav;*.wax;*.wma;*.xm;*.xma\0";
         dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
-
+#endif
         FMOD_Channel_IsPlaying(previewWorldMusicChannel, &isPlaying);
 
         if (isPlaying)
             FMOD_Channel_Stop(previewWorldMusicChannel);
 
+#ifndef LINUX
         if (GetOpenFileName(&dialogParms))
+#else
+        const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Import a valid music :"), QDir::homePath(), QStringLiteral("All Sound Formats (*.aiff *.asf *.asx *.dls *.flac *.fsb *.it *.m3u *.mid *.mod *.mp2 *.mp3 *.ogg *.pls *.s3m *.vag *.wav *.wax *.wma *.xm *.xma)")));
+        if (!filename.isEmpty())
+#endif
         {
             FMOD_RESULT result;
 
@@ -4281,7 +4380,9 @@ static void Music_Import()
                 FMOD_Sound_Release(musicSamples[22]);
                 musicSamples[22] = NULL;
             }
-
+#ifdef LINUX
+            strcpy(wfilegrab, filename.toLocal8Bit().constData());
+#endif
             result = FMOD_System_CreateStream(soundSystem, wfilegrab, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[22]);
 
             if (result == FMOD_OK)
@@ -4291,14 +4392,30 @@ static void Music_Import()
                 resutl = FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(19), musicSamples[22], 0, &previewWorldMusicChannel);
 
                 if (resutl != FMOD_OK)
-                    MessageBox(NULL, "Error ! The file cannot be played !", "File unplayable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+                {
+#ifndef LINUX
+                    MessageBox(NULL, "The file cannot be played !", "File unplayable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unplayable !"), QStringLiteral("The file cannot be played !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
             }
             else
-                MessageBox(NULL, "Error ! The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+            {
+#ifndef LINUX
+                MessageBox(NULL, "The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unreadable !"), QStringLiteral("The file format is not supported !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
+            }
         }
+        mainWindow->setMouseCursorVisible(showCursor);
     }
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcSize(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit[3];
@@ -4444,6 +4561,7 @@ LRESULT CALLBACK dialogProcSize(HWND windowHandle, UINT message, WPARAM wParam, 
 
     return FALSE;
 }
+#endif
 
 static void Info_New()
 {
@@ -4522,19 +4640,133 @@ static void Info_New()
 
 static void Size_Edit()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(54), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcSize));
+#else
+    QDialog dialog;
+    QFormLayout form(&dialog);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        /*mapScale.x = max(min(x, 200), 20);
+        mapScale.y = max(min(y, 150), 15);
+        worldLives = max(min(l, 99), 0);
+
+        worldBack->setSize(Vector2f(mapScale.x * 32, mapScale.y * 32));
+        worldBack->setTextureRect(IntRect(0, 0, mapScale.x * 32, mapScale.y * 32));
+
+        matrixMarker->resize((mapScale.x * 2) + 1, (mapScale.y * 2) + 1);
+
+        if (!listTextures.empty())
+        {
+            vector<list<TextureData*>::iterator> texToErase;
+
+            for (list<TextureData*>::iterator it = listTextures.begin(); it != listTextures.end(); it++)
+            {
+                FloatRect texBounds((*it)->rectangle.getGlobalBounds());
+
+                if (texBounds.left + texBounds.width > mapScale.x * 32 || texBounds.top + texBounds.height > mapScale.y * 32)
+                    texToErase.emplace_back(it);
+            }
+
+            for (vector<list<TextureData*>::iterator>::iterator it = texToErase.begin(); it != texToErase.end(); it++)
+                listTextures.erase(*it);
+
+            texToErase.clear();
+        }
+
+        if (!listEyecandies.empty())
+        {
+            vector<list<EyecandyData*>::iterator> eyeToErase;
+
+            for (list<EyecandyData*>::iterator it = listEyecandies.begin(); it != listEyecandies.end(); it++)
+            {
+                FloatRect eyeBounds((*it)->sprite.getGlobalBounds());
+
+                if (eyeBounds.left + eyeBounds.width > mapScale.x * 32 || eyeBounds.top + eyeBounds.height > mapScale.y * 32)
+                    eyeToErase.emplace_back(it);
+            }
+
+            for (vector<list<EyecandyData*>::iterator>::iterator it = eyeToErase.begin(); it != eyeToErase.end(); it++)
+                listEyecandies.erase(*it);
+
+            eyeToErase.clear();
+        }
+
+        if (!listLights.empty())
+        {
+                        vector<list<Light_Entity*>::iterator> lightToErase;
+
+                        for (list<Light_Entity*>::iterator it = listLights.begin(); it != listLights.end(); it++)
+                        {
+                            Vector2f pos((*it)->getPosition());
+
+                            if (pos.x + 32 > mapScale.x * 32 || pos.y + 32 > mapScale.y * 32)
+                                lightToErase.emplace_back(it);
+                            else
+                                (*it)->mapResized(mapScale);
+                        }
+
+                        for (vector<list<Light_Entity*>::iterator>::iterator it = lightToErase.begin(); it != lightToErase.end(); it++)
+                            listLights.erase(*it);
+
+                        lightToErase.clear();
+        }
+
+        if (!listMarkers.empty())
+        {
+            vector<list<Marker_Entity*>::iterator> markerToErase;
+
+            for (list<Marker_Entity*>::iterator it = listMarkers.begin(); it != listMarkers.end(); it++)
+            {
+                Vector2f pos((*it)->getPosition());
+
+                if (pos.x > mapScale.x * 32 || pos.y > mapScale.y * 32)
+                    markerToErase.emplace_back(it);
+            }
+
+            for (vector<list<Marker_Entity*>::iterator>::iterator it = markerToErase.begin(); it != markerToErase.end(); it++)
+                listMarkers.erase(*it);
+
+            markerToErase.clear();
+            worldMarkerLink.clear();
+
+            for (list<Marker_Entity*>::iterator it = listMarkers.begin(); it != listMarkers.end(); it++)
+            {
+                Vector2f pos((*it)->getPosition() + Vector2f(12, 10));
+
+                (*it)->setNumber(number);
+
+                worldMarkerLink.emplace_back(Vertex(pos, Color(128, 255, 255)));
+
+                number++;
+            }
+        }
+
+        selectedEntity = NULL;*/
+    }
+    mainWindow->setMouseCursorVisible(showCursor);
+#endif
 }
 
 static void Info_Save()
 {
     if (worldDir.empty())
     {
+        extern bool showCursor;
+        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
         OPENFILENAME dialogParms;
         TCHAR personalPath[MAX_PATH];
 
         SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-        StrCat(personalPath, "\\Mario Constructor Master\\Worlds");
+        strcat(personalPath, "\\Mario Constructor Master\\Worlds");
 
         ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -4552,13 +4784,17 @@ static void Info_Save()
         if (GetSaveFileName(&dialogParms))
         {
             PathRenameExtension(wfilegrab, ".cmw");
-
             worldDir = wfilegrab;
-
+#else
+        const QString filename(QFileDialog::getSaveFileName(NULL, QStringLiteral("Save a World :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Worlds"), QStringLiteral("Constructor Master Worlds (.cmw)")));
+        if (!filename.isEmpty())
+        {
+            worldDir = filename.toStdString();
+#endif
             checkResources(worldDir.c_str(), false);
-
             World_Save(worldDir);
         }
+        mainWindow->setMouseCursorVisible(showCursor);
     }
     else
         World_Save(worldDir);
@@ -4566,12 +4802,15 @@ static void Info_Save()
 
 static void Info_SaveAs()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
     TCHAR personalPath[MAX_PATH];
 
     SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-    StrCat(personalPath, "\\Mario Constructor Master\\Worlds");
+    strcat(personalPath, "\\Mario Constructor Master\\Worlds");
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -4589,23 +4828,30 @@ static void Info_SaveAs()
     if (GetSaveFileName(&dialogParms))
     {
         PathRenameExtension(wfilegrab, ".cmw");
-
         worldDir = wfilegrab;
-
+#else
+    const QString filename(QFileDialog::getSaveFileName(NULL, QStringLiteral("Save a World :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Worlds"), QStringLiteral("Constructor Master Worlds (.cmw)")));
+    if (!filename.isEmpty())
+    {
+        worldDir = filename.toStdString();
+#endif
         checkResources(worldDir.c_str(), true);
-
         World_Save(worldDir);
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Info_Load()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
     TCHAR personalPath[MAX_PATH];
 
     SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-    StrCat(personalPath, "\\Mario Constructor Master\\Worlds");
+    strcat(personalPath, "\\Mario Constructor Master\\Worlds");
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -4621,16 +4867,22 @@ static void Info_Load()
     dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
     if (GetOpenFileName(&dialogParms))
+#else
+    const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Load a World :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Worlds"), QStringLiteral("Constructor Master Worlds (.cmw)")));
+    if (!filename.isEmpty())
+#endif
     {
         worldCamera->setCenter(320, 240);
-
         mainTexture.setView(*worldCamera);
-
+#ifndef LINUX
         World_Load(wfilegrab);
-
+#else
+        World_Load(filename.toLocal8Bit().constData());
+#endif
         if (currentScreen == TITLE)
             Button_Title();
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Erasement_Light()
@@ -4718,7 +4970,12 @@ static void World_Save(const string& filename)
 
     if (!worldFile.good())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to create the World file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to create the World file !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return;
     }
 
@@ -4829,7 +5086,12 @@ static void World_Load(const string& filename)
 
     if (!worldFile.good())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to open the World file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the World file !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return;
     }
 
@@ -4899,6 +5161,9 @@ static void World_Load(const string& filename)
     currentMarker_Number = 0;
 
     {
+        extern char procPath[MAX_PATH];
+
+#ifndef LINUX
         TCHAR filePath[MAX_PATH];
         TCHAR getString[MAX_PATH];
 
@@ -4945,9 +5210,52 @@ static void World_Load(const string& filename)
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, filePath, MAX_PATH);
-        PathRemoveFileSpec(filePath);
-        SetCurrentDirectory(filePath);
+        SetCurrentDirectory(procPath);
+#else
+        char getString[MAX_PATH];
+
+        chdir(filename.substr(0, filename.find_last_of('/')).c_str());
+
+        for (register unsigned int i = 0; i < 2; i++)
+        {
+            worldFile.read(getString, 1);
+
+            if (getString[0] != '\0')
+            {
+                worldFile.seekg(-1, ios::cur);
+
+                for (register unsigned int j = 0; true; j++)
+                {
+                    worldFile.read(&getString[j], 1);
+
+                    if (getString[j] == '\0')
+                        break;
+                }
+
+                switch (i)
+                {
+                    case 0 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[22]);
+
+                        wresourcesArray[1] = new string(getString);
+
+                        break;
+
+                    case 1 :
+                        worldBackTex[1] = new Texture;
+                        worldBackTex[1]->loadFromFile(getString);
+                        worldBackTex[1]->setRepeated(true);
+
+                        wresourcesArray[0] = new string(getString);
+
+                        break;
+                }
+            }
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     worldFile.read(reinterpret_cast<char*>(&mapScale.x), 4);
@@ -5178,21 +5486,22 @@ static void mergeTextures()
     }
 }
 
-static void checkResources(LPCSTR worldURL, bool saveAs)
+static void checkResources(const char* worldURL, bool saveAs)
 {
-    TCHAR resourcePath[MAX_PATH];
-    TCHAR resourceName[MAX_PATH];
+    char resourcePath[MAX_PATH];
+    char resourceName[MAX_PATH];
 
-    TCHAR worldPath[MAX_PATH];
-    TCHAR worldName[MAX_PATH];
+    char worldPath[MAX_PATH];
+    char worldName[MAX_PATH];
 
-    TCHAR destName[MAX_PATH];
+    char destName[MAX_PATH];
 
     for (register unsigned int i = 0; i < 2; i++)
     {
         if (wresourcesArray[i] != NULL)
         {
-            TCHAR messageText[256];
+#ifndef LINUX
+            char messageText[256];
 
             strcpy(resourcePath, wresourcesArray[i]->c_str());
             strcpy(resourceName, wresourcesArray[i]->c_str());
@@ -5209,31 +5518,74 @@ static void checkResources(LPCSTR worldURL, bool saveAs)
             PathStripPath(worldName);
 
             if (PathIsRelative(wresourcesArray[i]->c_str()))
+#else
+            strcpy(resourcePath, wresourcesArray[i]->substr(0, wresourcesArray[i]->find_last_of('/')).c_str());
+            strcpy(resourceName, wresourcesArray[i]->substr(wresourcesArray[i]->find_last_of('/') + 1).c_str());
+
+            strcpy(worldPath, worldURL);
+            strcpy(worldName, worldURL);
+
+            dirname(worldPath);
+            basename(worldName);
+
+            strcpy(destName, worldPath);
+
+            if (wresourcesArray[i]->c_str()[0] != '/')
+#endif
             {
                 if (saveAs)
                 {
+                    extern bool showCursor;
+                    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                     sprintf(messageText, "The resource :\n%s\nis referred by a Relative Path from the previous world's location.\nDo you want update the Relative Path ?", resourceName);
 
                     if (MessageBox(NULL, messageText, "Update the Path ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
                     {
                         if (PathRelativePathTo(resourcePath, worldPath, FILE_ATTRIBUTE_DIRECTORY, wresourcesArray[i]->c_str(), FILE_ATTRIBUTE_NORMAL))
+#else
+                    QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Update the Path ?"), QString("The resource :\n%1\nis referred by a Relative Path from the previous world's location.\nDo you want update the Relative Path ?").arg(resourceName), QMessageBox::Yes | QMessageBox::No);
+                    if (messageBox.exec() == QMessageBox::Yes)
+                    {
+                        QDir dirPath(worldPath);
+                        QString relativePath(dirPath.relativeFilePath(wresourcesArray[i]->c_str()));
+
+                        if (relativePath.isEmpty())
+#endif
                         {
                             delete wresourcesArray[i];
-
+#ifndef LINUX
                             wresourcesArray[i] = new string(resourcePath);
+#else
+                            wresourcesArray[i] = new string(relativePath.toStdString());
+#endif
                         }
                         else
-                            MessageBox(NULL, "Error ! Failed to recreate Relative Path !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+                        {
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to recreate Relative Path !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                            QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to recreate Relative Path !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                     }
+                    mainWindow->setMouseCursorVisible(showCursor);
                 }
             }
             else
             {
                 if (strcmp(worldPath, resourcePath) != 0)
                 {
+                    extern bool showCursor;
+                    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                     sprintf(messageText, "The resource :\n%s\nis in another directory from the world.\nDo you want copy the resource into the world directory ?", resourceName);
-
                     if (MessageBox(NULL, messageText, "Copy the resource file ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
+#else
+                    QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Copy the resource file ?"), QString("The resource :\n%1\nis in another directory from the world.\nDo you want copy the resource into the world directory ?").arg(resourceName), QMessageBox::Yes | QMessageBox::No);
+                    if (messageBox.exec() == QMessageBox::Yes)
+#endif
                     {
                         ifstream src;
                         ofstream dest;
@@ -5242,17 +5594,30 @@ static void checkResources(LPCSTR worldURL, bool saveAs)
 
                         if (!src.good())
                         {
-                            MessageBox(NULL, "Error ! Failed to open the original resource file !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to open the original resource file !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                            QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Error !"), QStringLiteral("Failed to open the original resource file !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
                             goto LBL_CHKRESWORLD;
                         }
-
+#ifndef LINUX
                         PathAppend(destName, resourceName);
-
+#else
+                        strcat(destName, "/");
+                        strcat(destName, resourceName);
+#endif
                         dest.open(destName, ios::binary);
 
                         if (!dest.good())
                         {
-                            MessageBox(NULL, "Error ! Failed to copy the resource !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to copy the resource !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                            QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Error !"), QStringLiteral("Failed to copy the resource !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
                             src.close();
                             goto LBL_CHKRESWORLD;
                         }
@@ -5263,22 +5628,43 @@ static void checkResources(LPCSTR worldURL, bool saveAs)
                         dest.close();
                     }
                     else
+                    {
+#ifndef LINUX
                         PathAppend(destName, wresourcesArray[i]->c_str());
+#else
+                        strcat(destName, "/");
+                        strcat(destName, wresourcesArray[i]->c_str());
+#endif
+                    }
+                    mainWindow->setMouseCursorVisible(showCursor);
 
                     LBL_CHKRESWORLD :
 
+#ifndef LINUX
                     if (PathRelativePathTo(resourcePath, worldPath, FILE_ATTRIBUTE_DIRECTORY, destName, FILE_ATTRIBUTE_NORMAL))
+#else
+                    QDir dirPath(worldPath);
+                    QString relativePath(dirPath.relativeFilePath(destName));
+
+                    if (relativePath.isEmpty())
+#endif
                     {
                         delete wresourcesArray[i];
-
+#ifndef LINUX
                         wresourcesArray[i] = new string(resourcePath);
+#else
+                        wresourcesArray[i] = new string(relativePath.toStdString());
+#endif
                     }
                     else
                     {
-                        MessageBox(NULL, "Error ! Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                        MessageBox(NULL, "Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !\nYou must copy the file manually then re-import it !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
                         delete wresourcesArray[i];
-
                         wresourcesArray[i] = new string(destName);
                     }
                 }
@@ -5287,34 +5673,45 @@ static void checkResources(LPCSTR worldURL, bool saveAs)
     }
 }
 
-bool checkwLoadResources(ifstream& worldFile, LPCSTR filename)
+bool checkwLoadResources(ifstream& worldFile, const char* filename)
 {
+    extern char procPath[MAX_PATH];
+    char filePath[MAX_PATH];
+    char getString[MAX_PATH];
+    char CMLid[4];
     ifstream checkFile;
 
-    TCHAR filePath[MAX_PATH];
-    TCHAR getString[MAX_PATH];
-    TCHAR messageText[512];
-
-    char CMLid[4];
-
     strcpy(filePath, filename);
+#ifndef LINUX
+    char messageText[512];
 
     PathRemoveFileSpec(filePath);
     SetCurrentDirectory(filePath);
-
+#else
+    basename(filePath);
+    chdir(filePath);
+#endif
     worldFile.read(CMLid, 4);
 
     if (CMLid[0] != 'C' || CMLid[1] != 'M' || CMLid[2] != 'W')
     {
-        MessageBox(NULL, "Error ! This file is not a valid CMW World !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+        MessageBox(NULL, "This file is not a valid CMW World !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This file is not a valid CMW World !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
     if (CMLid[3] != EDITOR_VERSION)
     {
-        MessageBox(NULL, "Error ! This World was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
-
+#ifndef LINUX
+        MessageBox(NULL, "This World was made with an Higher Version of Mario Constructor Master Editor !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("This World was made with an Higher Version of Mario Constructor Master Editor !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return false;
     }
 
@@ -5338,10 +5735,13 @@ bool checkwLoadResources(ifstream& worldFile, LPCSTR filename)
 
             if (!checkFile.good())
             {
-                sprintf(messageText, "Error ! The resource is not found :\n%s !", getString);
-
+#ifndef LINUX
+                sprintf(messageText, "The resource is not found :\n%s !", getString);
                 MessageBox(NULL, messageText, "Resource not found !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
-
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Resource not found !"), QString("The resource is not found :\n%1 !").arg(getString), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 return false;
             }
             else
@@ -5350,17 +5750,18 @@ bool checkwLoadResources(ifstream& worldFile, LPCSTR filename)
     }
 
     // Reset the current directory :
-    GetModuleFileName(NULL, filePath, MAX_PATH);
-    PathRemoveFileSpec(filePath);
-    SetCurrentDirectory(filePath);
-
+#ifndef LINUX
+    SetCurrentDirectory(procPath);
+#else
+    chdir(procPath);
+#endif
     return true;
 }
 
 static void addNewResource(string filename, unsigned short id)
 {
-    TCHAR filenamePath[MAX_PATH];
-    TCHAR dirPath[MAX_PATH];
+    char filenamePath[MAX_PATH];
+    char dirPath[MAX_PATH];
 
     if (wresourcesArray[id] != NULL)
     {
@@ -5371,20 +5772,31 @@ static void addNewResource(string filename, unsigned short id)
     strcpy(filenamePath, filename.c_str());
     strcpy(dirPath, worldDir.c_str());
 
-    PathRemoveFileSpec(filenamePath);
+#ifndef LINUX
     PathRemoveFileSpec(dirPath);
+    PathRemoveFileSpec(filenamePath);
+#else
+    dirname(dirPath);
+    dirname(filenamePath);
+#endif
 
     if (!worldDir.empty())
     {
         if (filenamePath != dirPath)
         {
-            string messageText;
+            extern bool showCursor;
+            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
+            char messageText[256];
 
-            messageText = "The resource :\n" + filename + "\nis in another directory from the world.\nDo you want copy the resource into the world directory ?";
-
+            sprintf(messageText, "The resource :\n%s\nis in another directory from the world.\nDo you want copy the resource into the world directory ?", filename.c_str());
             if (MessageBox(NULL, messageText.c_str(), "Copy the resource file ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
+#else
+            QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Copy the resource file ?"), QString("The resource :\n%1\nis in another directory from the world.\nDo you want copy the resource into the world directory ?").arg(filename.c_str()), QMessageBox::Yes | QMessageBox::No);
+            if (messageBox.exec() == QMessageBox::Yes)
+#endif
             {
-                TCHAR bufferData[MAX_PATH];
+                char bufferData[MAX_PATH];
 
                 ifstream src;
                 ofstream dest;
@@ -5411,18 +5823,32 @@ static void addNewResource(string filename, unsigned short id)
 
                 filename = bufferData;
             }
+            mainWindow->setMouseCursorVisible(showCursor);
         }
 
         LBL_ADDRESWORLD :
 
         {
+#ifndef LINUX
             TCHAR relativePath[MAX_PATH] = "";
 
             if (PathRelativePathTo(relativePath, dirPath, FILE_ATTRIBUTE_DIRECTORY, filename.c_str(), FILE_ATTRIBUTE_NORMAL))
                 wresourcesArray[id] = new string(relativePath);
+#else
+            QDir dirPth(dirPath);
+            QString relativePath(dirPth.relativeFilePath(filename.c_str()));
+
+            if (relativePath.isEmpty())
+                wresourcesArray[id] = new string(relativePath.toStdString());
+#endif
             else
             {
-                MessageBox(NULL, "Error ! Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#ifndef LINUX
+                MessageBox(NULL, "Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !\nYou must copy the file manually then re-import it !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 wresourcesArray[id] = new string(filename);
             }
         }

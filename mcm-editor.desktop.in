@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Mario Constructor Master
+Comment=A Fangame Mario Game Editor made by RubisetCie and MarioVariable3410
+Exec=@CMAKE_INSTALL_PREFIX@/Editor/MCM-Editor %f
+Icon=@CMAKE_INSTALL_PREFIX@/Editor/mcm-editor.png
+Path=@CMAKE_INSTALL_PREFIX@/Editor
+Type=Application
+StartupNotify=true
+Categories=Game

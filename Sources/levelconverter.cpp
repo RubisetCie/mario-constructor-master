@@ -6,13 +6,11 @@ using namespace std;
 ifstream oldfile;
 ofstream newfile;
 
-main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     if (argc > 1)
     {
         string filename(argv[1]);
-
-        atexit(closefiles);
 
         // File readance :
         oldfile.open(filename.c_str(), ios::binary);

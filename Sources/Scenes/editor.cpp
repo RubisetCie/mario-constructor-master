@@ -13,10 +13,23 @@
 extern "C"
 {
     #include <fmod.h>
+    #ifndef LINUX
     #include <windows.h>
     #include <shlwapi.h>
     #include <shlobj.h>
+    #else
+    #include <unistd.h>
+    #include <libgen.h>
+    #endif
 }
+
+#ifdef LINUX
+#include <QColorDialog>
+#include <QInputDialog>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QDir>
+#endif
 
 #include "../../Headers/globals.hpp"
 #include "../../Headers/Graphics/button.hpp"
@@ -228,7 +241,7 @@ static void Erasment_Entities(Matrix* currentMatrix, Matrix* tileMatrix);
 static void Erasment_Pipes(Matrix* currentMatrix, Matrix* entMatrix, list<Tile>& currentList);
 static void Erasment_Warps(list<EntWarps>& currentList);
 
-static void checkResources(LPCSTR levelURL, bool saveAs);
+static void checkResources(const char* levelURL, bool saveAs);
 
 static void addNewResource(string filename, unsigned short id);
 static void removeResource(unsigned short id);
@@ -383,7 +396,7 @@ bool setLiquidSpots;
 bool grabLiquid;
 bool grabSpot;
 
-TCHAR filegrab[MAX_PATH];
+char filegrab[MAX_PATH];
 
 enum EditorMenus {EDITION, TILESET, MUSIC, BACKGROUND, GRADIENT, EFFECTS, INFOS, LIQUID, AUTOSCROLL} currentMenu;
 enum SelectionType {NONE, TILE, ESSENTIAL, PLATFORMS, BONUS, PIPES, SCENERIES, ENEMIES, HAZARDS, WARPS} currentSelection;
@@ -663,10 +676,13 @@ bool Scene::Editor()
 
     if (!InitAssets())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to initialize the assets on the Editor !", "Assets Error !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Assets Error !"), QStringLiteral("Failed to initialize the assets on the Editor !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         mainWindow->close();
-
         exitLoop = true;
     }
 
@@ -680,9 +696,7 @@ bool Scene::Editor()
             {
                 case Event::Closed      :
                     exitLoop = true;
-
                     mainWindow->close();
-
                     break;
 
                 case Event::KeyPressed :
@@ -693,17 +707,24 @@ bool Scene::Editor()
                     switch (eventSystem.key.code)
                     {
                         case Keyboard::Escape :
-
+                        {
+                            extern bool showCursor;
+                            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                             if (MessageBox(NULL, "Do you want to back to the Title Screen ?\nAll unsaved work will be lost !", "Back to the Title ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                            QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Back to the Title ?"), QStringLiteral("Do you want to back to the Title Screen ?\nAll unsaved work will be lost !"), QMessageBox::Yes | QMessageBox::No);
+                            if (messageBox.exec() == QMessageBox::Yes)
+#endif
                             {
                                 returnToTitle = true;
                                 blockEditor = true;
 
                                 fadeRect->setPosition(camPos.x-320, camPos.y-240);
                             }
-
+                            mainWindow->setMouseCursorVisible(showCursor);
                             break;
-
+                        }
                         case Keyboard::Space :
                             if (currentMenu == EDITION || currentMenu == LIQUID || currentMenu == AUTOSCROLL)
                             {
@@ -725,13 +746,14 @@ bool Scene::Editor()
                             {
                                 if (levelDir.empty())
                                 {
+                                    extern bool showCursor;
+                                    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                     OPENFILENAME dialogParms;
                                     TCHAR personalPath[MAX_PATH];
 
                                     SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
-
-                                    StrCat(personalPath, "/Mario Constructor Master/Levels");
-
+                                    strcat(personalPath, "/Mario Constructor Master/Levels");
                                     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
                                     dialogParms.lStructSize = sizeof(OPENFILENAME);
@@ -748,13 +770,17 @@ bool Scene::Editor()
                                     if (GetSaveFileName(&dialogParms))
                                     {
                                         PathRenameExtension(filegrab, ".cml");
-
                                         levelDir = filegrab;
-
+#else
+                                    const QString filename(QFileDialog::getSaveFileName(NULL, QStringLiteral("Save a Level :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+                                    if (!filename.isEmpty())
+                                    {
+                                        levelDir = filename.toStdString();
+#endif
                                         checkResources(levelDir.c_str(), false);
-
                                         Level_Save(levelDir);
                                     }
+                                    mainWindow->setMouseCursorVisible(showCursor);
                                 }
                                 else
                                     Level_Save(levelDir);
@@ -768,13 +794,14 @@ bool Scene::Editor()
 
                             if (eventSystem.key.control)
                             {
+                                extern bool showCursor;
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 OPENFILENAME dialogParms;
                                 TCHAR personalPath[MAX_PATH];
 
                                 SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
-
-                                StrCat(personalPath, "/Mario Constructor Master/Levels");
-
+                                strcat(personalPath, "/Mario Constructor Master/Levels");
                                 ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
                                 dialogParms.lStructSize = sizeof(OPENFILENAME);
@@ -790,6 +817,12 @@ bool Scene::Editor()
 
                                 if (GetOpenFileName(&dialogParms))
                                     Level_Load(filegrab);
+#else
+                                const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Load a Level :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+                                if (!filename.isEmpty())
+                                    Level_Load(filename.toLocal8Bit().constData());
+#endif
+                                mainWindow->setMouseCursorVisible(showCursor);
                             }
 
                             break;
@@ -799,20 +832,36 @@ bool Scene::Editor()
 
                             if (eventSystem.key.control)
                             {
+                                extern bool showCursor;
+                                mainWindow->setMouseCursorVisible(true);
                                 if (startArea == 0)
                                 {
+#ifndef LINUX
                                     MessageBox(NULL, "There is no Start Point in the Level !", "No Start Point", MB_ICONINFORMATION | MB_TASKMODAL | MB_OK);
+#else
+                                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("No Start Point"), QStringLiteral("There is no Start Point in the Level !"), QMessageBox::Ok);
+                                    messageBox.exec();
+#endif
                                     break;
                                 }
 
+#ifndef LINUX
                                 if (MessageBox(NULL, "Do you want to Test your current Level ?", "Test Level", MB_ICONQUESTION | MB_TASKMODAL | MB_YESNO) == IDYES)
+#else
+                                QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Test Level"), QStringLiteral("Do you want to Test your current Level ?"), QMessageBox::Yes | QMessageBox::No);
+                                if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                 {
                                     circleFadeTex = new Texture;
 
                                     if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
                                     {
-                                        MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                                        MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                                        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
                                         mainWindow->close();
 
                                         return false;
@@ -833,6 +882,7 @@ bool Scene::Editor()
                                     if (editorMusic)
                                         FMOD_Channel_Stop(musicChannel);
                                 }
+                                mainWindow->setMouseCursorVisible(showCursor);
                             }
 
                             break;
@@ -842,8 +892,16 @@ bool Scene::Editor()
 
                             if (eventSystem.key.control)
                             {
+                                extern bool showCursor;
+                                mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                                 if (MessageBox(NULL, "You are going to reset the Level.\nAll your placements will be deleted.\nAre you sure ?", "New Level", MB_ICONQUESTION | MB_TASKMODAL | MB_YESNO) == IDYES)
+#else
+                                QMessageBox messageBox(QMessageBox::Question, QStringLiteral("New Level"), QStringLiteral("You are going to reset the Level.\nAll your placements will be deleted.\nAre you sure ?"), QMessageBox::Yes | QMessageBox::No);
+                                if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                     Level_New();
+                                mainWindow->setMouseCursorVisible(showCursor);
                             }
 
                             break;
@@ -3185,11 +3243,17 @@ bool Scene::Editor()
                                     if (triggerCount < 26)
                                     {
                                         levelLiquidTriggerb.emplace_back(Trigger(spotRect->getPosition(), spotRect->getSize(), triggerCount, liquidTriggerText, editorMoveable, liquidRegulatorTex));
-
                                         FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
                                     }
                                     else
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "You cannot place more than 26 Liquid Triggers !", "Trigger Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Trigger Overflow !"), QStringLiteral("You cannot place more than 26 Liquid Triggers !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
 
                                     #ifdef DEBUGMODE
                                     cout << levelLiquidTriggerb.size() << endl;
@@ -3202,11 +3266,17 @@ bool Scene::Editor()
                                     if (triggerCount < 26)
                                     {
                                         levelLiquidTrigger.emplace_back(Trigger(spotRect->getPosition(), spotRect->getSize(), triggerCount, liquidTriggerText, editorMoveable, liquidRegulatorTex));
-
                                         FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), itemPut, 0, NULL);
                                     }
                                     else
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "You cannot place more than 26 Liquid Triggers !", "Trigger Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Trigger Overflow !"), QStringLiteral("You cannot place more than 26 Liquid Triggers !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
 
                                     #ifdef DEBUGMODE
                                     cout << levelLiquidTrigger.size() << endl;
@@ -3347,7 +3417,14 @@ bool Scene::Editor()
                                     if (triggerCount < 26)
                                         levelLiquidTriggerb.emplace_back(Trigger(spotRect->getPosition(), spotRect->getSize(), triggerCount, liquidTriggerText, editorMoveable, liquidRegulatorTex));
                                     else
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "You cannot place more than 26 Liquid Triggers !", "Trigger Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Trigger Overflow !"), QStringLiteral("You cannot place more than 26 Liquid Triggers !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
 
                                     #ifdef DEBUGMODE
                                     cout << levelLiquidTriggerb.size() << endl;
@@ -3360,7 +3437,14 @@ bool Scene::Editor()
                                     if (triggerCount < 26)
                                         levelLiquidTrigger.emplace_back(Trigger(spotRect->getPosition(), spotRect->getSize(), triggerCount, liquidTriggerText, editorMoveable, liquidRegulatorTex));
                                     else
+                                    {
+#ifndef LINUX
                                         MessageBox(NULL, "You cannot place more than 26 Liquid Triggers !", "Trigger Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Trigger Overflow !"), QStringLiteral("You cannot place more than 26 Liquid Triggers !"), QMessageBox::Ok);
+                                        messageBox.exec();
+#endif
+                                    }
 
                                     #ifdef DEBUGMODE
                                     cout << levelLiquidTrigger.size() << endl;
@@ -8462,6 +8546,9 @@ static void UpdateAssetsGradient()
 
         if (mousePressed == 1)
         {
+            extern bool showCursor;
+            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
             CHOOSECOLOR colorChooser;
             COLORREF colorRef;
 
@@ -8492,11 +8579,30 @@ static void UpdateAssetsGradient()
 
             if (colorPrefs.good())
             {
-                if(!colorPrefs.write(reinterpret_cast<char*>(&colorArray), sizeof(COLORREF) * 16))
-                    MessageBox(NULL, "Error ! Failed to save the Preferences Colors !", "Failed to save colors !", MB_TASKMODAL | MB_OK | MB_ICONERROR);
+                if (!colorPrefs.write(reinterpret_cast<char*>(&colorArray), sizeof(COLORREF) * 16))
+                    MessageBox(NULL, "Failed to save the Preferences Colors !", "Failed to save colors !", MB_TASKMODAL | MB_OK | MB_ICONERROR);
 
                 colorPrefs.close();
             }
+#else
+            QColor colorRef;
+
+            if (sectionb)
+                colorRef.setRgb(topColorb.r, topColorb.g, topColorb.b);
+            else
+                colorRef.setRgb(topColor.r, topColor.g, topColor.b);
+
+            QColorDialog colorChooser(colorRef);
+
+            if (colorChooser.exec())
+            {
+                if (sectionb)
+                    topColorb = Color(colorChooser.currentColor().red(), colorChooser.currentColor().green(), colorChooser.currentColor().blue());
+                else
+                    topColor = Color(colorChooser.currentColor().red(), colorChooser.currentColor().green(), colorChooser.currentColor().blue());
+            }
+#endif
+            mainWindow->setMouseCursorVisible(showCursor);
         }
     }
     else if (FloatRect(camPos.x-290, camPos.y+24, 161, 80).contains(mpos_relative))
@@ -8505,6 +8611,9 @@ static void UpdateAssetsGradient()
 
         if (mousePressed == 1)
         {
+            extern bool showCursor;
+            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
             CHOOSECOLOR colorChooser;
             COLORREF colorRef;
 
@@ -8535,11 +8644,30 @@ static void UpdateAssetsGradient()
 
             if (colorPrefs.good())
             {
-                if(!colorPrefs.write(reinterpret_cast<char*>(&colorArray), sizeof(COLORREF) * 16))
-                    MessageBox(NULL, "Error ! Failed to save the Preferences Colors !", "Failed to save colors !", MB_TASKMODAL | MB_OK | MB_ICONERROR);
+                if (!colorPrefs.write(reinterpret_cast<char*>(&colorArray), sizeof(COLORREF) * 16))
+                    MessageBox(NULL, "Failed to save the Preferences Colors !", "Failed to save colors !", MB_TASKMODAL | MB_OK | MB_ICONERROR);
 
                 colorPrefs.close();
             }
+#else
+            QColor colorRef;
+
+            if (sectionb)
+                colorRef.setRgb(bottomColorb.r, bottomColorb.g, bottomColorb.b);
+            else
+                colorRef.setRgb(bottomColor.r, bottomColor.g, bottomColor.b);
+
+            QColorDialog colorChooser(colorRef);
+
+            if (colorChooser.exec())
+            {
+                if (sectionb)
+                    bottomColorb = Color(colorChooser.currentColor().red(), colorChooser.currentColor().green(), colorChooser.currentColor().blue());
+                else
+                    bottomColor = Color(colorChooser.currentColor().red(), colorChooser.currentColor().green(), colorChooser.currentColor().blue());
+            }
+#endif
+            mainWindow->setMouseCursorVisible(showCursor);
         }
     }
     else
@@ -8659,14 +8787,28 @@ static void Selection_Essential()
                 if (sectionb)
                 {
                     if (listEntitiesb.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Essentials(entityMatrixb, layer2TileMatrixb, listEntitiesb);
                 }
                 else
                 {
                     if (listEntities.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Essentials(entityMatrix, layer2TileMatrix, listEntities);
                 }
@@ -8677,14 +8819,28 @@ static void Selection_Essential()
             if (sectionb)
             {
                 if (listEntitiesb.size() == 800)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Essentials(entityMatrixb, layer2TileMatrixb, listEntitiesb);
             }
             else
             {
                 if (listEntities.size() == 800)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Essentials(entityMatrix, layer2TileMatrix, listEntities);
             }
@@ -8723,14 +8879,28 @@ static void Selection_Platforms()
                 if (sectionb)
                 {
                     if (listEntitiesb.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Platforms(entityMatrixb, layer2TileMatrixb, listEntitiesb);
                 }
                 else
                 {
                     if (listEntities.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Platforms(entityMatrix, layer2TileMatrix, listEntities);
                 }
@@ -8741,14 +8911,28 @@ static void Selection_Platforms()
             if (sectionb)
             {
                 if (listEntitiesb.size() == 800)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Platforms(entityMatrixb, layer2TileMatrixb, listEntitiesb);
             }
             else
             {
                 if (listEntities.size() == 800)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Platforms(entityMatrix, layer2TileMatrix, listEntities);
             }
@@ -8787,14 +8971,28 @@ static void Selection_Bonus()
                 if (sectionb)
                 {
                     if (listBonusb.size() == 400)
-                        MessageBox(NULL, "You cannot place more than 400 Bonuses!", "Bonus Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                    {
+#ifndef LINUX
+                        MessageBox(NULL, "You cannot place more than 400 Bonuses !", "Bonus Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Bonus Overflow !"), QStringLiteral("You cannot place more than 400 Bonuses !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Bonus(entityMatrixb, layer2TileMatrixb, listBonusb);
                 }
                 else
                 {
                     if (listBonus.size() == 400)
-                        MessageBox(NULL, "You cannot place more than 400 Bonuses!", "Bonus Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                    {
+#ifndef LINUX
+                        MessageBox(NULL, "You cannot place more than 400 Bonuses !", "Bonus Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Bonus Overflow !"), QStringLiteral("You cannot place more than 400 Bonuses !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Bonus(entityMatrix, layer2TileMatrix, listBonus);
                 }
@@ -8805,14 +9003,28 @@ static void Selection_Bonus()
             if (sectionb)
             {
                 if (listBonusb.size() == 400)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 400 Bonuses!", "Bonus Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Bonus Overflow !"), QStringLiteral("You cannot place more than 400 Bonuses !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Bonus(entityMatrixb, layer2TileMatrixb, listBonusb);
             }
             else
             {
                 if (listBonus.size() == 400)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 400 Bonuses!", "Bonus Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Bonus Overflow !"), QStringLiteral("You cannot place more than 400 Bonuses !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Bonus(entityMatrix, layer2TileMatrix, listBonus);
             }
@@ -8955,14 +9167,28 @@ static void Selection_Sceneries()
                     if (sectionb)
                     {
                         if (listSceneriesb.size() == 400)
+                        {
+#ifndef LINUX
                             MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                         else
                             Placements_Sceneries(entityMatrixb, listSceneriesb);
                     }
                     else
                     {
                         if (listSceneries.size() == 400)
+                        {
+#ifndef LINUX
                             MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                         else
                             Placements_Sceneries(entityMatrix, listSceneries);
                     }
@@ -8973,14 +9199,28 @@ static void Selection_Sceneries()
                 if (sectionb)
                 {
                     if (listSceneriesb.size() == 400)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Sceneries(entityMatrixb, listSceneriesb);
                 }
                 else
                 {
                     if (listSceneries.size() == 400)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Sceneries(entityMatrix, listSceneries);
                 }
@@ -9030,14 +9270,28 @@ static void Selection_Enemies()
                     if (sectionb)
                     {
                         if (listEntitiesb.size() == 800)
+                        {
+#ifndef LINUX
                             MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                         else
                             Placements_Enemies(entityMatrixb, layer2TileMatrixb, listEntitiesb);
                     }
                     else
                     {
                         if (listEntities.size() == 800)
+                        {
+#ifndef LINUX
                             MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                         else
                             Placements_Enemies(entityMatrix, layer2TileMatrix, listEntities);
                     }
@@ -9048,14 +9302,28 @@ static void Selection_Enemies()
                 if (sectionb)
                 {
                     if (listEntitiesb.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Enemies(entityMatrixb, layer2TileMatrixb, listEntitiesb);
                 }
                 else
                 {
                     if (listEntities.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Enemies(entityMatrix, layer2TileMatrix, listEntities);
                 }
@@ -9105,14 +9373,28 @@ static void Selection_Hazards()
                     if (sectionb)
                     {
                         if (listEntitiesb.size() == 800)
+                        {
+#ifndef LINUX
                             MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                         else
                             Placements_Hazards(entityMatrixb, layer2TileMatrixb, listEntitiesb);
                     }
                     else
                     {
                         if (listEntities.size() == 800)
+                        {
+#ifndef LINUX
                             MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                         else
                             Placements_Hazards(entityMatrix, layer2TileMatrix, listEntities);
                     }
@@ -9123,14 +9405,28 @@ static void Selection_Hazards()
                 if (sectionb)
                 {
                     if (listEntitiesb.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Hazards(entityMatrixb, layer2TileMatrixb, listEntitiesb);
                 }
                 else
                 {
                     if (listEntities.size() == 800)
+                    {
+#ifndef LINUX
                         MessageBox(NULL, "You cannot place more than 800 Entities !", "Entity Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Entity Overflow !"), QStringLiteral("You cannot place more than 800 Entities !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
+                    }
                     else
                         Placements_Hazards(entityMatrix, layer2TileMatrix, listEntities);
                 }
@@ -9168,7 +9464,14 @@ static void Selection_Warps()
             if (!(mpos_absolute.y < 150 || (mpos_absolute.x < 133 && mpos_absolute.y > 448) || (mpos_absolute.x > 459 && mpos_absolute.y > 448)))
             {
                 if (listWarps.size() == 52)
+                {
+#ifndef LINUX
                     MessageBox(NULL, "You cannot place more than 52 Warps !", "Warps Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                    QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Warps Overflow !"), QStringLiteral("You cannot place more than 52 Warps !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
                 else
                     Placements_Warps(listWarps);
             }
@@ -9176,7 +9479,14 @@ static void Selection_Warps()
         else
         {
             if (listWarps.size() == 52)
+            {
+#ifndef LINUX
                 MessageBox(NULL, "You cannot place more than 52 Warps !", "Warps Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+                QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Warps Overflow !"), QStringLiteral("You cannot place more than 52 Warps !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
+            }
             else
                 Placements_Warps(listWarps);
         }
@@ -9190,7 +9500,6 @@ static void Placements_Tiles(Matrix* currentMatrix, list<Tile>& currentList)
     if (currentMatrix->getValue(cursorPos.x / 32, cursorPos.y / 32) == 0)
     {
         currentList.emplace_back(Tile(cursorPos.x, cursorPos.y, tileNumbX, tileNumbY));
-
         currentMatrix->setValue(cursorPos.x / 32, cursorPos.y / 32, 1);
     }
 }
@@ -15924,7 +16233,14 @@ static void Autoscroll_AddNode()
     register unsigned int sizer = levelAutoscrollPath.size();
 
     if (sizer == 26)
+    {
+#ifndef LINUX
         MessageBox(NULL, "You cannot place more than 26 Nodes !", "Nodes Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+#else
+        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Nodes Overflow !"), QStringLiteral("You cannot place more than 26 Nodes !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
+    }
     else
     {
         autoscrollPathLine->append(Vertex(static_cast<Vector2f>(camPos + Vector2i(16, 16)), Color::White));
@@ -17251,13 +17567,11 @@ static void Music_Import()
         if (sectionb)
         {
             levelbMusic = 23;
-
             addNewResource(filegrab, 2);
         }
         else
         {
             levelMusic = 22;
-
             addNewResource(filegrab, 0);
         }
 
@@ -17276,6 +17590,9 @@ static void Music_Import()
     }
     else
     {
+        extern bool showCursor;
+        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
         OPENFILENAME dialogParms;
 
         ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
@@ -17289,13 +17606,18 @@ static void Music_Import()
         dialogParms.lpstrTitle = "Import a valid music :";
         dialogParms.lpstrFilter = "All Sound Formats\0*.aiff;*.asf;*.asx;*.dls;*.flac;*.fsb;*.it;*.m3u;*.mid;*.mod;*.mp2;*.mp3;*.ogg;*.pls;*.s3m;*.vag;*.wav;*.wax;*.wma;*.xm;*.xma\0";
         dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
-
+#endif
         FMOD_Channel_IsPlaying(musicSamplesChannel, &isPlaying);
 
         if (isPlaying)
             FMOD_Channel_Stop(musicSamplesChannel);
 
+#ifndef LINUX
         if (GetOpenFileName(&dialogParms))
+#else
+        const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Import a valid music :"), QDir::homePath(), QStringLiteral("All Sound Formats (*.aiff *.asf *.asx *.dls *.flac *.fsb *.it *.m3u *.mid *.mod *.mp2 *.mp3 *.ogg *.pls *.s3m *.vag *.wav *.wax *.wma *.xm *.xma)")));
+        if (!filename.isEmpty())
+#endif
         {
             FMOD_RESULT result;
 
@@ -17317,7 +17639,9 @@ static void Music_Import()
                     musicSamples[22] = NULL;
                 }
             }
-
+#ifdef LINUX
+            strcpy(filegrab, filename.toLocal8Bit().constData());
+#endif
             if (sectionb)
                 result = FMOD_System_CreateStream(soundSystem, filegrab, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[23]);
             else
@@ -17333,11 +17657,26 @@ static void Music_Import()
                     resutl = FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(19), musicSamples[22], 0, &musicSamplesChannel);
 
                 if (resutl != FMOD_OK)
-                    MessageBox(NULL, "Error ! The file cannot be played !", "File unplayable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+                {
+#ifndef LINUX
+                    MessageBox(NULL, "The file cannot be played !", "File unplayable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                    QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unplayable !"), QStringLiteral("The file cannot be played !"), QMessageBox::Ok);
+                    messageBox.exec();
+#endif
+                }
             }
             else
-                MessageBox(NULL, "Error ! The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+            {
+#ifndef LINUX
+                MessageBox(NULL, "The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unreadable !"), QStringLiteral("The file format is not supported !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
+            }
         }
+        mainWindow->setMouseCursorVisible(showCursor);
     }
 }
 
@@ -18033,6 +18372,9 @@ static void Background_LavaCave()
 
 static void Background_Import()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
@@ -18048,7 +18390,14 @@ static void Background_Import()
     dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
     if (GetOpenFileName(&dialogParms))
+#else
+    const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Import a valid background :"), QDir::homePath(), QStringLiteral("Supported Image Formats (*.bmp *.dds *.jpg *.png *.tga *.psd)")));
+    if (!filename.isEmpty())
+#endif
     {
+#ifdef LINUX
+        strcpy(filegrab, filename.toLocal8Bit().constData());
+#endif
         if (sectionb)
         {
             if (backgroundTxt[13] != NULL)
@@ -18058,8 +18407,12 @@ static void Background_Import()
 
             if (!backgroundTxt[13]->loadFromFile(filegrab))
             {
-                MessageBox(NULL, "Error ! The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
-
+#ifndef LINUX
+                MessageBox(NULL, "The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unreadable !"), QStringLiteral("The file format is not supported !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 delete backgroundTxt[13];
 
                 backgroundTxt[13] = NULL;
@@ -18089,8 +18442,12 @@ static void Background_Import()
 
             if (!backgroundTxt[12]->loadFromFile(filegrab))
             {
-                MessageBox(NULL, "Error ! The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
-
+#ifndef LINUX
+                MessageBox(NULL, "The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unreadable !"), QStringLiteral("The file format is not supported !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 delete backgroundTxt[12];
 
                 backgroundTxt[12] = NULL;
@@ -18118,6 +18475,7 @@ static void Background_Import()
 
         currentMenu = EDITION;
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Gradient_Fit()
@@ -18457,6 +18815,7 @@ static void Effect_But6()
     }
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcName(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18475,11 +18834,8 @@ LRESULT CALLBACK dialogProcName(HWND windowHandle, UINT message, WPARAM wParam, 
             {
                 case 6 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 5);
-
                     GetWindowText(handleEdit, textBuffer, 22);
-
                     levelName = textBuffer;
 
                     return TRUE;
@@ -18494,12 +18850,28 @@ LRESULT CALLBACK dialogProcName(HWND windowHandle, UINT message, WPARAM wParam, 
 
     return FALSE;
 }
+#endif
 
 static void Info_LevelName()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(2), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcName));
+#else
+    const QString text(QInputDialog::getText(NULL, QStringLiteral("Enter a name :"), QStringLiteral("Please enter the Name of your Level here :"),
+        QLineEdit::Normal, levelName.c_str()));
+
+    if (!text.isEmpty())
+    {
+        // Constraint the length
+        levelName = text.left(20).toStdString();
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcAuthor(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18518,11 +18890,8 @@ LRESULT CALLBACK dialogProcAuthor(HWND windowHandle, UINT message, WPARAM wParam
             {
                 case 12 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 11);
-
                     GetWindowText(handleEdit, textBuffer, 32);
-
                     levelAuthor = textBuffer;
 
                     return TRUE;
@@ -18537,12 +18906,28 @@ LRESULT CALLBACK dialogProcAuthor(HWND windowHandle, UINT message, WPARAM wParam
 
     return FALSE;
 }
+#endif
 
 static void Info_LevelAuthor()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(8), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcAuthor));
+#else
+    const QString text(QInputDialog::getText(NULL, QStringLiteral("Enter a name :"), QStringLiteral("Please enter your Name :"),
+        QLineEdit::Normal, levelAuthor.c_str()));
+
+    if (!text.isEmpty())
+    {
+        // Constraint the length
+        levelAuthor = text.left(30).toStdString();
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcGrav(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18561,13 +18946,9 @@ LRESULT CALLBACK dialogProcGrav(HWND windowHandle, UINT message, WPARAM wParam, 
             {
                 case 19 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 17);
-
                     GetWindowText(handleEdit, textBuffer, 2);
-
                     levelGravity = max(min(atoi(textBuffer), 10), 1);
-
                     infoSlider[0]->setPosition(roundf(20.222222 * (levelGravity-1)));
 
                     return TRUE;
@@ -18582,19 +18963,35 @@ LRESULT CALLBACK dialogProcGrav(HWND windowHandle, UINT message, WPARAM wParam, 
 
     return FALSE;
 }
+#endif
 
 static void sliderGravity(float sliderPos)
 {
     infoSlider[0]->setPosition(roundf(sliderPos / 20.222222) * 20.222222);
-
     levelGravity = roundf(sliderPos / 20.222222) + 1;
 }
 
 static void Info_LevelGravity()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(14), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcGrav));
+#else
+    bool ok;
+    const int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter a Gravity value between 1 and 10 :"),
+        levelGravity, 1, 10, 1, &ok));
+
+    if (ok)
+    {
+        levelGravity = max(min(value, 10), 1);
+        infoSlider[0]->setPosition(roundf(20.222222 * (levelGravity-1)));
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcTime(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18613,13 +19010,9 @@ LRESULT CALLBACK dialogProcTime(HWND windowHandle, UINT message, WPARAM wParam, 
             {
                 case 26 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 24);
-
                     GetWindowText(handleEdit, textBuffer, 5);
-
                     levelTime = max(min(atoi(textBuffer), 10000), 100);
-
                     infoSlider[1]->setPosition(roundf((levelTime-100) / 54.395604));
 
                     return TRUE;
@@ -18634,6 +19027,7 @@ LRESULT CALLBACK dialogProcTime(HWND windowHandle, UINT message, WPARAM wParam, 
 
     return FALSE;
 }
+#endif
 
 static void sliderTime(float sliderPos)
 {
@@ -18642,9 +19036,25 @@ static void sliderTime(float sliderPos)
 
 static void Info_LevelTime()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(21), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcTime));
+#else
+    bool ok;
+    const int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter a Time Limit between 100 and 10000 :"),
+        levelTime, 100, 10000, 1, &ok));
+
+    if (ok)
+    {
+        levelTime = max(min(value, 10000), 100);
+        infoSlider[1]->setPosition(roundf((levelTime-100) / 54.395604));
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcBackA(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18667,21 +19077,17 @@ LRESULT CALLBACK dialogProcBackA(HWND windowHandle, UINT message, WPARAM wParam,
             {
                 case 33 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 31);
-
                     GetWindowText(handleEdit, textBuffer, 3);
 
                     if (sectionb)
                     {
                         levelBackAlphab = max(min(atoi(textBuffer), 255), 0);
-
                         infoSlider[2]->setPosition(roundf(levelBackAlphab / 1.401098));
                     }
                     else
                     {
                         levelBackAlpha = max(min(atoi(textBuffer), 255), 0);
-
                         infoSlider[2]->setPosition(roundf(levelBackAlpha / 1.401098));
                     }
 
@@ -18697,6 +19103,7 @@ LRESULT CALLBACK dialogProcBackA(HWND windowHandle, UINT message, WPARAM wParam,
 
     return FALSE;
 }
+#endif
 
 static void sliderBackAlpha(float sliderPos)
 {
@@ -18708,9 +19115,39 @@ static void sliderBackAlpha(float sliderPos)
 
 static void Info_BackAlpha()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(28), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcBackA));
+#else
+    bool ok;
+    int initial;
+    if (sectionb)
+        initial = levelBackAlphab;
+    else
+        initial = levelBackAlpha;
+
+    const int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter an Opacity Value between 0 and 255 :"),
+        initial, 0, 255, 1, &ok));
+
+    if (ok)
+    {
+        if (sectionb)
+        {
+            levelBackAlphab = max(min(value, 255), 0);
+            infoSlider[2]->setPosition(roundf(levelBackAlphab / 1.401098));
+        }
+        else
+        {
+            levelBackAlpha = max(min(value, 255), 0);
+            infoSlider[2]->setPosition(roundf(levelBackAlpha / 1.401098));
+        }
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcFrontA(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18733,21 +19170,17 @@ LRESULT CALLBACK dialogProcFrontA(HWND windowHandle, UINT message, WPARAM wParam
             {
                 case 33 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 31);
-
                     GetWindowText(handleEdit, textBuffer, 3);
 
                     if (sectionb)
                     {
                         levelFrontAlphab = max(min(atoi(textBuffer), 255), 0);
-
                         infoSlider[3]->setPosition(roundf(levelFrontAlphab / 1.401098));
                     }
                     else
                     {
                         levelFrontAlpha = max(min(atoi(textBuffer), 255), 0);
-
                         infoSlider[3]->setPosition(roundf(levelFrontAlpha / 1.401098));
                     }
 
@@ -18763,6 +19196,7 @@ LRESULT CALLBACK dialogProcFrontA(HWND windowHandle, UINT message, WPARAM wParam
 
     return FALSE;
 }
+#endif
 
 static void sliderFrontAlpha(float sliderPos)
 {
@@ -18774,7 +19208,36 @@ static void sliderFrontAlpha(float sliderPos)
 
 static void Info_FrontAlpha()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(28), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcFrontA));
+#else
+    bool ok;
+    int initial;
+    if (sectionb)
+        initial = levelFrontAlphab;
+    else
+        initial = levelFrontAlpha;
+
+    const int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter an Opacity Value between 0 and 255 :"),
+        initial, 0, 255, 1, &ok));
+
+    if (ok)
+    {
+        if (sectionb)
+        {
+            levelFrontAlphab = max(min(value, 255), 0);
+            infoSlider[2]->setPosition(roundf(levelFrontAlphab / 1.401098));
+        }
+        else
+        {
+            levelFrontAlpha = max(min(value, 255), 0);
+            infoSlider[2]->setPosition(roundf(levelFrontAlpha / 1.401098));
+        }
+    }
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void sliderLiquidSpeed(float sliderPos)
@@ -18938,6 +19401,7 @@ static void sliderBowserTrail(float sliderPos)
     #endif
 }
 
+#ifndef LINUX
 LRESULT CALLBACK dialogProcBowserHealth(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HWND handleEdit;
@@ -18956,11 +19420,8 @@ LRESULT CALLBACK dialogProcBowserHealth(HWND windowHandle, UINT message, WPARAM 
             {
                 case 47 :
                     EndDialog(windowHandle, 0);
-
                     handleEdit = GetDlgItem(windowHandle, 45);
-
                     GetWindowText(handleEdit, textBuffer, 2);
-
                     bowserHealth = atoi(textBuffer);
 
                     return TRUE;
@@ -18975,14 +19436,30 @@ LRESULT CALLBACK dialogProcBowserHealth(HWND windowHandle, UINT message, WPARAM 
 
     return FALSE;
 }
+#endif
 
 static void Info_BowserHealth()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     DialogBox(*mainInstance, MAKEINTRESOURCE(42), mainWindow->getSystemHandle(), reinterpret_cast<DLGPROC>(dialogProcBowserHealth));
+#else
+    bool ok;
+    const int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter an Health Value between 1 and 25 :"),
+        bowserHealth, 1, 25, 1, &ok));
+
+    if (ok)
+        bowserHealth = value;
+#endif
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Info_BowserMusic()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
@@ -18999,6 +19476,10 @@ static void Info_BowserMusic()
     dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
     if (GetOpenFileName(&dialogParms))
+#else
+    const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Import a valid music :"), QDir::homePath(), QStringLiteral("All Sound Formats (*.aiff *.asf *.asx *.dls *.flac *.fsb *.it *.m3u *.mid *.mod *.mp2 *.mp3 *.ogg *.pls *.s3m *.vag *.wav *.wax *.wma *.xm *.xma)")));
+    if (!filename.isEmpty())
+#endif
     {
         FMOD_RESULT result;
 
@@ -19015,7 +19496,9 @@ static void Info_BowserMusic()
         }
 
         bowserMusic = 1;
-
+#ifdef LINUX
+        strcpy(filegrab, filename.toLocal8Bit().constData());
+#endif
         result = FMOD_System_CreateStream(soundSystem, filegrab, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[24]);
 
         if (result == FMOD_OK)
@@ -19026,7 +19509,12 @@ static void Info_BowserMusic()
 
             if (resutl != FMOD_OK)
             {
-                MessageBox(NULL, "Error ! The file cannot be played !", "File unplayable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#ifndef LINUX
+                MessageBox(NULL, "The file cannot be played !", "File unplayable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unplayable !"), QStringLiteral("The file cannot be played !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 return;
             }
 
@@ -19037,20 +19525,31 @@ static void Info_BowserMusic()
             addNewResource(filegrab, 4);
         }
         else
-            MessageBox(NULL, "Error ! The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+        {
+#ifndef LINUX
+            MessageBox(NULL, "The file format is not supported !", "File unreadable !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("File unreadable !"), QStringLiteral("The file format is not supported !"), QMessageBox::Ok);
+            messageBox.exec();
+#endif
+        }
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Info_LevelSave()
 {
     if (levelDir.empty())
     {
+        extern bool showCursor;
+        mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
         OPENFILENAME dialogParms;
         TCHAR personalPath[MAX_PATH];
 
         SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-        StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+        strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
         ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -19068,13 +19567,17 @@ static void Info_LevelSave()
         if (GetSaveFileName(&dialogParms))
         {
             PathRenameExtension(filegrab, ".cml");
-
             levelDir = filegrab;
-
+#else
+        const QString filename(QFileDialog::getSaveFileName(NULL, QStringLiteral("Save a Level :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+        if (!filename.isEmpty())
+        {
+            levelDir = filename.toStdString();
+#endif
             checkResources(levelDir.c_str(), false);
-
             Level_Save(levelDir);
         }
+        mainWindow->setMouseCursorVisible(showCursor);
     }
     else
         Level_Save(levelDir);
@@ -19082,12 +19585,15 @@ static void Info_LevelSave()
 
 static void Info_LevelSaveas()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
     TCHAR personalPath[MAX_PATH];
 
     SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-    StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+    strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -19105,23 +19611,30 @@ static void Info_LevelSaveas()
     if (GetSaveFileName(&dialogParms))
     {
         PathRenameExtension(filegrab, ".cml");
-
         levelDir = filegrab;
-
+#else
+    const QString filename(QFileDialog::getSaveFileName(NULL, QStringLiteral("Save a Level :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+    if (!filename.isEmpty())
+    {
+        levelDir = filename.toStdString();
+#endif
         checkResources(levelDir.c_str(), true);
-
         Level_Save(levelDir);
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Info_LevelLoad()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
     OPENFILENAME dialogParms;
     TCHAR personalPath[MAX_PATH];
 
     SHGetFolderPath(mainWindow->getSystemHandle(), CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, personalPath);
 
-    StrCat(personalPath, "\\Mario Constructor Master\\Levels");
+    strcat(personalPath, "\\Mario Constructor Master\\Levels");
 
     ZeroMemory(&dialogParms, sizeof(OPENFILENAME));
 
@@ -19137,33 +19650,55 @@ static void Info_LevelLoad()
     dialogParms.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | OFN_NOCHANGEDIR;
 
     if (GetOpenFileName(&dialogParms))
+#else
+    const QString filename(QFileDialog::getOpenFileName(NULL, QStringLiteral("Load a Level :"), QDir::homePath() + QStringLiteral("/Mario Constructor Master/Levels"), QStringLiteral("Constructor Master Levels (*.cml)")));
+    if (!filename.isEmpty())
+#endif
     {
         camera->setCenter(320, 240);
-
         mainTexture.setView(*camera);
-
+#ifndef LINUX
         Level_Load(filegrab);
-
+#else
+        Level_Load(filename.toLocal8Bit().constData());
+#endif
         Prefs_Title();
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Info_LevelTest()
 {
+    extern bool showCursor;
+    mainWindow->setMouseCursorVisible(true);
     if (startArea == 0)
     {
+#ifndef LINUX
         MessageBox(NULL, "There is no Start Point in the Level !", "No Start Point", MB_ICONINFORMATION | MB_TASKMODAL | MB_OK);
+#else
+        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("No Start Point"), QStringLiteral("There is no Start Point in the Level !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return;
     }
 
+#ifndef LINUX
     if (MessageBox(NULL, "Do you want to Test your current Level ?", "Test Level", MB_ICONQUESTION | MB_TASKMODAL | MB_YESNO) == IDYES)
+#else
+    QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Test Level"), QStringLiteral("Do you want to Test your current Level ?"), QMessageBox::Yes | QMessageBox::No);
+    if (messageBox.exec() == QMessageBox::Yes)
+#endif
     {
         circleFadeTex = new Texture;
 
         if (!circleFadeTex->loadFromFile("Data/Gfx/CircleFade.bmp"))
         {
-            MessageBox(NULL, "Error ! Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+            MessageBox(NULL, "Failed to load Texture :\nData/Gfx/CircleFade.bmp", "Failed to load Texture", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+            QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Failed to load Texture"), QStringLiteral("Failed to load Texture :\nData/Gfx/CircleFade.bmp"), QMessageBox::Ok);
+            messageBox.exec();
+#endif
             mainWindow->close();
 
             return;
@@ -19184,6 +19719,7 @@ static void Info_LevelTest()
         if (editorMusic)
             FMOD_Channel_Stop(musicChannel);
     }
+    mainWindow->setMouseCursorVisible(showCursor);
 }
 
 static void Info_LiquidNone()
@@ -19384,7 +19920,12 @@ static void Level_Save(const string& filename)
 
     if (!levelFile.good())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to create the Level file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to create the Level file !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return;
     }
 
@@ -19808,7 +20349,12 @@ static void Level_Load(const string& filename)
 
     if (!levelFile.good())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to open the Level file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return;
     }
 
@@ -19985,6 +20531,9 @@ static void Level_Load(const string& filename)
     levelDir = filename;
 
     {
+        extern char procPath[MAX_PATH];
+
+#ifndef LINUX
         TCHAR filePath[MAX_PATH];
         TCHAR getString[MAX_PATH];
 
@@ -20056,9 +20605,77 @@ static void Level_Load(const string& filename)
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, filePath, MAX_PATH);
-        PathRemoveFileSpec(filePath);
-        SetCurrentDirectory(filePath);
+        SetCurrentDirectory(procPath);
+#else
+        char getString[MAX_PATH];
+
+        chdir(filename.substr(0, filename.find_last_of('/')).c_str());
+
+        for (register unsigned int i = 0; i < 5; i++)
+        {
+            levelFile.read(getString, 1);
+
+            if (getString[0] != '\0')
+            {
+                levelFile.seekg(-1, ios::cur);
+
+                for (register unsigned int j = 0; true; j++)
+                {
+                    levelFile.read(&getString[j], 1);
+
+                    if (getString[j] == '\0')
+                        break;
+                }
+
+                switch (i)
+                {
+                    case 0 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[22]);
+
+                        resourcesArray[0] = new string(getString);
+
+                        break;
+                    case 1 :
+                        backgroundTxt[12] = new Texture;
+                        backgroundTxt[12]->loadFromFile(getString);
+                        backgroundTxt[12]->setRepeated(true);
+
+                        background[12] = new RectangleShape;
+                        background[12]->setTexture(backgroundTxt[12]);
+
+                        resourcesArray[1] = new string(getString);
+
+                        break;
+                    case 2 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[23]);
+
+                        resourcesArray[2] = new string(getString);
+
+                        break;
+                    case 3 :
+                        backgroundTxt[13] = new Texture;
+                        backgroundTxt[13]->loadFromFile(getString);
+                        backgroundTxt[13]->setRepeated(true);
+
+                        background[13] = new RectangleShape;
+                        background[13]->setTexture(backgroundTxt[13]);
+
+                        resourcesArray[3] = new string(getString);
+
+                        break;
+                    case 4 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[24]);
+
+                        resourcesArray[4] = new string(getString);
+
+                        break;
+                }
+            }
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     levelFile.read(reinterpret_cast<char*>(&roomScale.x), 4);
@@ -20092,7 +20709,12 @@ static void Level_LoadEntry()
 
     if (!levelFile.good())
     {
+#ifndef LINUX
         MessageBox(NULL, "Failed to open the Level file !", "Error !", MB_OK | MB_TASKMODAL | MB_ICONERROR);
+#else
+        QMessageBox messageBox(QMessageBox::Critical, QStringLiteral("Error !"), QStringLiteral("Failed to open the Level file !"), QMessageBox::Ok);
+        messageBox.exec();
+#endif
         return;
     }
 
@@ -20101,6 +20723,9 @@ static void Level_LoadEntry()
     levelDir = fileToLoad;
 
     {
+        extern char procPath[MAX_PATH];
+
+#ifndef LINUX
         TCHAR filePath[MAX_PATH];
         TCHAR getString[MAX_PATH];
 
@@ -20172,9 +20797,77 @@ static void Level_LoadEntry()
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, filePath, MAX_PATH);
-        PathRemoveFileSpec(filePath);
         SetCurrentDirectory(filePath);
+#else
+        char getString[MAX_PATH];
+
+        chdir(fileToLoad.substr(0, fileToLoad.find_last_of('/')).c_str());
+
+        for (register unsigned int i = 0; i < 5; i++)
+        {
+            levelFile.read(getString, 1);
+
+            if (getString[0] != '\0')
+            {
+                levelFile.seekg(-1, ios::cur);
+
+                for (register unsigned int j = 0; true; j++)
+                {
+                    levelFile.read(&getString[j], 1);
+
+                    if (getString[j] == '\0')
+                        break;
+                }
+
+                switch (i)
+                {
+                    case 0 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[22]);
+
+                        resourcesArray[0] = new string(getString);
+
+                        break;
+                    case 1 :
+                        backgroundTxt[12] = new Texture;
+                        backgroundTxt[12]->loadFromFile(getString);
+                        backgroundTxt[12]->setRepeated(true);
+
+                        background[12] = new RectangleShape;
+                        background[12]->setTexture(backgroundTxt[12]);
+
+                        resourcesArray[1] = new string(getString);
+
+                        break;
+                    case 2 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[23]);
+
+                        resourcesArray[2] = new string(getString);
+
+                        break;
+                    case 3 :
+                        backgroundTxt[13] = new Texture;
+                        backgroundTxt[13]->loadFromFile(getString);
+                        backgroundTxt[13]->setRepeated(true);
+
+                        background[13] = new RectangleShape;
+                        background[13]->setTexture(backgroundTxt[13]);
+
+                        resourcesArray[3] = new string(getString);
+
+                        break;
+                    case 4 :
+                        FMOD_System_CreateStream(soundSystem, getString, FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[24]);
+
+                        resourcesArray[4] = new string(getString);
+
+                        break;
+                }
+            }
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     levelFile.read(reinterpret_cast<char*>(&roomScale.x), 4);
@@ -20369,7 +21062,7 @@ static void Level_LoadObjects(ifstream& levelFile)
     levelFile.read(reinterpret_cast<char*>(&bowserMusic), 1);
 
     {
-        TCHAR getString[MAX_PATH];
+        char getString[MAX_PATH];
 
         levelFile.read(getString, 1);
 
@@ -20392,7 +21085,7 @@ static void Level_LoadObjects(ifstream& levelFile)
     }
 
     {
-        TCHAR getString[MAX_PATH];
+        char getString[MAX_PATH];
 
         levelFile.read(getString, 1);
 
@@ -25872,6 +26565,9 @@ static void Level_Test()
     coinsFont = new SpriteFont(Vector2f(285, 36), false, "0");
 
     {
+        extern char procPath[MAX_PATH];
+
+#ifndef LINUX
         TCHAR filePath[MAX_PATH];
 
         strcpy(filePath, levelDir.c_str());
@@ -25902,9 +26598,35 @@ static void Level_Test()
         }
 
         // Reset the current directory :
-        GetModuleFileName(NULL, filePath, MAX_PATH);
-        PathRemoveFileSpec(filePath);
         SetCurrentDirectory(filePath);
+#else
+        chdir(levelDir.substr(0, levelDir.find_last_of('/')).c_str());
+
+        for (register unsigned int i = 0; i < 5; i++)
+        {
+            if (resourcesArray[i] == NULL)
+                continue;
+
+            switch (i)
+            {
+                case 0 :
+                    FMOD_System_CreateStream(soundSystem, resourcesArray[0]->c_str(), FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[22]);
+
+                    break;
+                case 2 :
+                    FMOD_System_CreateStream(soundSystem, resourcesArray[2]->c_str(), FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[23]);
+
+                    break;
+                case 4 :
+                    FMOD_System_CreateStream(soundSystem, resourcesArray[4]->c_str(), FMOD_LOOP_NORMAL | FMOD_SOFTWARE | FMOD_2D, NULL, &musicSamples[24]);
+
+                    break;
+            }
+        }
+
+        // Reset the current directory :
+        chdir(procPath);
+#endif
     }
 
     // Level loading :
@@ -28395,11 +29117,19 @@ static void Level_Test()
                     switch (eventSystem.key.code)
                     {
                         case Keyboard::Escape :
-
+                        {
+                            extern bool showCursor;
+                            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                             if (MessageBox(NULL, "Do you want to back to the Editor ?", "Back to the Editor ?", MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL) == IDYES)
+#else
+                            QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Back to the Editor ?"), QStringLiteral("Do you want to back to the Editor ?"), QMessageBox::Yes | QMessageBox::No);
+                            if (messageBox.exec() == QMessageBox::Yes)
+#endif
                                 exitToTitle = true;
-
+                            mainWindow->setMouseCursorVisible(showCursor);
                             break;
+                        }
                         default :
 
                             if (player != NULL)
@@ -30524,21 +31254,22 @@ static void Elements_Hazards(unsigned int elementNumb)
     }
 }
 
-static void checkResources(LPCSTR levelURL, bool saveAs)
+static void checkResources(const char* levelURL, bool saveAs)
 {
-    TCHAR resourcePath[MAX_PATH];
-    TCHAR resourceName[MAX_PATH];
+    char resourcePath[MAX_PATH];
+    char resourceName[MAX_PATH];
 
-    TCHAR levelPath[MAX_PATH];
-    TCHAR levelName[MAX_PATH];
+    char levelPath[MAX_PATH];
+    char levelName[MAX_PATH];
 
-    TCHAR destName[MAX_PATH];
+    char destName[MAX_PATH];
 
     for (register unsigned int i = 0; i < 5; i++)
     {
         if (resourcesArray[i] != NULL)
         {
-            TCHAR messageText[256];
+#ifndef LINUX
+            char messageText[256];
 
             strcpy(resourcePath, resourcesArray[i]->c_str());
             strcpy(resourceName, resourcesArray[i]->c_str());
@@ -30555,31 +31286,74 @@ static void checkResources(LPCSTR levelURL, bool saveAs)
             PathStripPath(levelName);
 
             if (PathIsRelative(resourcesArray[i]->c_str()))
+#else
+            strcpy(resourcePath, resourcesArray[i]->substr(0, resourcesArray[i]->find_last_of('/')).c_str());
+            strcpy(resourceName, resourcesArray[i]->substr(resourcesArray[i]->find_last_of('/') + 1).c_str());
+
+            strcpy(levelPath, levelURL);
+            strcpy(levelName, levelURL);
+
+            dirname(levelPath);
+            basename(levelName);
+
+            strcpy(destName, levelPath);
+
+            if (resourcesArray[i]->c_str()[0] != '/')
+#endif
             {
                 if (saveAs)
                 {
+                    extern bool showCursor;
+                    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                     sprintf(messageText, "The resource :\n%s\nis referred by a Relative Path from the previous level's location.\nDo you want update the Relative Path ?", resourceName);
 
                     if (MessageBox(NULL, messageText, "Update the Path ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
                     {
                         if (PathRelativePathTo(resourcePath, levelPath, FILE_ATTRIBUTE_DIRECTORY, resourcesArray[i]->c_str(), FILE_ATTRIBUTE_NORMAL))
+#else
+                    QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Update the Path ?"), QString("The resource :\n%1\nis referred by a Relative Path from the previous level's location.\nDo you want update the Relative Path ?").arg(resourceName), QMessageBox::Yes | QMessageBox::No);
+                    if (messageBox.exec() == QMessageBox::Yes)
+                    {
+                        QDir dirPath(levelPath);
+                        QString relativePath(dirPath.relativeFilePath(resourcesArray[i]->c_str()));
+
+                        if (relativePath.isEmpty())
+#endif
                         {
                             delete resourcesArray[i];
-
+#ifndef LINUX
                             resourcesArray[i] = new string(resourcePath);
+#else
+                            resourcesArray[i] = new string(relativePath.toStdString());
+#endif
                         }
                         else
-                            MessageBox(NULL, "Error ! Failed to recreate Relative Path !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+                        {
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to recreate Relative Path !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                            QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to recreate Relative Path !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
+                        }
                     }
+                    mainWindow->setMouseCursorVisible(showCursor);
                 }
             }
             else
             {
                 if (strcmp(levelPath, resourcePath) != 0)
                 {
+                    extern bool showCursor;
+                    mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
                     sprintf(messageText, "The resource :\n%s\nis in another directory from the level.\nDo you want copy the resource into the level directory ?", resourceName);
-
                     if (MessageBox(NULL, messageText, "Copy the resource file ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
+#else
+                    QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Copy the resource file ?"), QString("The resource :\n%1\nis in another directory from the level.\nDo you want copy the resource into the level directory ?").arg(resourceName), QMessageBox::Yes | QMessageBox::No);
+                    if (messageBox.exec() == QMessageBox::Yes)
+#endif
                     {
                         ifstream src;
                         ofstream dest;
@@ -30588,17 +31362,30 @@ static void checkResources(LPCSTR levelURL, bool saveAs)
 
                         if (!src.good())
                         {
-                            MessageBox(NULL, "Error ! Failed to open the original resource file !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to open the original resource file !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                            QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Error !"), QStringLiteral("Failed to open the original resource file !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
                             goto LBL_CHKRESLVL;
                         }
-
+#ifndef LINUX
                         PathAppend(destName, resourceName);
-
+#else
+                        strcat(destName, "/");
+                        strcat(destName, resourceName);
+#endif
                         dest.open(destName, ios::binary);
 
                         if (!dest.good())
                         {
-                            MessageBox(NULL, "Error ! Failed to copy the resource !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#ifndef LINUX
+                            MessageBox(NULL, "Failed to copy the resource !", "Error !", MB_TASKMODAL | MB_ICONERROR | MB_OK);
+#else
+                            QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Error !"), QStringLiteral("Failed to copy the resource !"), QMessageBox::Ok);
+                            messageBox.exec();
+#endif
                             src.close();
                             goto LBL_CHKRESLVL;
                         }
@@ -30609,22 +31396,42 @@ static void checkResources(LPCSTR levelURL, bool saveAs)
                         dest.close();
                     }
                     else
+                    {
+#ifndef LINUX
                         PathAppend(destName, resourcesArray[i]->c_str());
+#else
+                        strcat(destName, "/");
+                        strcat(destName, resourcesArray[i]->c_str());
+#endif
+                    }
+                    mainWindow->setMouseCursorVisible(showCursor);
 
                     LBL_CHKRESLVL :
-
+#ifndef LINUX
                     if (PathRelativePathTo(resourcePath, levelPath, FILE_ATTRIBUTE_DIRECTORY, destName, FILE_ATTRIBUTE_NORMAL))
+#else
+                    QDir dirPath(levelPath);
+                    QString relativePath(dirPath.relativeFilePath(destName));
+
+                    if (relativePath.isEmpty())
+#endif
                     {
                         delete resourcesArray[i];
-
+#ifndef LINUX
                         resourcesArray[i] = new string(resourcePath);
+#else
+                        resourcesArray[i] = new string(relativePath.toStdString());
+#endif
                     }
                     else
                     {
-                        MessageBox(NULL, "Error ! Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
-
+#ifndef LINUX
+                        MessageBox(NULL, "Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                        QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !\nYou must copy the file manually then re-import it !"), QMessageBox::Ok);
+                        messageBox.exec();
+#endif
                         delete resourcesArray[i];
-
                         resourcesArray[i] = new string(destName);
                     }
                 }
@@ -30635,11 +31442,11 @@ static void checkResources(LPCSTR levelURL, bool saveAs)
 
 static void addNewResource(string filename, unsigned short id)
 {
-    TCHAR filenamePath[MAX_PATH];
-    TCHAR filenameName[MAX_PATH];
+    char filenamePath[MAX_PATH];
+    char filenameName[MAX_PATH];
 
-    TCHAR dirPath[MAX_PATH];
-    TCHAR dirURL[MAX_PATH];
+    char dirPath[MAX_PATH];
+    char dirURL[MAX_PATH];
 
     if (resourcesArray[id] != NULL)
     {
@@ -30653,19 +31460,30 @@ static void addNewResource(string filename, unsigned short id)
         strcpy(filenameName, filename.c_str());
 
         strcpy(dirPath, levelDir.c_str());
-
-        PathRemoveFileSpec(filenamePath);
+#ifndef LINUX
         PathRemoveFileSpec(dirPath);
+        PathRemoveFileSpec(filenamePath);
 
         PathStripPath(filenameName);
+#else
+        dirname(dirPath);
+        dirname(filenamePath);
 
+        basename(filenameName);
+#endif
         if (filenamePath != dirPath)
         {
-            TCHAR messageText[256];
+            extern bool showCursor;
+            mainWindow->setMouseCursorVisible(true);
+#ifndef LINUX
+            char messageText[256];
 
             sprintf(messageText, "The resource :\n%s\nis in another directory from the level.\nDo you want copy the resource into the level directory ?", filename.c_str());
-
             if (MessageBox(NULL, messageText, "Copy the resource file ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
+#else
+            QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Copy the resource file ?"), QString("The resource :\n%1\nis in another directory from the level.\nDo you want copy the resource into the level directory ?").arg(filename.c_str()), QMessageBox::Yes | QMessageBox::No);
+            if (messageBox.exec() == QMessageBox::Yes)
+#endif
             {
                 ifstream src;
                 ofstream dest;
@@ -30674,9 +31492,13 @@ static void addNewResource(string filename, unsigned short id)
 
                 if (!src.good())
                     goto LBL_ADDRESLVL;
-
+#ifndef LINUX
                 PathCombine(dirURL, dirPath, filenameName);
-
+#else
+                strcpy(dirURL, dirPath);
+                strcpy(dirURL, "/");
+                strcpy(dirURL, filenameName);
+#endif
                 dest.open(dirURL, ios::binary);
 
                 if (!dest.good())
@@ -30692,18 +31514,32 @@ static void addNewResource(string filename, unsigned short id)
 
                 filename = dirURL;
             }
+            mainWindow->setMouseCursorVisible(showCursor);
         }
 
         LBL_ADDRESLVL :
 
         {
+#ifndef LINUX
             TCHAR relativePath[MAX_PATH] = "";
 
             if (PathRelativePathTo(relativePath, dirPath, FILE_ATTRIBUTE_DIRECTORY, filename.c_str(), FILE_ATTRIBUTE_NORMAL))
                 resourcesArray[id] = new string(relativePath);
+#else
+            QDir dirPth(dirPath);
+            QString relativePath(dirPth.relativeFilePath(filename.c_str()));
+
+            if (relativePath.isEmpty())
+                resourcesArray[id] = new string(relativePath.toStdString());
+#endif
             else
             {
-                MessageBox(NULL, "Error ! Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#ifndef LINUX
+                MessageBox(NULL, "Failed to create Relative Path !\nYou must copy the file manually then re-import it !", "Can't create Relative Path !", MB_OK | MB_ICONERROR | MB_TASKMODAL);
+#else
+                QMessageBox messageBox(QMessageBox::Warning, QStringLiteral("Can't create Relative Path !"), QStringLiteral("Failed to create Relative Path !\nYou must copy the file manually then re-import it !"), QMessageBox::Ok);
+                messageBox.exec();
+#endif
                 resourcesArray[id] = new string(filename);
             }
         }
