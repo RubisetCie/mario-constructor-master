@@ -5492,8 +5492,12 @@ static void checkResources(const char* worldURL, bool saveAs)
     char resourceName[MAX_PATH];
 
     char worldPath[MAX_PATH];
+#ifndef LINUX
     char worldName[MAX_PATH];
-
+#else
+    char worldNameTemp[MAX_PATH];
+    char* worldName;
+#endif
     char destName[MAX_PATH];
 
     for (register unsigned int i = 0; i < 2; i++)
@@ -5523,10 +5527,10 @@ static void checkResources(const char* worldURL, bool saveAs)
             strcpy(resourceName, wresourcesArray[i]->substr(wresourcesArray[i]->find_last_of('/') + 1).c_str());
 
             strcpy(worldPath, worldURL);
-            strcpy(worldName, worldURL);
+            strcpy(worldNameTemp, worldURL);
 
             dirname(worldPath);
-            basename(worldName);
+            worldName = basename(worldNameTemp);
 
             strcpy(destName, worldPath);
 
@@ -5688,7 +5692,7 @@ bool checkwLoadResources(ifstream& worldFile, const char* filename)
     PathRemoveFileSpec(filePath);
     SetCurrentDirectory(filePath);
 #else
-    basename(filePath);
+    dirname(filePath);
     chdir(filePath);
 #endif
     worldFile.read(CMLid, 4);

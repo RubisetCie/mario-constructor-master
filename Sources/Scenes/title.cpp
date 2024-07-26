@@ -18,6 +18,7 @@ extern "C"
     #include <shlobj.h>
     #else
     #include <unistd.h>
+    #include <libgen.h>
     #endif
 }
 
@@ -3065,7 +3066,7 @@ bool checkLoadResources(ifstream& levelFile, const char* filename)
     PathRemoveFileSpec(filePath);
     SetCurrentDirectory(filePath);
 #else
-    basename(filePath);
+    dirname(filePath);
     chdir(filePath);
 #endif
     levelFile.read(CMLid, 4);

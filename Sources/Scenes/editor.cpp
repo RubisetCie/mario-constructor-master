@@ -31260,7 +31260,6 @@ static void checkResources(const char* levelURL, bool saveAs)
     char resourceName[MAX_PATH];
 
     char levelPath[MAX_PATH];
-    char levelName[MAX_PATH];
 
     char destName[MAX_PATH];
 
@@ -31269,6 +31268,7 @@ static void checkResources(const char* levelURL, bool saveAs)
         if (resourcesArray[i] != NULL)
         {
 #ifndef LINUX
+            char levelName[MAX_PATH];
             char messageText[256];
 
             strcpy(resourcePath, resourcesArray[i]->c_str());
@@ -31287,14 +31287,15 @@ static void checkResources(const char* levelURL, bool saveAs)
 
             if (PathIsRelative(resourcesArray[i]->c_str()))
 #else
+            char* levelName;
+
             strcpy(resourcePath, resourcesArray[i]->substr(0, resourcesArray[i]->find_last_of('/')).c_str());
             strcpy(resourceName, resourcesArray[i]->substr(resourcesArray[i]->find_last_of('/') + 1).c_str());
 
             strcpy(levelPath, levelURL);
-            strcpy(levelName, levelURL);
 
             dirname(levelPath);
-            basename(levelName);
+            levelName = basename(levelPath);
 
             strcpy(destName, levelPath);
 
@@ -31443,7 +31444,12 @@ static void checkResources(const char* levelURL, bool saveAs)
 static void addNewResource(string filename, unsigned short id)
 {
     char filenamePath[MAX_PATH];
+#ifndef LINUX
     char filenameName[MAX_PATH];
+#else
+    char filenameNameTemp[MAX_PATH];
+    char* filenameName;
+#endif
 
     char dirPath[MAX_PATH];
     char dirURL[MAX_PATH];
@@ -31457,7 +31463,11 @@ static void addNewResource(string filename, unsigned short id)
     if (!levelDir.empty())
     {
         strcpy(filenamePath, filename.c_str());
+#ifndef LINUX
         strcpy(filenameName, filename.c_str());
+#else
+        strcpy(filenameNameTemp, filename.c_str());
+#endif
 
         strcpy(dirPath, levelDir.c_str());
 #ifndef LINUX
@@ -31469,7 +31479,7 @@ static void addNewResource(string filename, unsigned short id)
         dirname(dirPath);
         dirname(filenamePath);
 
-        basename(filenameName);
+        filenameName = basename(filenameNameTemp);
 #endif
         if (filenamePath != dirPath)
         {
