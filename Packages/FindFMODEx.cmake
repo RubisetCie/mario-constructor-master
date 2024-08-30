@@ -12,7 +12,7 @@ find_path(FMODEX_INCLUDE_DIR
         "/opt/fmodex/include"
         "/opt/fmodex/api/inc"
         "C:/Program Files (x86)/FMOD SoundSystem/FMOD Programmers API Win32/api/inc"
-    PATH_SUFFIXES "" "inc" "include" "fmodex/fmod" "fmodex/fmod3" "fmod" "fmod3"
+    PATH_SUFFIXES "" "inc" "include" "fmodex" "fmod" "fmod3"
     DOC "The path to FMOD Ex's include directory."
 )
 
@@ -22,8 +22,8 @@ find_library(FMODEX_32_LIBRARY
     PATHS
         "${FMODEX_ROOT}"
         "/usr"
-        "/usr/local"
         "/usr/X11R6"
+        "/usr/local"
         "/usr/local/X11R6"
         "/sw"
         "/opt"
@@ -40,16 +40,16 @@ find_library(FMODEX_64_LIBRARY
     PATHS
         "${FMODEX_ROOT}"
         "/usr"
-        "/usr/local"
         "/usr/X11R6"
+        "/usr/local"
         "/usr/local/X11R6"
+        "/usr/freeware"
         "/sw"
         "/opt"
         "/opt/local"
         "/opt/csw"
         "/opt/fmodex"
         "/opt/fmodex/api"
-        "/usr/freeware"
     PATH_SUFFIXES "" "lib" "lib64"
 )
 
