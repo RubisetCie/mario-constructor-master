@@ -99,10 +99,9 @@ foreach(FIND_SFML_COMPONENT ${SFML_FIND_COMPONENTS})
         # Library found
         set(SFML_${FIND_SFML_COMPONENT_UPPER}_FOUND TRUE)
 
-        # If both are found, set SFML_XXX_LIBRARY to contain both
+        # If both are found, set SFML_XXX_LIBRARY to contain only release
         if (SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY_DEBUG AND SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY_RELEASE)
-            set(SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY debug     ${SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY_DEBUG}
-                                                          optimized ${SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY_RELEASE})
+            set(SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY ${SFML_${FIND_SFML_COMPONENT_UPPER}_LIBRARY_RELEASE})
         endif()
 
         # If only one debug/release variant is found, set the other to be equal to the found one
