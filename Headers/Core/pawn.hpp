@@ -17,28 +17,28 @@ class Pawn : public Placeable
 
         Pawn();
 
-        bool makeMoveVertical(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveHorizontal(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveVertical(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveHorizontal(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
 
         void makeMoveVerticalFake(float mov);
 
-        bool makeMoveVerticalHigh(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveHorizontalHigh(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveVerticalHigh(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveHorizontalHigh(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
 
-        bool makeMoveVerticalPlatform(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveHorizontalPlatform(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveVerticalHighPlatform(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveHorizontalHighPlatform(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveVerticalPlatform(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveHorizontalPlatform(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveVerticalHighPlatform(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveHorizontalHighPlatform(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
 
-        bool makeMoveHorizontalNR(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveHorizontalHighNR(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool makeMoveVerticalNR(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveHorizontalNR(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveHorizontalHighNR(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool makeMoveVerticalNR(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
 
-        bool testVertical(float distance, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool testHorizontal(float distance, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool testVertical(float distance, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool testHorizontal(float distance, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
 
-        bool testVerticalHigh(float distance, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
-        bool testHorizontalHigh(float distance, bool right, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool testVerticalHigh(float distance, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
+        bool testHorizontalHigh(float distance, bool right, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more);
 
         sf::FloatRect m_aabb;
 

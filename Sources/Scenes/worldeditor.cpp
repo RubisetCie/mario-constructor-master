@@ -162,7 +162,12 @@ bool placementAllowed;
 
 unsigned char flickTimer;
 
-enum EditType {NONE, TEXTURE, EYECANDY, LIGHT, MARKER} currentEditing;
+#define NONE 0
+#define TEXTURE 1
+#define EYECANDY 2
+#define LIGHT 3
+#define MARKER 4
+int currentEditing;
 enum MenuType {EDITOR, TEXTURES, EYECANDIES, TITLE, MUSIC} currentScreen;
 
 extern Uint8 fadeAlpha;
@@ -5794,7 +5799,7 @@ static void addNewResource(string filename, unsigned short id)
             char messageText[256];
 
             sprintf(messageText, "The resource :\n%s\nis in another directory from the world.\nDo you want copy the resource into the world directory ?", filename.c_str());
-            if (MessageBox(NULL, messageText.c_str(), "Copy the resource file ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
+            if (MessageBox(NULL, messageText, "Copy the resource file ?", MB_TASKMODAL | MB_ICONQUESTION | MB_YESNO) == IDYES)
 #else
             QMessageBox messageBox(QMessageBox::Question, QStringLiteral("Copy the resource file ?"), QString("The resource :\n%1\nis in another directory from the world.\nDo you want copy the resource into the world directory ?").arg(filename.c_str()), QMessageBox::Yes | QMessageBox::No);
             if (messageBox.exec() == QMessageBox::Yes)

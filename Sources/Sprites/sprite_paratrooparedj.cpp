@@ -43,7 +43,7 @@ void Sprite_ParatroopaRedJ::flyUpdate()
         m_movedistance.y += sprite_gravity;
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :

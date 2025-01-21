@@ -356,7 +356,7 @@ void Sprite_Brother::secureUpdate()
     else
     {
         Matrix* currentMatrix;
-        Vector2i* currentScale;
+        Vector2u* currentScale;
         list<Collider*>* currentList;
 
         if (m_onfloor)

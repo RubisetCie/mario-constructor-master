@@ -12,12 +12,12 @@ class Mark_WaterPlane : public Mark_LiquidPlane
 {
     public :
 
-        Mark_WaterPlane(sf::Texture* texture, float height, sf::Vector2i dimensions);
+        Mark_WaterPlane(sf::Texture* texture, float height, sf::Vector2u dimensions);
 
         float getHeight();
         bool getType() const;
 
-        void setHeight(float height, sf::Vector2i dimensions);
+        void setHeight(float height, sf::Vector2u dimensions);
 
         void update();
 

@@ -77,8 +77,8 @@ void Dragger::update()
     {
         extern bool sectionb;
 
-        extern Vector2i roomScale;
-        extern Vector2i roomScaleb;
+        extern Vector2u roomScale;
+        extern Vector2u roomScaleb;
 
         Vector2f moveablePos = mpos_relative;
 

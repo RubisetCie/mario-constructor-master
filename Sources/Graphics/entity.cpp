@@ -40,7 +40,7 @@ unsigned int Entity::getType() const
     return m_enttype;
 }
 
-void Entity::roomResized(Vector2i newsize)
+void Entity::roomResized(Vector2u newsize)
 {
 }
 

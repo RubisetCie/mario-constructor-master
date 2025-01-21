@@ -225,8 +225,8 @@ Color levelBackColorb;
 
 Vector2i mpScale;
 
-Vector2i levelScale;
-Vector2i levelScaleb;
+Vector2u levelScale;
+Vector2u levelScaleb;
 
 Vector2f cameraPos;
 Vector2f mapPos;

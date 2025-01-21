@@ -4,6 +4,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <fstream>
+#include <cfloat>
 #include <cmath>
 
 #ifdef DEBUGMODE
@@ -324,8 +325,8 @@ Color bottomColorb;
 Color backColor;
 Color backColorb;
 
-Vector2i roomScale;
-Vector2i roomScaleb;
+Vector2u roomScale;
+Vector2u roomScaleb;
 
 Vector2f cameraSpeed;
 
@@ -398,8 +399,28 @@ bool grabSpot;
 
 char filegrab[MAX_PATH];
 
-enum EditorMenus {EDITION, TILESET, MUSIC, BACKGROUND, GRADIENT, EFFECTS, INFOS, LIQUID, AUTOSCROLL} currentMenu;
-enum SelectionType {NONE, TILE, ESSENTIAL, PLATFORMS, BONUS, PIPES, SCENERIES, ENEMIES, HAZARDS, WARPS} currentSelection;
+#define EDITION 0
+#define TILESET 1
+#define MUSIC 2
+#define BACKGROUND 3
+#define GRADIENT 4
+#define EFFECTS 5
+#define INFOS 6
+#define LIQUID 7
+#define AUTOSCROLL 8
+int currentMenu;
+
+#define NONE 0
+#define TILE 1
+#define ESSENTIAL 2
+#define PLATFORMS 3
+#define BONUS 4
+#define PIPES 5
+#define SCENERIES 6
+#define ENEMIES 7
+#define HAZARDS 8
+#define WARPS 9
+int currentSelection;
 
 list<Tile> listTile1;
 list<Tile> listTile2;
@@ -4677,8 +4698,8 @@ static bool InitAssets()
     backColor = Color::Black;
     backColorb = Color::Black;
 
-    roomScale = Vector2i(2, 1);
-    roomScaleb = Vector2i(1, 1);
+    roomScale = Vector2u(2, 1);
+    roomScaleb = Vector2u(1, 1);
 
     cameraSpeed = Vector2f(0, 0);
 
@@ -26260,8 +26281,8 @@ static void Level_New()
     backColor = Color::Black;
     backColorb = Color::Black;
 
-    roomScale = Vector2i(2, 1);
-    roomScaleb = Vector2i(1, 1);
+    roomScale = Vector2u(2, 1);
+    roomScaleb = Vector2u(1, 1);
 
     cameraSpeed = Vector2f(0, 0);
 
@@ -29467,7 +29488,7 @@ static void Level_Test()
                 {
                     for (vector<TriggerData*>::iterator it = liquidSpotsb.begin(); it != liquidSpotsb.end(); it++)
                     {
-                        if ((liquidTargetHeightb > (*it)->targetHeight - __FLT_EPSILON__ && liquidTargetHeightb < (*it)->targetHeight + __FLT_EPSILON__) || !player->m_active)
+                        if ((liquidTargetHeightb > (*it)->targetHeight - FLT_EPSILON && liquidTargetHeightb < (*it)->targetHeight + FLT_EPSILON) || !player->m_active)
                             continue;
 
                         if (player->m_aabb.intersects(FloatRect((*it)->x, (*it)->y, (*it)->width, (*it)->height)))
@@ -29650,7 +29671,7 @@ static void Level_Test()
                 {
                     for (vector<TriggerData*>::iterator it = liquidSpots.begin(); it != liquidSpots.end(); it++)
                     {
-                        if ((liquidTargetHeight > (*it)->targetHeight - __FLT_EPSILON__ && liquidTargetHeight < (*it)->targetHeight + __FLT_EPSILON__) || !player->m_active)
+                        if ((liquidTargetHeight > (*it)->targetHeight - FLT_EPSILON && liquidTargetHeight < (*it)->targetHeight + FLT_EPSILON) || !player->m_active)
                             continue;
 
                         if (player->m_aabb.intersects(FloatRect((*it)->x, (*it)->y, (*it)->width, (*it)->height)))
@@ -30093,20 +30114,20 @@ static void Elements_Platforms(unsigned int elementNumb)
         else
             currentSelection = PLATFORMS;
 
-        if (elementNumb >= 3 and elementNumb <= 7)
+        if (elementNumb >= 3 && elementNumb <= 7)
         {
             itemHandled->setTexture(*marksTxt[0], true);
             itemHandled->setOrigin(32, 0);
         }
-        else if (elementNumb >= 8 and elementNumb <= 12)
+        else if (elementNumb >= 8 && elementNumb <= 12)
             itemHandled->setTexture(*marksTxt[1], true);
-        else if (elementNumb >= 13 and elementNumb <= 17)
+        else if (elementNumb >= 13 && elementNumb <= 17)
         {
             itemHandled->setTexture(*marksTxt[2]);
             itemHandled->setTextureRect(IntRect(0, 0, 126, 32));
             itemHandled->setOrigin(45, 0);
         }
-        else if (elementNumb >= 18 and elementNumb <= 22)
+        else if (elementNumb >= 18 && elementNumb <= 22)
         {
             itemHandled->setTexture(*marksTxt[3], true);
             itemHandled->setOrigin(43, 0);

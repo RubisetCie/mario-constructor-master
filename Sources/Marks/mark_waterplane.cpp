@@ -15,7 +15,7 @@ using namespace std;
 
 using namespace sf;
 
-Mark_WaterPlane::Mark_WaterPlane(Texture* texture, float height, Vector2i dimensions)
+Mark_WaterPlane::Mark_WaterPlane(Texture* texture, float height, Vector2u dimensions)
 {
     m_water.setTexture(texture);
     m_water.setTextureRect(IntRect(0, 0, 640, 16));
@@ -38,7 +38,7 @@ bool Mark_WaterPlane::getType() const
     return false;
 }
 
-void Mark_WaterPlane::setHeight(float height, Vector2i dimensions)
+void Mark_WaterPlane::setHeight(float height, Vector2u dimensions)
 {
     m_water.setPosition(cameraPos.x - 320, height - 16);
     m_waterdepth.setPosition(cameraPos.x - 320, height);

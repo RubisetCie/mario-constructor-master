@@ -16,7 +16,7 @@ using namespace std;
 using namespace sf;
 
 
-Mark_LavaPlane::Mark_LavaPlane(Texture* texture, float height, Vector2i dimensions)
+Mark_LavaPlane::Mark_LavaPlane(Texture* texture, float height, Vector2u dimensions)
 {
     m_lava.setTexture(texture);
     m_lava.setTextureRect(IntRect(0, 0, 640, 34));
@@ -38,7 +38,7 @@ bool Mark_LavaPlane::getType() const
     return true;
 }
 
-void Mark_LavaPlane::setHeight(float height, Vector2i dimensions)
+void Mark_LavaPlane::setHeight(float height, Vector2u dimensions)
 {
     m_lava.setPosition(cameraPos.x - 320, height - 34);
     m_lavadepth.setPosition(cameraPos.x - 320, height);

@@ -36,7 +36,7 @@ void Projectile_Fireball::update()
         m_movedistance.y += sprite_gravity;
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :

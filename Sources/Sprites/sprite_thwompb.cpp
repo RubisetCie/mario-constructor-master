@@ -99,7 +99,7 @@ void Sprite_ThwompB::secureUpdate()
 {
     if (m_state == 1)
     {
-        Vector2i* currentScale;
+        Vector2u* currentScale;
 
         if (m_movedistance < THWOMP_MAXVSPEED - mario_gravity)
             m_movedistance += mario_gravity;

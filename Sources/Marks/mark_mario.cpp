@@ -188,7 +188,7 @@ void Mark_Mario::secureUpdate()
     }
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     bool focus = mainWindow->hasFocus();
@@ -2099,7 +2099,7 @@ void Mark_Mario::disorient()
 void Mark_Mario::pushH(float distance)
 {
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     if (zoneb)
@@ -2134,7 +2134,7 @@ void Mark_Mario::pushH(float distance)
 void Mark_Mario::pushV(float distance)
 {
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     if (zoneb)

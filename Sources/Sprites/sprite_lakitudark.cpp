@@ -21,7 +21,7 @@ Sprite_LakituDark::Sprite_LakituDark(const Texture& texture, Collider* collision
 void Sprite_LakituDark::thruw()
 {
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     if (zoneb)

@@ -11,7 +11,7 @@
 using namespace std;
 using namespace sf;
 
-bool Projectile::makeMoveVertical(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more, bool hitenemies)
+bool Projectile::makeMoveVertical(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more, bool hitenemies)
 {
     Vector2f testPoint[2];
 
@@ -142,7 +142,7 @@ bool Projectile::makeMoveVertical(float mov, const Vector2i& levelSize, Matrix* 
     return collide;
 }
 
-bool Projectile::makeMoveHorizontal(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more, bool hitenemies)
+bool Projectile::makeMoveHorizontal(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more, bool hitenemies)
 {
     Vector2f testPoint[2];
 

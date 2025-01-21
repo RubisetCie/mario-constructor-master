@@ -49,7 +49,7 @@ void Projectile_SilverHammer::update()
     if (m_remindings > 0)
     {
         Matrix* currentMatrix;
-        Vector2i* currentScale;
+        Vector2u* currentScale;
         list<Collider*>* currentList;
         if (zoneb)
         {

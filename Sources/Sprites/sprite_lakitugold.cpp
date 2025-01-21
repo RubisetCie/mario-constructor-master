@@ -21,7 +21,7 @@ Sprite_LakituGold::Sprite_LakituGold(const Texture& texture, Collider* collision
 void Sprite_LakituGold::thruw()
 {
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     if (zoneb)

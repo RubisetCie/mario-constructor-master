@@ -81,7 +81,7 @@ void Sprite_ThrowedCoin::secureUpdate()
     }
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :

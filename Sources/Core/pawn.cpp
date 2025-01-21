@@ -23,7 +23,7 @@ Pawn::Pawn() : Placeable()
     m_platform = NULL;
 }
 
-bool Pawn::makeMoveVertical(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveVertical(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[3];
     bool collide = false;
@@ -219,7 +219,7 @@ bool Pawn::makeMoveVertical(float mov, const Vector2i& levelSize, Matrix* collis
     return collide;
 }
 
-bool Pawn::makeMoveHorizontal(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveHorizontal(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[4];
     ID id = getID();
@@ -582,7 +582,7 @@ void Pawn::makeMoveVerticalFake(float mov)
     }
 }
 
-bool Pawn::makeMoveVerticalHigh(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveVerticalHigh(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     ID id = getID();
 
@@ -721,7 +721,7 @@ bool Pawn::makeMoveVerticalHigh(float mov, const Vector2i& levelSize, Matrix* co
     return collide;
 }
 
-bool Pawn::makeMoveHorizontalHigh(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveHorizontalHigh(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[3];
 
@@ -841,7 +841,7 @@ bool Pawn::makeMoveHorizontalHigh(float mov, const Vector2i& levelSize, Matrix* 
     return collide;
 }
 
-bool Pawn::makeMoveVerticalPlatform(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveVerticalPlatform(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     ID id = getID();
     Vector2f testPoint[3];
@@ -1013,7 +1013,7 @@ bool Pawn::makeMoveVerticalPlatform(float mov, const Vector2i& levelSize, Matrix
     return collide;
 }
 
-bool Pawn::makeMoveHorizontalPlatform(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveHorizontalPlatform(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[2];
 
@@ -1122,7 +1122,7 @@ bool Pawn::makeMoveHorizontalPlatform(float mov, const Vector2i& levelSize, Matr
     return collide;
 }
 
-bool Pawn::makeMoveVerticalHighPlatform(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveVerticalHighPlatform(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     ID id = getID();
     Vector2f testPoint[4];
@@ -1286,7 +1286,7 @@ bool Pawn::makeMoveVerticalHighPlatform(float mov, const Vector2i& levelSize, Ma
     return collide;
 }
 
-bool Pawn::makeMoveHorizontalHighPlatform(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveHorizontalHighPlatform(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[3];
 
@@ -1397,7 +1397,7 @@ bool Pawn::makeMoveHorizontalHighPlatform(float mov, const Vector2i& levelSize, 
     return collide;
 }
 
-bool Pawn::makeMoveHorizontalNR(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveHorizontalNR(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[2];
 
@@ -1457,7 +1457,7 @@ bool Pawn::makeMoveHorizontalNR(float mov, const Vector2i& levelSize, Matrix* co
     return collide;
 }
 
-bool Pawn::makeMoveHorizontalHighNR(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveHorizontalHighNR(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[3];
 
@@ -1518,7 +1518,7 @@ bool Pawn::makeMoveHorizontalHighNR(float mov, const Vector2i& levelSize, Matrix
     return collide;
 }
 
-bool Pawn::makeMoveVerticalNR(float mov, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::makeMoveVerticalNR(float mov, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[2];
 
@@ -1616,7 +1616,7 @@ bool Pawn::makeMoveVerticalNR(float mov, const Vector2i& levelSize, Matrix* coll
     return collide;
 }
 
-bool Pawn::testVertical(float distance, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::testVertical(float distance, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[2];
 
@@ -1708,7 +1708,7 @@ bool Pawn::testVertical(float distance, const Vector2i& levelSize, Matrix* colli
     return false;
 }
 
-bool Pawn::testHorizontal(float distance, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::testHorizontal(float distance, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[2];
 
@@ -1769,7 +1769,7 @@ bool Pawn::testHorizontal(float distance, const Vector2i& levelSize, Matrix* col
     return false;
 }
 
-bool Pawn::testVerticalHigh(float distance, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::testVerticalHigh(float distance, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[4];
 
@@ -1823,7 +1823,7 @@ bool Pawn::testVerticalHigh(float distance, const Vector2i& levelSize, Matrix* c
     return false;
 }
 
-bool Pawn::testHorizontalHigh(float distance, bool right, const Vector2i& levelSize, Matrix* collision, list<Collider*>* more)
+bool Pawn::testHorizontalHigh(float distance, bool right, const Vector2u& levelSize, Matrix* collision, list<Collider*>* more)
 {
     Vector2f testPoint[3];
 

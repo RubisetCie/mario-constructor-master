@@ -420,7 +420,7 @@ void Sprite_ParatroopaYellow::walkUpdate()
     }
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :
@@ -493,7 +493,7 @@ void Sprite_ParatroopaYellow::flyUpdate()
         m_sprite.setScale(-1, 1);
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :

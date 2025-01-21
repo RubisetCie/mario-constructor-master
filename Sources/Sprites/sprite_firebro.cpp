@@ -98,7 +98,7 @@ void Sprite_FireBro::afterUpdate()
 void Sprite_FireBro::thruw()
 {
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     if (zoneb)

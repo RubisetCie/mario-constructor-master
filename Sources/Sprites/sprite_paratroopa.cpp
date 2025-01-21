@@ -368,7 +368,7 @@ void Sprite_Paratroopa::walkUpdate()
     }
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :

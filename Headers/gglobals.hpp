@@ -139,8 +139,8 @@ extern bool enableShaders;
 extern sf::Color levelBackColor;
 extern sf::Color levelBackColorb;
 
-extern sf::Vector2i levelScale;
-extern sf::Vector2i levelScaleb;
+extern sf::Vector2u levelScale;
+extern sf::Vector2u levelScaleb;
 
 extern sf::Vector2f cameraPos;
 extern float levelCamera_shake;

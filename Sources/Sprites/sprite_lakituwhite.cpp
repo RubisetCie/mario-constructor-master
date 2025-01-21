@@ -21,7 +21,7 @@ Sprite_LakituWhite::Sprite_LakituWhite(const Texture& texture, Collider* collisi
 void Sprite_LakituWhite::thruw()
 {
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     if (zoneb)

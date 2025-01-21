@@ -16,8 +16,8 @@ class Projectile : public sf::Drawable
 
         virtual void cast(sf::Vector2f position, bool right) = 0;
 
-        bool makeMoveVertical(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more, bool hitenemies);
-        bool makeMoveHorizontal(float mov, const sf::Vector2i& levelSize, Matrix* collision, std::list<Collider*>* more, bool hitenemies);
+        bool makeMoveVertical(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more, bool hitenemies);
+        bool makeMoveHorizontal(float mov, const sf::Vector2u& levelSize, Matrix* collision, std::list<Collider*>* more, bool hitenemies);
 
         sf::FloatRect m_aabb;
 

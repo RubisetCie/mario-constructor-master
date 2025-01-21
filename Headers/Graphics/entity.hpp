@@ -21,7 +21,7 @@ class Entity : public sf::Drawable
 
         virtual unsigned int getType() const;
 
-        virtual void roomResized(sf::Vector2i newsize);
+        virtual void roomResized(sf::Vector2u newsize);
 
         virtual void save(std::vector<float>& entData);
         virtual void load(std::vector<float>& entData);

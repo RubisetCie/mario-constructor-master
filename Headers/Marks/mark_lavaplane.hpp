@@ -12,12 +12,12 @@ class Mark_LavaPlane : public Mark_LiquidPlane
 {
     public :
 
-        Mark_LavaPlane(sf::Texture* texture, float height, sf::Vector2i dimensions);
+        Mark_LavaPlane(sf::Texture* texture, float height, sf::Vector2u dimensions);
 
         float getHeight();
         bool getType() const;
 
-        void setHeight(float height, sf::Vector2i dimensions);
+        void setHeight(float height, sf::Vector2u dimensions);
 
         void update();
 

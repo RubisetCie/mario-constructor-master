@@ -81,7 +81,7 @@ void Sprite_Star::secureUpdate()
         m_movedistance.y += star_gravity;
 
     Matrix* currentMatrix;
-    Vector2i* currentScale;
+    Vector2u* currentScale;
     list<Collider*>* currentList;
 
     // Collision Events :
