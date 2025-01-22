@@ -25,8 +25,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set custom build flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUGMODE")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-exceptions -fdelete-null-pointer-checks -fomit-frame-pointer")
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /DDEBUGMODE")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D_HAS_EXCEPTIONS=0 /Oy")
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUGMODE")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-exceptions -fdelete-null-pointer-checks -fomit-frame-pointer")
+endif()
 
 # Find packages
 if(BUILD_EDITOR OR BUILD_PUBLISHER)
