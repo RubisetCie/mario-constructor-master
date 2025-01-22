@@ -2966,7 +2966,7 @@ LRESULT CALLBACK dialogNumLevels(HWND windowHandle, UINT message, WPARAM wParam,
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 39, UDM_SETRANGE, 0, MAKELPARAM(2, 32));
+            SendDlgItemMessage(windowHandle, 39, UDM_SETRANGE, 0, MAKELPARAM(32, 2));
             SendDlgItemMessage(windowHandle, 39, UDM_SETPOS, 0, 2);
             return TRUE;
 
@@ -3002,7 +3002,7 @@ LRESULT CALLBACK dialogNumLifes(HWND windowHandle, UINT message, WPARAM wParam, 
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 69, UDM_SETRANGE, 0, MAKELPARAM(0, 99));
+            SendDlgItemMessage(windowHandle, 69, UDM_SETRANGE, 0, MAKELPARAM(99, 0));
             SendDlgItemMessage(windowHandle, 69, UDM_SETPOS, 0, 4);
             return TRUE;
 

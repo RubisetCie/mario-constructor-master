@@ -4433,9 +4433,9 @@ LRESULT CALLBACK dialogProcSize(HWND windowHandle, UINT message, WPARAM wParam, 
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 58, UDM_SETRANGE, 0, MAKELPARAM(20, 200));
-            SendDlgItemMessage(windowHandle, 60, UDM_SETRANGE, 0, MAKELPARAM(15, 150));
-            SendDlgItemMessage(windowHandle, 73, UDM_SETRANGE, 0, MAKELPARAM(0, 99));
+            SendDlgItemMessage(windowHandle, 58, UDM_SETRANGE, 0, MAKELPARAM(200, 20));
+            SendDlgItemMessage(windowHandle, 60, UDM_SETRANGE, 0, MAKELPARAM(150, 15));
+            SendDlgItemMessage(windowHandle, 73, UDM_SETRANGE, 0, MAKELPARAM(99, 0));
 
             SendDlgItemMessage(windowHandle, 58, UDM_SETPOS, 0, mapScale.x);
             SendDlgItemMessage(windowHandle, 60, UDM_SETPOS, 0, mapScale.y);

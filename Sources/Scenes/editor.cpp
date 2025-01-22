@@ -18957,7 +18957,7 @@ LRESULT CALLBACK dialogProcGrav(HWND windowHandle, UINT message, WPARAM wParam, 
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 18, UDM_SETRANGE, 0, MAKELPARAM(1, 10));
+            SendDlgItemMessage(windowHandle, 18, UDM_SETRANGE, 0, MAKELPARAM(10, 1));
             SendDlgItemMessage(windowHandle, 18, UDM_SETPOS, 0, levelGravity);
 
             return TRUE;
@@ -19021,7 +19021,7 @@ LRESULT CALLBACK dialogProcTime(HWND windowHandle, UINT message, WPARAM wParam, 
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 25, UDM_SETRANGE, 0, MAKELPARAM(100, 10000));
+            SendDlgItemMessage(windowHandle, 25, UDM_SETRANGE, 0, MAKELPARAM(10000, 100));
             SendDlgItemMessage(windowHandle, 25, UDM_SETPOS, 0, levelTime);
 
             return TRUE;
@@ -19084,7 +19084,7 @@ LRESULT CALLBACK dialogProcBackA(HWND windowHandle, UINT message, WPARAM wParam,
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 32, UDM_SETRANGE, 0, MAKELPARAM(0, 255));
+            SendDlgItemMessage(windowHandle, 32, UDM_SETRANGE, 0, MAKELPARAM(255, 0));
 
             if (sectionb)
                 SendDlgItemMessage(windowHandle, 32, UDM_SETPOS, 0, levelBackAlphab);
@@ -19177,7 +19177,7 @@ LRESULT CALLBACK dialogProcFrontA(HWND windowHandle, UINT message, WPARAM wParam
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 32, UDM_SETRANGE, 0, MAKELPARAM(0, 255));
+            SendDlgItemMessage(windowHandle, 32, UDM_SETRANGE, 0, MAKELPARAM(255, 0));
 
             if (sectionb)
                 SendDlgItemMessage(windowHandle, 32, UDM_SETPOS, 0, levelFrontAlphab);
@@ -19431,7 +19431,7 @@ LRESULT CALLBACK dialogProcBowserHealth(HWND windowHandle, UINT message, WPARAM 
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 46, UDM_SETRANGE, 0, MAKELPARAM(1, 25));
+            SendDlgItemMessage(windowHandle, 46, UDM_SETRANGE, 0, MAKELPARAM(25, 1));
             SendDlgItemMessage(windowHandle, 46, UDM_SETPOS, 0, bowserHealth);
 
             return TRUE;
