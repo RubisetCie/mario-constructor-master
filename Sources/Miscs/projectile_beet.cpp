@@ -119,8 +119,7 @@ void Projectile_Beet::update()
 
         if (m_aabb.left > cameraPos.x + 448 ||
             m_aabb.left < cameraPos.x - 471 ||
-            m_aabb.top > cameraPos.y + 368 ||
-            m_aabb.top < cameraPos.y - 400)
+            m_aabb.top > cameraPos.y + 368)
             m_aabb.left = -64;
 
         m_sprite.setPosition(m_aabb.left, m_aabb.top);
@@ -131,8 +130,7 @@ void Projectile_Beet::update()
 
         if (pos.x > cameraPos.x + 332 ||
             pos.x < cameraPos.x - 332 ||
-            pos.y > cameraPos.y + 240 ||
-            pos.y < cameraPos.y - 272)
+            pos.y > cameraPos.y + 240)
             m_aabb.left = -64;
 
         m_sprite.move(m_movedistance);

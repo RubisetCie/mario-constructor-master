@@ -78,8 +78,7 @@ void Projectile_EnemyFireball::update()
 
     if (m_aabb.left > cameraPos.x + 368 ||
         m_aabb.left < cameraPos.x - 384 ||
-        m_aabb.top > cameraPos.y + 288 ||
-        m_aabb.top < cameraPos.y - 304)
+        m_aabb.top > cameraPos.y + 288)
         m_destroyed = true;
 
     m_sprite.setPosition(m_aabb.left+6, m_aabb.top+8);

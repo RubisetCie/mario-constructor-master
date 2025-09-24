@@ -22,6 +22,9 @@ bool Projectile::makeMoveVertical(float mov, const Vector2u& levelSize, Matrix* 
         testPoint[0] = Vector2f(m_aabb.left + 1, m_aabb.top + m_aabb.height + mov);
         testPoint[1] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + m_aabb.height + mov);
 
+        if (testPoint[0].y < 1)
+            goto LBL_PENDLOOP;
+
         if (testPoint[0].y > (levelSize.y * 480) - 1)
             goto LBL_PENDLOOP;
     }

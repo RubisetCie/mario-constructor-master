@@ -133,8 +133,7 @@ void Projectile_EnemyBeet::update()
 
         if (m_aabb.left > cameraPos.x + 480 ||
             m_aabb.left < cameraPos.x - 503 ||
-            m_aabb.top > cameraPos.y + 400 ||
-            m_aabb.top < cameraPos.y - 432)
+            m_aabb.top > cameraPos.y + 400)
             m_destroyed = true;
 
         m_sprite.setPosition(m_aabb.left, m_aabb.top);

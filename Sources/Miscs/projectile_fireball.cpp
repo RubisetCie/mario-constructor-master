@@ -77,8 +77,7 @@ void Projectile_Fireball::update()
 
     if (m_aabb.left > cameraPos.x + 320 ||
         m_aabb.left < cameraPos.x - 336 ||
-        m_aabb.top > cameraPos.y + 240 ||
-        m_aabb.top < cameraPos.y - 256)
+        m_aabb.top > cameraPos.y + 240)
         m_aabb.left = -64;
 
     m_sprite.setPosition(m_aabb.left+6, m_aabb.top+8);
