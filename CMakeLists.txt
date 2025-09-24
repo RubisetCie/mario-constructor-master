@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_EDITOR "Whether to build the main level editor" ON)
 option(BUILD_PUBLISHER "Whether to build the game executable (to be shared without the editor)" ON)
 option(BUILD_TOOLS "Whether to build the tools (level converter & resources remover)" OFF)
+option(INSTALL_EXAMPLES "Whether to install example levels & scenarii" ON)
 
 if(NOT WIN32)
     set(QT_MAIN_VERSION "5" CACHE STRING "Set the major Qt version to look to (5 or 6)")
@@ -641,4 +642,8 @@ if(BUILD_TOOLS)
     # Installation definitions
     install(TARGETS ToolConverter DESTINATION "Tools")
     install(TARGETS ToolRemover DESTINATION "Tools")
+endif()
+
+if(INSTALL_EXAMPLES)
+    install(DIRECTORY "Levels" "Worlds" DESTINATION "Examples")
 endif()
