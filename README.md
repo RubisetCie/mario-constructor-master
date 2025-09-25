@@ -29,6 +29,7 @@ The following options are available :
 * `BUILD_EDITOR`: To control the build of the main level editor (installed in the "Editor" sub-directory).
 * `BUILD_PUBLISHER`: To control the build of the publisher (installed in the "Publisher" sub-directory).
 * `BUILD_TOOLS`: To control the build of the various tools like the Level Converter (installed in the "Tools" sub-directory).
+* `INSTALL_EXAMPLES`: To install the example levels and world (installed in the "Examples" sub-directory).
 
 After the configuration, run the simple `make` command:
 
