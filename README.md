@@ -16,6 +16,9 @@ https://www.youtube.com/watch?v=TVHdkTk4rAo
 * Simple and Fast Multimedia Library ([Website](https://www.sfml-dev.org/index.php))
 * FModEx ([Download](https://github.com/alexey-lysiuk/fmodex-zdoom/tree/master/4.26))
 
+> [!IMPORTANT]
+> Mario Constructor Master is currently only supported by SFML version 2.
+
 ## How to Build
 
 *Mario Constructor Master* is built using the CMake subsystem:
