@@ -890,7 +890,7 @@ bool Scene::Title()
                                                                 QDir dirPth(dirPath);
                                                                 QString relativePath(dirPth.relativeFilePath(filegrab));
 
-                                                                if (relativePath.isEmpty())
+                                                                if (!relativePath.isEmpty())
                                                                     scenario << relativePath.toStdString();
                                                                 else
                                                                 {

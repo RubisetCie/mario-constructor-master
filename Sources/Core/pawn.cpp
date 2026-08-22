@@ -34,12 +34,6 @@ bool Pawn::makeMoveVertical(float mov, const Vector2u& levelSize, Matrix* collis
     {
         testPoint[0] = Vector2f(m_aabb.left + 1, m_aabb.top + m_aabb.height + mov);
         testPoint[1] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + m_aabb.height + mov);
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA1;
-
-        if (testPoint[0].y > (levelSize.y * 480) - 1)
-            goto LBL_PA1;
     }
     else
     {
@@ -69,10 +63,13 @@ bool Pawn::makeMoveVertical(float mov, const Vector2u& levelSize, Matrix* collis
                 }
             }
         }
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA1;
     }
+
+    if (testPoint[0].y < 1)
+        goto LBL_PA1;
+
+    if (testPoint[0].y > (levelSize.y * 480) - 1)
+        goto LBL_PA1;
 
     for (register unsigned char i = 0; i < 2; i++)
     {
@@ -595,12 +592,6 @@ bool Pawn::makeMoveVerticalHigh(float mov, const Vector2u& levelSize, Matrix* co
         testPoint[1] = Vector2f(m_aabb.left + 24, m_aabb.top + m_aabb.height + mov);
         testPoint[2] = Vector2f(m_aabb.left + 48, m_aabb.top + m_aabb.height + mov);
         testPoint[3] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + m_aabb.height + mov);
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA3;
-
-        if (testPoint[0].y > (levelSize.y * 480) - 1)
-            goto LBL_PA3;
     }
     else
     {
@@ -631,10 +622,13 @@ bool Pawn::makeMoveVerticalHigh(float mov, const Vector2u& levelSize, Matrix* co
                 }
             }
         }
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA3;
     }
+
+    if (testPoint[0].y < 1)
+        goto LBL_PA3;
+
+    if (testPoint[0].y > (levelSize.y * 480) - 1)
+        goto LBL_PA3;
 
     for (register unsigned char i = 0; i < 4; i++)
     {
@@ -852,12 +846,6 @@ bool Pawn::makeMoveVerticalPlatform(float mov, const Vector2u& levelSize, Matrix
     {
         testPoint[0] = Vector2f(m_aabb.left + 1, m_aabb.top + m_aabb.height + mov);
         testPoint[1] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + m_aabb.height + mov);
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA5;
-
-        if (testPoint[0].y > (levelSize.y * 480) - 1)
-            goto LBL_PA5;
     }
     else
     {
@@ -892,10 +880,13 @@ bool Pawn::makeMoveVerticalPlatform(float mov, const Vector2u& levelSize, Matrix
                 }
             }
         }
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA5;
     }
+
+    if (testPoint[0].y < 1)
+        goto LBL_PA5;
+
+    if (testPoint[0].y > (levelSize.y * 480) - 1)
+        goto LBL_PA5;
 
     for (register unsigned char i = 0; i < 2; i++)
     {
@@ -1135,12 +1126,6 @@ bool Pawn::makeMoveVerticalHighPlatform(float mov, const Vector2u& levelSize, Ma
         testPoint[1] = Vector2f(m_aabb.left + 24, m_aabb.top + m_aabb.height + mov);
         testPoint[2] = Vector2f(m_aabb.left + 48, m_aabb.top + m_aabb.height + mov);
         testPoint[3] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + m_aabb.height + mov);
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA7;
-
-        if (testPoint[0].y > (levelSize.y * 480) - 1)
-            goto LBL_PA7;
     }
     else
     {
@@ -1171,10 +1156,13 @@ bool Pawn::makeMoveVerticalHighPlatform(float mov, const Vector2u& levelSize, Ma
                 }
             }
         }
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA7;
     }
+
+    if (testPoint[0].y < 1)
+        goto LBL_PA7;
+
+    if (testPoint[0].y > (levelSize.y * 480) - 1)
+        goto LBL_PA7;
 
     for (register unsigned char i = 0; i < 4; i++)
     {
@@ -1528,21 +1516,18 @@ bool Pawn::makeMoveVerticalNR(float mov, const Vector2u& levelSize, Matrix* coll
     {
         testPoint[0] = Vector2f(m_aabb.left + 1, m_aabb.top + m_aabb.height + mov);
         testPoint[1] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + m_aabb.height + mov);
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA11;
-
-        if (testPoint[0].y > (levelSize.y * 480) - 1)
-            goto LBL_PA11;
     }
     else
     {
         testPoint[0] = Vector2f(m_aabb.left + 1, m_aabb.top + mov);
         testPoint[1] = Vector2f(m_aabb.left + m_aabb.width - 1, m_aabb.top + mov);
-
-        if (testPoint[0].y < 1)
-            goto LBL_PA11;
     }
+
+    if (testPoint[0].y < 1)
+        goto LBL_PA11;
+
+    if (testPoint[0].y > (levelSize.y * 480) - 1)
+        goto LBL_PA11;
 
     for (register unsigned char i = 0; i < 2; i++)
     {

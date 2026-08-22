@@ -5565,7 +5565,7 @@ static void checkResources(const char* worldURL, bool saveAs)
                         QDir dirPath(worldPath);
                         QString relativePath(dirPath.relativeFilePath(wresourcesArray[i]->c_str()));
 
-                        if (relativePath.isEmpty())
+                        if (!relativePath.isEmpty())
 #endif
                         {
                             delete wresourcesArray[i];
@@ -5661,7 +5661,7 @@ static void checkResources(const char* worldURL, bool saveAs)
                     QDir dirPath(worldPath);
                     QString relativePath(dirPath.relativeFilePath(destName));
 
-                    if (relativePath.isEmpty())
+                    if (!relativePath.isEmpty())
 #endif
                     {
                         delete wresourcesArray[i];
@@ -5858,7 +5858,7 @@ static void addNewResource(string filename, unsigned short id)
             QDir dirPth(dirPath);
             QString relativePath(dirPth.relativeFilePath(filename.c_str()));
 
-            if (relativePath.isEmpty())
+            if (!relativePath.isEmpty())
                 wresourcesArray[id] = new string(relativePath.toStdString());
 #endif
             else
