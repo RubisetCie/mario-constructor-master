@@ -1235,41 +1235,41 @@ bool Scene::Ingame()
                     {
                         playerPos = player->getPosition();
 
+                        if (player->m_active)
+                            cameraPos = Vector2f(lerp(cameraPos.x, playerPos.x + 21, 0.5), lerp(cameraPos.y, playerPos.y + 32, 0.2));
+                        else if (player->m_warp != NULL)
+                            cameraPos = Vector2f(playerPos.x + 21, playerPos.y + 32);
+
                         if (levelCamera_shake > 0)
                         {
-                            playerPos.x += (rand() / (RAND_MAX / levelCamera_shake)) - levelCamera_shake / 2.0f;
-                            playerPos.y += (rand() / (RAND_MAX / levelCamera_shake)) - levelCamera_shake / 2.0f;
+                            cameraPos.x += (rand() / (RAND_MAX / levelCamera_shake)) - levelCamera_shake / 4.0f;
+                            cameraPos.y += (rand() / (RAND_MAX / levelCamera_shake)) - levelCamera_shake / 4.0f;
 
                             levelCamera_shake -= 0.8;
                         }
 
-                        if (playerPos.x < 299)
-                            playerPos.x = 299;
+                        if (cameraPos.x < 320)
+                            cameraPos.x = 320;
 
-                        if (playerPos.y < 208)
-                            playerPos.y = 208;
+                        if (cameraPos.y < 240)
+                            cameraPos.y = 240;
 
                         if (zoneb)
                         {
-                            if (playerPos.x > (levelScaleb.x * 640) - 341)
-                                playerPos.x = (levelScaleb.x * 640) - 341;
+                            if (cameraPos.x > (levelScaleb.x * 640) - 320)
+                                cameraPos.x = (levelScaleb.x * 640) - 320;
 
-                            if (playerPos.y > (levelScaleb.y * 480) - 272)
-                                playerPos.y = (levelScaleb.y * 480) - 272;
+                            if (cameraPos.y > (levelScaleb.y * 480) - 240)
+                                cameraPos.y = (levelScaleb.y * 480) - 240;
                         }
                         else
                         {
-                            if (playerPos.x > (levelScale.x * 640) - 341)
-                                playerPos.x = (levelScale.x * 640) - 341;
+                            if (cameraPos.x > (levelScale.x * 640) - 320)
+                                cameraPos.x = (levelScale.x * 640) - 320;
 
-                            if (playerPos.y > (levelScale.y * 480) - 272)
-                                playerPos.y = (levelScale.y * 480) - 272;
+                            if (cameraPos.y > (levelScale.y * 480) - 240)
+                                cameraPos.y = (levelScale.y * 480) - 240;
                         }
-
-                        if (player->m_active)
-                            cameraPos = Vector2f(lerp(cameraPos.x, playerPos.x + 21, 0.5), lerp(cameraPos.y, playerPos.y + 32, 0.5));
-                        else if (player->m_warp != NULL)
-                            cameraPos = Vector2f(playerPos.x + 21, playerPos.y + 32);
                     }
                 }
                 else if (autoscrollSpeed > 0)
@@ -4176,6 +4176,11 @@ static bool Level_Load()
         do
         {
             scenario_file.read(&c, 1);
+
+            // Convert backslashes into forward slashes
+            if (c == '\\')
+                c = '/';
+
             path[i] = c;
 
             if (scenario_file.eof())
@@ -4185,7 +4190,8 @@ static bool Level_Load()
         } while (c != '\0');
 
         // Set the current directory :
-        chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+        const string scenarioDir = scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/'));
+        chdir(scenarioDir.c_str());
 
         level_file.open(path, ios::binary);
 
@@ -4226,7 +4232,8 @@ static bool Level_Load()
         SetCurrentDirectory(procPath);
 #else
         // Set the current directory :
-        chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+        const string scenarioDir = scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/'));
+        chdir(scenarioDir.c_str());
 
         level_file.open(fileToLoad, ios::binary);
 
@@ -4326,9 +4333,15 @@ static bool Level_Load()
         char getString[MAX_PATH];
 
         if (loadingType == 1)
-            chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+        {
+            const string scenarioDir = scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/'));
+            chdir(scenarioDir.c_str());
+        }
         else
-            chdir(fileToLoad.substr(0, fileToLoad.find_last_of('/')).c_str());
+        {
+            const string fileDir = fileToLoad.substr(0, fileToLoad.find_last_of('/'));
+            chdir(fileDir.c_str());
+        }
 
         for (register unsigned int i = 0; i < 5; i++)
         {
@@ -4342,7 +4355,10 @@ static bool Level_Load()
                 {
                     level_file.read(&getString[j], 1);
 
-                    if (getString[j] == '\0')
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else if (getString[j] == '\0')
                         break;
                 }
 
@@ -9809,7 +9825,8 @@ static bool World_Load()
 #else
         char getString[MAX_PATH];
 
-        chdir(scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/')).c_str());
+        const string scenarioDir = scenarioToLoad.substr(0, scenarioToLoad.find_last_of('/'));
+        chdir(scenarioDir.c_str());
 
         for (register unsigned int i = 0; i < 2; i++)
         {
@@ -9823,7 +9840,10 @@ static bool World_Load()
                 {
                     scenario_file.read(&getString[j], 1);
 
-                    if (getString[j] == '\0')
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else if (getString[j] == '\0')
                         break;
                 }
 
@@ -9963,8 +9983,8 @@ static bool World_Load()
                 light->x = currentData.x;
                 light->y = currentData.y;
 
-                float deltax = currentData.x - currentData.moveablex;
-                float deltay = currentData.y - currentData.moveabley;
+                const float deltax = currentData.x - currentData.moveablex;
+                const float deltay = currentData.y - currentData.moveabley;
                 light->radius = sqrtf((deltax * deltax) + (deltay * deltay));
 
                 listLamps.emplace_back(light);
@@ -9988,7 +10008,16 @@ static bool World_Load()
                 Vector2f pos;
 
                 scenario_file.read(reinterpret_cast<char*>(currentData), sizeof(MarkerData));
-
+#ifdef LINUX
+                // Convert backslashes into forward slashes
+                for (register unsigned int j = 0; j < MAX_PATH; j++)
+                {
+                    if (currentData->levelURL[j] == '\\')
+                        currentData->levelURL[j] = '/';
+                    else if (currentData->levelURL[j] == '\0')
+                        break;
+                }
+#endif
                 if (i == 0)
                 {
                     startPos = Vector2f(currentData->x, currentData->y);
@@ -10001,7 +10030,7 @@ static bool World_Load()
                 }
                 else if (i == 1 && marioSpr_speed != Vector2f(0, 0))
                 {
-                    float angle = atan2(startPos.y - currentData->y, startPos.x - currentData->x);
+                    const float angle = atan2(startPos.y - currentData->y, startPos.x - currentData->x);
 
                     marioSpr_speed = Vector2f(-WORLDMAP_MARIOSPEED * cos(angle), -WORLDMAP_MARIOSPEED * sin(angle));
                 }

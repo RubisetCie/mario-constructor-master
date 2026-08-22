@@ -63,7 +63,7 @@ void Sprite_PlantR::update()
         return;
 
     FloatRect const aabb = player->m_aabb;
-    if (aabb.intersects(m_aabb))
+    if (m_collider->rect.width > 4 && aabb.intersects(m_aabb))
     {
         if (player->m_invincibility > 0)
         {

@@ -199,7 +199,12 @@ int main(int argc, char* argv[])
                 for (register unsigned int j = 0; true; j++)
                 {
                     levelFile.read(&getString[j], 1);
-
+#ifdef LINUX
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else
+#endif
                     if (getString[j] == '\0')
                         break;
                 }
@@ -303,7 +308,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef DEBUGMODE
-    targetScene = SCENE_EDITOR;
+    targetScene = SCENE_LOGO;
 #else
     if (fileToLoad.empty())
         targetScene = SCENE_LOGO;
@@ -578,6 +583,9 @@ bool InitSFML()
     loading->setPosition(524, 462);
 
     cursor = new Sprite(*cursorTex);
+
+    // Initialize mouse position
+    mpos_absolute = Vector2i(320, 240);
 
     return true;
 }

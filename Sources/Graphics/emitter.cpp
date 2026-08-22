@@ -76,6 +76,9 @@ void Emitter::update()
 
 void Emitter::draw(RenderTarget& target, RenderStates states) const
 {
+    if (m_particles.empty())
+        return;
+
     states.blendMode = BlendAdd;
 
     target.draw(&m_particles.front(), m_particles.size(), Quads, states);

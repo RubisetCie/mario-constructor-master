@@ -31,7 +31,7 @@ extern "C"
 #define EDITOR_VERSION 2
 
 #ifdef LINUX
-#define MAX_PATH 1024
+#define MAX_PATH 260 // Mandatory to keep level files compatibility!
 #endif
 
 #define TILE_PIPE_GREEN_VTOP        IntRect(576, 0, 64, 32)

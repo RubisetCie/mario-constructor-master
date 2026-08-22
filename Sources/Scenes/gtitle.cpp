@@ -629,7 +629,12 @@ bool checkLoadResources(ifstream& levelFile, const char* filename)
             for (register unsigned int j = 0; true; j++)
             {
                 levelFile.read(&getString[j], 1);
-
+#ifdef LINUX
+                // Convert backslashes into forward slashes
+                if (getString[j] == '\\')
+                    getString[j] = '/';
+                else
+#endif
                 if (getString[j] == '\0')
                     break;
             }

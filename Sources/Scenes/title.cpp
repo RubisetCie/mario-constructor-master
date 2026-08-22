@@ -851,14 +851,14 @@ bool Scene::Title()
 #else
                                         bool ok;
                                         int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Levels you want to include in your Scenario :"),
-                                            2, 2, 32, 1, &ok));
+                                            2, 2, 250, 1, &ok));
 
                                         if (ok)
                                         {
                                             char dirPath[MAX_PATH];
                                             ifstream level;
 
-                                            levels = max(min(value, 32), 2);
+                                            levels = max(min(value, 250), 2);
 
                                             strcpy(dirPath, filegrab.left(filegrab.lastIndexOf(QChar('/'))).toLocal8Bit().constData());
 
@@ -1027,13 +1027,13 @@ bool Scene::Title()
 #else
                                         bool ok;
                                         int value(QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Levels you want to include in your Scenario :"),
-                                            2, 2, 32, 1, &ok));
+                                            2, 2, 250, 1, &ok));
 
                                         if (ok)
                                         {
                                             ifstream level;
 
-                                            levels = max(min(value, 32), 2);
+                                            levels = max(min(value, 250), 2);
                                             value = QInputDialog::getInt(NULL, QStringLiteral("Enter a number :"), QStringLiteral("Please enter the number of Lives you want in your Scenario :"),
                                                 4, 0, 99, 1, &ok);
 
@@ -1347,7 +1347,6 @@ bool Scene::Title()
                                             circleSpr->setOrigin(240, 240);
 
                                             FMOD_System_PlaySound(soundSystem, static_cast<FMOD_CHANNELINDEX>(1), enterLevel, 0, NULL);
-
                                             FMOD_Channel_Stop(musicChannel);
                                         }
 
@@ -2966,7 +2965,7 @@ LRESULT CALLBACK dialogNumLevels(HWND windowHandle, UINT message, WPARAM wParam,
     switch(message)
     {
         case WM_INITDIALOG :
-            SendDlgItemMessage(windowHandle, 39, UDM_SETRANGE, 0, MAKELPARAM(32, 2));
+            SendDlgItemMessage(windowHandle, 39, UDM_SETRANGE, 0, MAKELPARAM(250, 2));
             SendDlgItemMessage(windowHandle, 39, UDM_SETPOS, 0, 2);
             return TRUE;
 
@@ -2979,7 +2978,7 @@ LRESULT CALLBACK dialogNumLevels(HWND windowHandle, UINT message, WPARAM wParam,
                     handleEdit = GetDlgItem(windowHandle, 38);
                     GetWindowText(handleEdit, textBuffer, 2);
 
-                    levels = max(min(atoi(textBuffer), 32), 2);
+                    levels = max(min(atoi(textBuffer), 250), 2);
 
                     return TRUE;
                 case 41 :
@@ -3104,7 +3103,12 @@ bool checkLoadResources(ifstream& levelFile, const char* filename)
             for (register unsigned int j = 0; true; j++)
             {
                 levelFile.read(&getString[j], 1);
-
+#ifdef LINUX
+                // Convert backslashes into forward slashes
+                if (getString[j] == '\\')
+                    getString[j] = '/';
+                else
+#endif
                 if (getString[j] == '\0')
                     break;
             }

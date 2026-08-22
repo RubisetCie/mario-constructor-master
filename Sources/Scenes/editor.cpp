@@ -9187,12 +9187,12 @@ static void Selection_Sceneries()
                 {
                     if (sectionb)
                     {
-                        if (listSceneriesb.size() == 400)
+                        if (listSceneriesb.size() == 1000)
                         {
 #ifndef LINUX
-                            MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                            MessageBox(NULL, "You cannot place more than 1000 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
 #else
-                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 1000 Sceneries !"), QMessageBox::Ok);
                             messageBox.exec();
 #endif
                         }
@@ -9201,12 +9201,12 @@ static void Selection_Sceneries()
                     }
                     else
                     {
-                        if (listSceneries.size() == 400)
+                        if (listSceneries.size() == 1000)
                         {
 #ifndef LINUX
-                            MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                            MessageBox(NULL, "You cannot place more than 1000 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
 #else
-                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 1000 Sceneries !"), QMessageBox::Ok);
                             messageBox.exec();
 #endif
                         }
@@ -9219,12 +9219,12 @@ static void Selection_Sceneries()
             {
                 if (sectionb)
                 {
-                    if (listSceneriesb.size() == 400)
+                    if (listSceneriesb.size() == 1000)
                     {
 #ifndef LINUX
-                        MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                        MessageBox(NULL, "You cannot place more than 1000 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
 #else
-                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 1000 Sceneries !"), QMessageBox::Ok);
                         messageBox.exec();
 #endif
                     }
@@ -9233,12 +9233,12 @@ static void Selection_Sceneries()
                 }
                 else
                 {
-                    if (listSceneries.size() == 400)
+                    if (listSceneries.size() == 1000)
                     {
 #ifndef LINUX
-                        MessageBox(NULL, "You cannot place more than 400 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                        MessageBox(NULL, "You cannot place more than 1000 Sceneries !", "Scenery Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
 #else
-                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 400 Sceneries !"), QMessageBox::Ok);
+                        QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Scenery Overflow !"), QStringLiteral("You cannot place more than 1000 Sceneries !"), QMessageBox::Ok);
                         messageBox.exec();
 #endif
                     }
@@ -20575,6 +20575,12 @@ static void Level_Load(const string& filename)
                 {
                     levelFile.read(&getString[j], 1);
 
+#ifdef LINUX
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else
+#endif
                     if (getString[j] == '\0')
                         break;
                 }
@@ -20630,7 +20636,8 @@ static void Level_Load(const string& filename)
 #else
         char getString[MAX_PATH];
 
-        chdir(filename.substr(0, filename.find_last_of('/')).c_str());
+        const string filenameDir = filename.substr(0, filename.find_last_of('/'));
+        chdir(filenameDir.c_str());
 
         for (register unsigned int i = 0; i < 5; i++)
         {
@@ -20644,7 +20651,10 @@ static void Level_Load(const string& filename)
                 {
                     levelFile.read(&getString[j], 1);
 
-                    if (getString[j] == '\0')
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else if (getString[j] == '\0')
                         break;
                 }
 
@@ -20822,7 +20832,8 @@ static void Level_LoadEntry()
 #else
         char getString[MAX_PATH];
 
-        chdir(fileToLoad.substr(0, fileToLoad.find_last_of('/')).c_str());
+        const string filenameDir = fileToLoad.substr(0, fileToLoad.find_last_of('/'));
+        chdir(filenameDir.c_str());
 
         for (register unsigned int i = 0; i < 5; i++)
         {
@@ -20836,7 +20847,10 @@ static void Level_LoadEntry()
                 {
                     levelFile.read(&getString[j], 1);
 
-                    if (getString[j] == '\0')
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else if (getString[j] == '\0')
                         break;
                 }
 
@@ -26621,7 +26635,8 @@ static void Level_Test()
         // Reset the current directory :
         SetCurrentDirectory(filePath);
 #else
-        chdir(levelDir.substr(0, levelDir.find_last_of('/')).c_str());
+        const string filenameDir = levelDir.substr(0, levelDir.find_last_of('/'));
+        chdir(filenameDir.c_str());
 
         for (register unsigned int i = 0; i < 5; i++)
         {
@@ -31310,8 +31325,10 @@ static void checkResources(const char* levelURL, bool saveAs)
 #else
             char* levelName;
 
-            strcpy(resourcePath, resourcesArray[i]->substr(0, resourcesArray[i]->find_last_of('/')).c_str());
-            strcpy(resourceName, resourcesArray[i]->substr(resourcesArray[i]->find_last_of('/') + 1).c_str());
+            const string resourcesArrayPath = resourcesArray[i]->substr(0, resourcesArray[i]->find_last_of('/'));
+            const string resourcesArrayFile = resourcesArray[i]->substr(resourcesArray[i]->find_last_of('/') + 1);
+            strcpy(resourcePath, resourcesArrayPath.c_str());
+            strcpy(resourceName, resourcesArrayFile.c_str());
 
             strcpy(levelPath, levelURL);
 

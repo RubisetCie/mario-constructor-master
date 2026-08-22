@@ -89,7 +89,7 @@ void Walkable::update()
         if (makeMoveHorizontal(m_movedistance.x, *currentScale, currentMatrix, currentList))
         {
             m_movedistance.x = -m_movedistance.x;
-            m_movedistance.y = 0;
+            m_movedistance.y /= 2;
         }
     }
 

@@ -191,13 +191,13 @@ void Mark_Mario::secureUpdate()
     Vector2u* currentScale;
     list<Collider*>* currentList;
 
-    bool focus = mainWindow->hasFocus();
+    const bool focus = mainWindow->hasFocus();
 
-    bool keyLeft = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[0])) && focus;
-    bool keyRight = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[1])) && focus;
-    bool keyDown = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[2])) && focus;
-    bool keyJump = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[4])) && focus;
-    bool keyRun = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[5])) && focus;
+    const bool keyLeft = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[0])) && focus;
+    const bool keyRight = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[1])) && focus;
+    const bool keyDown = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[2])) && focus;
+    const bool keyJump = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[4])) && focus;
+    const bool keyRun = Keyboard::isKeyPressed(static_cast<Keyboard::Key>(keybindings[5])) && focus;
 
     // Liquid calculations :
     if (zoneb)
@@ -1792,7 +1792,7 @@ void Mark_Mario::moveHorizontal(float dist)
 
     if (zoneb)
     {
-        if (koopaEngaged == 0 && autoscroll != zoneb + 1)
+        if (koopaEngaged == 0 && autoscroll != 2)
         {
             if (cameuPos.x > (levelScaleb.x * 640) - 320)
                 cameuPos.x = (levelScaleb.x * 640) - 320;
@@ -1832,7 +1832,7 @@ void Mark_Mario::moveHorizontal(float dist)
     }
     else
     {
-        if (koopaEngaged == 0 && autoscroll != zoneb + 1)
+        if (koopaEngaged == 0 && autoscroll != 1)
         {
             if (cameuPos.x > (levelScale.x * 640) - 320)
                 cameuPos.x = (levelScale.x * 640) - 320;
@@ -1872,7 +1872,7 @@ void Mark_Mario::moveHorizontal(float dist)
     }
 
     if (koopaEngaged == 0 && autoscroll != zoneb + 1)
-        cameraPos = Vector2f(lerp(cameraPos.x, cameuPos.x, 0.5), lerp(cameraPos.y, cameuPos.y, 0.5));
+        cameraPos = Vector2f(lerp(cameraPos.x, cameuPos.x, 0.5), lerp(cameraPos.y, cameuPos.y, 0.35));
 
     if (m_invincibility > 0)
     {

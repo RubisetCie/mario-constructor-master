@@ -414,12 +414,12 @@ bool Scene::WorldEditor()
                                                 break;
                                         }
 
-                                        if (listEyecandies.size() == 128)
+                                        if (listEyecandies.size() == 255)
                                         {
 #ifndef LINUX
-                                            MessageBox(NULL, "You cannot place more than 128 Eyecandies !", "Eyecandies Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                                            MessageBox(NULL, "You cannot place more than 255 Eyecandies !", "Eyecandies Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
 #else
-                                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Eyecandies Overflow !"), QStringLiteral("You cannot place more than 128 Eyecandies !"), QMessageBox::Ok);
+                                            QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Eyecandies Overflow !"), QStringLiteral("You cannot place more than 255 Eyecandies !"), QMessageBox::Ok);
                                             messageBox.exec();
 #endif
                                         }
@@ -511,12 +511,12 @@ bool Scene::WorldEditor()
 
                                         if (matrixMarker->getValue(cursorPosu.x / 16, cursorPosu.y / 16) == 0)
                                         {
-                                            if (listMarkers.size() == 32)
+                                            if (listMarkers.size() == 250)
                                             {
 #ifndef LINUX
-                                                MessageBox(NULL, "You cannot place more than 32 Markers !", "Markers Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
+                                                MessageBox(NULL, "You cannot place more than 250 Markers !", "Markers Overflow !", MB_TASKMODAL | MB_OK | MB_ICONEXCLAMATION);
 #else
-                                                QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Markers Overflow !"), QStringLiteral("You cannot place more than 32 Markers !"), QMessageBox::Ok);
+                                                QMessageBox messageBox(QMessageBox::Information, QStringLiteral("Markers Overflow !"), QStringLiteral("You cannot place more than 250 Markers !"), QMessageBox::Ok);
                                                 messageBox.exec();
 #endif
                                             }
@@ -5219,7 +5219,8 @@ static void World_Load(const string& filename)
 #else
         char getString[MAX_PATH];
 
-        chdir(filename.substr(0, filename.find_last_of('/')).c_str());
+        const string filenameDir = filename.substr(0, filename.find_last_of('/'));
+        chdir(filenameDir.c_str());
 
         for (register unsigned int i = 0; i < 2; i++)
         {
@@ -5233,7 +5234,10 @@ static void World_Load(const string& filename)
                 {
                     worldFile.read(&getString[j], 1);
 
-                    if (getString[j] == '\0')
+                    // Convert backslashes into forward slashes
+                    if (getString[j] == '\\')
+                        getString[j] = '/';
+                    else if (getString[j] == '\0')
                         break;
                 }
 
@@ -5528,8 +5532,10 @@ static void checkResources(const char* worldURL, bool saveAs)
 
             if (PathIsRelative(wresourcesArray[i]->c_str()))
 #else
-            strcpy(resourcePath, wresourcesArray[i]->substr(0, wresourcesArray[i]->find_last_of('/')).c_str());
-            strcpy(resourceName, wresourcesArray[i]->substr(wresourcesArray[i]->find_last_of('/') + 1).c_str());
+            const string wresourcesArrayPath = wresourcesArray[i]->substr(0, wresourcesArray[i]->find_last_of('/'));
+            const string wresourcesArrayFile = wresourcesArray[i]->substr(wresourcesArray[i]->find_last_of('/') + 1);
+            strcpy(resourcePath, wresourcesArrayPath.c_str());
+            strcpy(resourceName, wresourcesArrayFile.c_str());
 
             strcpy(worldPath, worldURL);
             strcpy(worldNameTemp, worldURL);
@@ -5735,7 +5741,12 @@ bool checkwLoadResources(ifstream& worldFile, const char* filename)
             for (register unsigned int j = 0; true; j++)
             {
                 worldFile.read(&getString[j], 1);
-
+#ifdef LINUX
+                // Convert backslashes into forward slashes
+                if (getString[j] == '\\')
+                    getString[j] = '/';
+                else
+#endif
                 if (getString[j] == '\0')
                     break;
             }

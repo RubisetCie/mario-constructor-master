@@ -228,7 +228,10 @@ Marker_Entity::Marker_Entity(Texture* markertexture, Vector2f position, bool isL
                         {
                             levelFile.read(&getString[j], 1);
 
-                            if (getString[j] == '\0')
+                            // Convert backslashes into forward slashes
+                            if (getString[j] == '\\')
+                                getString[j] = '/';
+                            else if (getString[j] == '\0')
                                 break;
                         }
 
@@ -504,7 +507,10 @@ void Marker_Entity::setIsLevel(bool isLevel)
                         {
                             levelFile.read(&getString[j], 1);
 
-                            if (getString[j] == '\0')
+                            // Convert backslashes into forward slashes
+                            if (getString[j] == '\\')
+                                getString[j] = '/';
+                            else if (getString[j] == '\0')
                                 break;
                         }
 
